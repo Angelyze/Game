@@ -14,47 +14,44 @@
         body {
             font-family: Arial, sans-serif;
             background-color: #222222;
-            text-align: center;
-            position: relative;
             display: flex;
-            justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
-            flex-direction: column; /* Stack vertically */
-            min-height: 100vh; /* Ensure minimum height for viewport */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         #hud {
             background-color: #ff9000;
             color: white;
-            padding: 5px 0; /* Reduced padding for smaller height */
+            padding: 5px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: clamp(12px, 1.5vw, 16px); /* Smaller font for a tighter HUD */
-            height: 40px; /* Fixed, smaller height */
-            flex-shrink: 0; /* Prevent shrinking */
-            width: 100%; /* Full width */
+            font-size: clamp(12px, 1.5vw, 16px);
+            height: 40px;
+            flex-shrink: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
-        #hud > div:first-child { /* Level: */
-            margin-left: 10px; /* 10px from left border */
+        #hud > div:first-child {
+            margin-left: 10px;
         }
-        #hud > div:last-child { /* Sound: On/Off */
-            margin-right: 10px; /* 10px from right border */
+        #hud > div:last-child {
+            margin-right: 10px;
         }
         #game-container {
-            flex: 1; /* Take remaining height */
             display: grid;
             gap: 5px;
-            padding: 5px;
+            padding: 10px;
             box-sizing: border-box;
-            max-width: 100%; /* Allow full width of the window */
-            margin: 0 auto; /* Center horizontally */
-            width: 100%; /* Full width initially */
-            /* outline: 2px solid red; */ /* Uncomment to debug */
+            width: 100%;
+            max-width: 100%;
+            overflow-y: auto; /* Allow scrolling if absolutely necessary */
         }
         .card {
             width: 100%;
-            height: 0; /* Start with no height */
-            padding-bottom: calc(350 / 225 * 100%); /* 2:3 ratio (350 / 225 = 1.5556) */
+            height: 0;
+            padding-bottom: calc(350 / 225 * 100%); /* 2:3 ratio */
             border-radius: 10px;
             cursor: pointer;
             position: relative;
@@ -62,7 +59,6 @@
             background-size: cover;
             background-position: center;
             touch-action: manipulation;
-            /* outline: 1px solid yellow; */ /* Uncomment to debug */
         }
         .card img {
             width: 100%;
@@ -79,13 +75,6 @@
         }
         .card.flipped img.card-front {
             display: block;
-        }
-        #game-container::after {
-            content: '';
-            display: block;
-            grid-column: span 5; /* Span all columns */
-            grid-row: span 6; /* Span all rows */
-            visibility: hidden;
         }
         #game-over {
             display: none;
@@ -107,20 +96,18 @@
         }
         @media (max-width: 480px) {
             #game-container {
-                grid-template-columns: repeat(4, 1fr); /* 4 columns on mobile */
-                grid-template-rows: repeat(8, minmax(0, 1fr)); /* 8 rows to fit 30 cards */
                 gap: 3px;
+                padding: 5px;
             }
             #hud {
-                padding: 4px 0;
-                height: 35px; /* Even smaller on mobile */
+                height: 35px;
                 font-size: clamp(10px, 1.5vw, 14px);
             }
             #hud > div:first-child {
-                margin-left: 8px; /* Slightly reduced for mobile */
+                margin-left: 8px;
             }
             #hud > div:last-child {
-                margin-right: 8px; /* Slightly reduced for mobile */
+                margin-right: 8px;
             }
         }
     </style>
@@ -159,7 +146,7 @@
             matchedPairs = 0;
             document.getElementById('game-over').style.display = 'none';
             loadLevel();
-            adjustGameHeight(); // Ensure height is correct on load
+            adjustGameLayout();
         }
 
         function loadLevel() {
@@ -170,7 +157,7 @@
             document.getElementById('time').innerText = `Time: ${formatTime(timeLeft)}`;
             createCards();
             startTimer();
-            adjustGameHeight(); // Adjust height after creating cards
+            adjustGameLayout();
         }
 
         function createCards() {
@@ -188,12 +175,12 @@
                 card.addEventListener('touchstart', handleTouchStart, { passive: false });
                 gameContainer.appendChild(card);
             });
-            updateGridLayout(); // Dynamically set grid layout based on cards
+            adjustGameLayout();
         }
 
         function getCardImages() {
             return [
-                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg9tw3TLwn1lz4rSrZafttewjkdCt1i-ujQdVE1VJd3hy4fakv6n4FlrbSR1a5TbXQpQIAmzy7ff455xQZF50T2HCCn-YQKB8PbJ4qo6Slkqp6yXM8yTAuJYXaxsLdZi9NG0xg1w_dKa3Xw6SqRbHzDzGMKALOOPuXuigdnq2wiV6mYv9ovVR5wcJzrr2Bk/s350/01.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg9tw3TLwn1lz4rSrZafttewjkdCt1i-ujQdVE1VJd3hy4fakv6n4FlrbSR1a5TbXQpQIAmzy7ff455xQZF50T2HCCn-YQKB8PbJ4qo6Slkqp6yXM8yTAuJBSzYHDz8nyv36wi8XzSD1DqN0EtlxLalOYvEqszh-iFqbaCwmIPFqnD2arHtQoDV5oZ7hiSUZOmyrqDqbxh6SlMeZGCO5si4YvjH-rVJdHW94SIk5BRPr6ATOsfVGZetORScSTLT/s350/01.jpg',
                 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi3YXm1P87EC1jE652kTshUcOsTUmXMGFx2JtpGdtdI3VGEQWYgFuKQtb2ecGywDmJwR-9CbCrCAadsTZfIt-kv_6HEle9r52gb2YyqI9zSxdQjme7AKXcKP_IodqLg-9P9zKEwpEThtLRP8iQjRpzLnDfjKLcMFdSIZC0quERCghZC1QZdmGE49C0RoO8D/s350/02.jpg',
                 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjQhQTxb-P7yEHDenrSdVm5pgHS07Uk3t2Zm3PH3YR_gRNxSQ7ibZNBwWFIUfLPmr8sR8BJ5yxVw_Md1_3YYgfXUFJOCoMDVJyy4SUanrnUMkNmawlAEwEdQSVOPYN2R9aPKsLQzP0laRRelDFRiaiMulBTvjytdaTZHRbAegbcJkSte4VhQE-R2cjyzW5p/s350/03.jpg',
                 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjNh8zAkLps8cqERVNwM2qYi80fZNwC1z2XM4li0K-T202DthaymdZOLdsFcVa8NpZ4h-hfHH2Q0KynfM7StSIPy2Ei_sgsqQas4qFbvq2d0cRzF69D5C0Y-QUpio6FwV9uGwRWkA9q7Af7CxKlclcauU7rwhJg65D_ccTLCfID60uKvlmlmAWTv-Lb1hJ6/s350/04.jpg',
@@ -365,41 +352,43 @@
             oscillator.stop(audioContext.currentTime + 0.5);
         }
 
-        // Function to dynamically adjust game height and width, accounting for mobile chrome
-        function adjustGameHeight() {
+        function adjustGameLayout() {
             const gameContainer = document.getElementById('game-container');
-            const windowHeight = window.innerHeight || document.documentElement.clientHeight;
             const hudHeight = document.getElementById('hud').offsetHeight;
-            const availableHeight = windowHeight - hudHeight - 10; // Account for padding
-            const cardHeight = Math.min(availableHeight / 6, 350); // Limit card height to 350px max
-            const cardWidth = cardHeight * (225 / 350); // Maintain 2:3 ratio (225x350)
-            const totalWidth = cardWidth * 5 + 20; // 5 cards + gaps + padding
+            const padding = 10; // Total padding (5px top + 5px bottom)
+            let availableHeight = window.innerHeight - hudHeight - padding;
 
-            gameContainer.style.gridTemplateColumns = `repeat(5, ${cardWidth}px)`;
-            gameContainer.style.gridTemplateRows = `repeat(6, ${cardHeight}px)`;
-            gameContainer.style.width = `${totalWidth}px`; // Set exact width for cards
-            gameContainer.style.maxWidth = '100%'; // Ensure it fits within window
-            gameContainer.style.height = '100%'; // Scale to full available height
-            gameContainer.style.minHeight = `${cardHeight * 6 + 10}px`; // Minimum height for 6 rows + padding
-
-            // Ensure the body and container are centered, accounting for mobile chrome
-            document.body.style.height = `${windowHeight}px`;
-            gameContainer.style.minHeight = `${Math.max(cardHeight * 6 + 10, windowHeight - hudHeight - 10)}px`;
-        }
-
-        // Function to dynamically set grid layout based on cards
-        function updateGridLayout() {
-            const cards = document.querySelectorAll('.card');
-            if (cards.length === 30) { // 30 cards for 5x6 grid
-                adjustGameHeight();
+            if (window.visualViewport) {
+                availableHeight = window.visualViewport.height - hudHeight - padding;
             }
+
+            // Define grid: 5 columns, 6 rows (30 cards total)
+            const numCols = 5;
+            const numRows = 6;
+            const gap = 5; // Gap between cards
+
+            // Calculate maximum card height based on available height
+            const maxCardHeight = (availableHeight - (numRows - 1) * gap) / numRows;
+            const maxCardWidth = maxCardHeight * (225 / 350); // Maintain 2:3 ratio
+
+            // Calculate total width based on card width
+            const totalWidth = (maxCardWidth * numCols) + (numCols - 1) * gap;
+
+            // Adjust grid layout
+            gameContainer.style.gridTemplateColumns = `repeat(${numCols}, ${maxCardWidth}px)`;
+            gameContainer.style.gridTemplateRows = `repeat(${numRows}, ${maxCardHeight}px)`;
+            gameContainer.style.width = `${totalWidth}px`;
+            gameContainer.style.maxWidth = '95%'; // Prevent overflow on narrow screens
+            gameContainer.style.height = `${availableHeight}px`;
         }
 
-        // Adjust height on load, resize, and orientation change for mobile
         window.onload = () => {
             startGame();
-            window.addEventListener('resize', adjustGameHeight);
-            window.addEventListener('orientationchange', adjustGameHeight); // Handle mobile orientation changes
+            window.addEventListener('resize', adjustGameLayout);
+            window.addEventListener('orientationchange', adjustGameLayout);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', adjustGameLayout);
+            }
         };
     </script>
 </body>
