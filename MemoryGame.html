@@ -16,28 +16,25 @@
             background-color: #222222;
             text-align: center;
             position: relative;
+            display: flex;
+            flex-direction: column; /* Stack vertically */
         }
         #hud {
             background-color: #ff9000;
             color: white;
-            padding: 10px;
+            padding: 10px 0; /* Remove horizontal padding to maintain height */
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: clamp(14px, 2vw, 18px);
-            position: relative;
-            z-index: 1;
-            height: 60px; /* Fixed height for HUD */
+            height: 60px; /* Fixed height for consistency */
+            flex-shrink: 0; /* Prevent shrinking */
         }
         #game-container {
-            position: absolute;
-            top: 60px; /* Match HUD height */
-            bottom: 0;
-            left: 0;
-            right: 0;
+            flex: 1; /* Take remaining height */
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(6, minmax(0, 1fr)); /* Ensure rows fit */
+            grid-template-rows: repeat(6, minmax(0, 1fr)); /* Ensure all rows fit */
             gap: 5px;
             padding: 5px;
             box-sizing: border-box;
@@ -53,7 +50,7 @@
             background-size: cover;
             background-position: center;
             touch-action: manipulation;
-            aspect-ratio: 2 / 3;
+            aspect-ratio: 2 / 3; /* Enforce 2:3 ratio */
             /* outline: 1px solid yellow; */ /* Uncomment to debug */
         }
         .card img {
@@ -97,7 +94,7 @@
                 gap: 3px;
             }
             #hud {
-                padding: 8px;
+                padding: 8px 0;
                 height: 50px; /* Smaller HUD on mobile */
             }
         }
@@ -346,7 +343,8 @@
         function adjustGameHeight() {
             const gameContainer = document.getElementById('game-container');
             const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-            gameContainer.style.height = `calc(${windowHeight}px - 60px)`; // Subtract HUD height
+            const hudHeight = document.getElementById('hud').offsetHeight;
+            gameContainer.style.height = `calc(${windowHeight}px - ${hudHeight}px)`; // Use exact HUD height
         }
 
         // Adjust height on load and resize
