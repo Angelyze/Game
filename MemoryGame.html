@@ -44,14 +44,14 @@
             gap: 5px;
             padding: 10px;
             box-sizing: border-box;
-            width: 100%;
-            max-width: 100%;
-            overflow-y: auto; /* Allow scrolling if absolutely necessary */
+            width: calc(100% - 20px);
+            max-width: 95vw;
+            overflow-y: auto;
         }
         .card {
             width: 100%;
             height: 0;
-            padding-bottom: calc(350 / 225 * 100%); /* 2:3 ratio */
+            padding-bottom: calc(350 / 225 * 100%);
             border-radius: 10px;
             cursor: pointer;
             position: relative;
@@ -355,31 +355,23 @@
         function adjustGameLayout() {
             const gameContainer = document.getElementById('game-container');
             const hudHeight = document.getElementById('hud').offsetHeight;
-            const padding = 10; // Total padding (5px top + 5px bottom)
-            let availableHeight = window.innerHeight - hudHeight - padding;
+            const padding = 20;
+            const screenHeight = window.innerHeight || document.documentElement.clientHeight;
+            const availableHeight = screenHeight * 0.95 - hudHeight - padding;
 
-            if (window.visualViewport) {
-                availableHeight = window.visualViewport.height - hudHeight - padding;
-            }
-
-            // Define grid: 5 columns, 6 rows (30 cards total)
             const numCols = 5;
             const numRows = 6;
-            const gap = 5; // Gap between cards
+            const gap = 5;
 
-            // Calculate maximum card height based on available height
             const maxCardHeight = (availableHeight - (numRows - 1) * gap) / numRows;
-            const maxCardWidth = maxCardHeight * (225 / 350); // Maintain 2:3 ratio
-
-            // Calculate total width based on card width
+            const maxCardWidth = maxCardHeight * (225 / 350);
             const totalWidth = (maxCardWidth * numCols) + (numCols - 1) * gap;
 
-            // Adjust grid layout
             gameContainer.style.gridTemplateColumns = `repeat(${numCols}, ${maxCardWidth}px)`;
             gameContainer.style.gridTemplateRows = `repeat(${numRows}, ${maxCardHeight}px)`;
             gameContainer.style.width = `${totalWidth}px`;
-            gameContainer.style.maxWidth = '95%'; // Prevent overflow on narrow screens
             gameContainer.style.height = `${availableHeight}px`;
+            gameContainer.style.maxWidth = '95%';
         }
 
         window.onload = () => {
