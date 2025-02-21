@@ -6,7 +6,7 @@
     <title>The Memory Game</title>
     <style>
         html, body {
-            height: 100%; /* Full height of the window */
+            height: 100%;
             margin: 0;
             padding: 0;
             overflow: hidden;
@@ -15,8 +15,7 @@
             font-family: Arial, sans-serif;
             background-color: #222222;
             text-align: center;
-            display: flex;
-            flex-direction: column; /* Stack HUD and game vertically */
+            position: relative; /* Contain absolutely positioned children */
         }
         #hud {
             background-color: #ff9000;
@@ -26,17 +25,22 @@
             justify-content: space-between;
             align-items: center;
             font-size: clamp(14px, 2vw, 18px);
-            flex-shrink: 0; /* Prevent HUD from shrinking */
+            position: relative;
+            z-index: 1; /* Stay above game container */
         }
         #game-container {
-            flex: 1; /* Take remaining height */
+            position: absolute;
+            top: 60px; /* Height of HUD with padding */
+            bottom: 0; /* Extend to bottom of window */
+            left: 0;
+            right: 0;
             display: grid;
-            grid-template-columns: repeat(5, 1fr); /* 5 columns */
-            grid-template-rows: repeat(6, 1fr); /* 6 rows */
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(6, minmax(0, 1fr)); /* Ensure rows fit */
             gap: 5px;
             padding: 5px;
-            max-width: 100%; /* Allow width to adjust */
             box-sizing: border-box;
+            /* outline: 2px solid red; */ /* Uncomment to debug */
         }
         .card {
             width: 100%;
@@ -48,7 +52,8 @@
             background-size: cover;
             background-position: center;
             touch-action: manipulation;
-            aspect-ratio: 2 / 3; /* Maintain 2:3 ratio */
+            aspect-ratio: 2 / 3;
+            /* outline: 1px solid yellow; */ /* Uncomment to debug */
         }
         .card img {
             width: 100%;
@@ -84,12 +89,10 @@
         #game-over h2 {
             margin: 20px;
         }
-
-        /* Media query for smaller screens */
         @media (max-width: 480px) {
             #game-container {
-                grid-template-columns: repeat(4, 1fr); /* 4 columns */
-                grid-template-rows: repeat(8, 1fr); /* 8 rows */
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(8, minmax(0, 1fr));
                 gap: 3px;
             }
             #hud {
@@ -112,11 +115,11 @@
 
     <script>
         const levels = [
-            { time: 600, pairs: 15 }, // Level 1: 10 minutes
-            { time: 480, pairs: 15 }, // Level 2: 8 minutes
-            { time: 360, pairs: 15 }, // Level 3: 6 minutes
-            { time: 240, pairs: 15 }, // Level 4: 4 minutes
-            { time: 180, pairs: 15 }  // Level 5: 3 minutes
+            { time: 600, pairs: 15 },
+            { time: 480, pairs: 15 },
+            { time: 360, pairs: 15 },
+            { time: 240, pairs: 15 },
+            { time: 180, pairs: 15 }
         ];
 
         let currentLevel = 0;
