@@ -15,7 +15,7 @@
             font-family: Arial, sans-serif;
             background-color: #222222;
             text-align: center;
-            position: relative; /* Contain absolutely positioned children */
+            position: relative;
         }
         #hud {
             background-color: #ff9000;
@@ -26,12 +26,13 @@
             align-items: center;
             font-size: clamp(14px, 2vw, 18px);
             position: relative;
-            z-index: 1; /* Stay above game container */
+            z-index: 1;
+            height: 60px; /* Fixed height for HUD */
         }
         #game-container {
             position: absolute;
-            top: 60px; /* Height of HUD with padding */
-            bottom: 0; /* Extend to bottom of window */
+            top: 60px; /* Match HUD height */
+            bottom: 0;
             left: 0;
             right: 0;
             display: grid;
@@ -97,6 +98,7 @@
             }
             #hud {
                 padding: 8px;
+                height: 50px; /* Smaller HUD on mobile */
             }
         }
     </style>
@@ -135,6 +137,7 @@
             matchedPairs = 0;
             document.getElementById('game-over').style.display = 'none';
             loadLevel();
+            adjustGameHeight(); // Ensure height is correct on load
         }
 
         function loadLevel() {
@@ -145,6 +148,7 @@
             document.getElementById('time').innerText = `Time: ${formatTime(timeLeft)}`;
             createCards();
             startTimer();
+            adjustGameHeight(); // Adjust height after creating cards
         }
 
         function createCards() {
@@ -338,7 +342,18 @@
             oscillator.stop(audioContext.currentTime + 0.5);
         }
 
-        window.onload = startGame;
+        // Function to dynamically adjust game height
+        function adjustGameHeight() {
+            const gameContainer = document.getElementById('game-container');
+            const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+            gameContainer.style.height = `calc(${windowHeight}px - 60px)`; // Subtract HUD height
+        }
+
+        // Adjust height on load and resize
+        window.onload = () => {
+            startGame();
+            window.addEventListener('resize', adjustGameHeight);
+        };
     </script>
 </body>
 </html>
