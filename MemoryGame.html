@@ -33,16 +33,16 @@
         #game-container {
             flex: 1; /* Take remaining height */
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(6, minmax(0, 1fr)); /* Ensure all 6 rows fit */
             gap: 5px;
             padding: 5px;
             box-sizing: border-box;
+            /* Remove fixed grid templates and let cards determine size */
             /* outline: 2px solid red; */ /* Uncomment to debug */
         }
         .card {
             width: 100%;
-            height: 100%; /* Fill grid cell */
+            height: 0; /* Start with no height */
+            padding-bottom: calc(350 / 225 * 100%); /* 2:3 ratio (350 / 225 = 1.5556) */
             border-radius: 10px;
             cursor: pointer;
             position: relative;
@@ -50,7 +50,6 @@
             background-size: cover;
             background-position: center;
             touch-action: manipulation;
-            aspect-ratio: 225 / 350; /* Exact 2:3 ratio based on 225x350 pixels */
             /* outline: 1px solid yellow; */ /* Uncomment to debug */
         }
         .card img {
@@ -68,6 +67,13 @@
         }
         .card.flipped img.card-front {
             display: block;
+        }
+        #game-container::after {
+            content: '';
+            display: block;
+            grid-column: span 5; /* Span all columns */
+            grid-row: span 6; /* Span all rows */
+            visibility: hidden;
         }
         #game-over {
             display: none;
@@ -89,8 +95,8 @@
         }
         @media (max-width: 480px) {
             #game-container {
-                grid-template-columns: repeat(4, 1fr);
-                grid-template-rows: repeat(8, minmax(0, 1fr));
+                grid-template-columns: repeat(4, 1fr); /* 4 columns on mobile */
+                grid-template-rows: repeat(8, minmax(0, 1fr)); /* 8 rows to fit 30 cards */
                 gap: 3px;
             }
             #hud {
@@ -164,6 +170,7 @@
                 card.addEventListener('touchstart', handleTouchStart, { passive: false });
                 gameContainer.appendChild(card);
             });
+            updateGridLayout(); // Dynamically set grid layout based on cards
         }
 
         function getCardImages() {
@@ -345,7 +352,19 @@
             const gameContainer = document.getElementById('game-container');
             const windowHeight = window.innerHeight || document.documentElement.clientHeight;
             const hudHeight = document.getElementById('hud').offsetHeight;
+            const cardHeight = (windowHeight - hudHeight - 10) / 6; // 6 rows, account for padding
+            const cardWidth = cardHeight * (225 / 350); // Maintain 2:3 ratio
+            gameContainer.style.gridTemplateColumns = `repeat(5, ${cardWidth}px)`;
+            gameContainer.style.gridTemplateRows = `repeat(6, ${cardHeight}px)`;
             gameContainer.style.height = `calc(${windowHeight}px - ${hudHeight}px)`; // Use exact HUD height
+        }
+
+        // Function to dynamically set grid layout based on cards
+        function updateGridLayout() {
+            const cards = document.querySelectorAll('.card');
+            if (cards.length === 30) { // 30 cards for 5x6 grid
+                adjustGameHeight();
+            }
         }
 
         // Adjust height on load and resize
