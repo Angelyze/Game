@@ -46,7 +46,7 @@
             box-sizing: border-box;
             width: calc(100% - 20px);
             max-width: 95vw;
-            overflow: hidden; /* Prevent scrollbars */
+            overflow: hidden;
         }
         .card {
             width: 100%;
@@ -365,12 +365,10 @@
             const numRows = 6;
             const gap = 5;
 
-            // Calculate card dimensions based on height and width constraints
             const maxCardHeight = (availableHeight - (numRows - 1) * gap) / numRows;
             const maxCardWidthHeightRatio = maxCardHeight * (225 / 350);
             const maxCardWidthWidthRatio = (availableWidth - (numCols - 1) * gap) / numCols;
 
-            // Choose the smaller card width to fit both height and width
             const cardWidth = Math.min(maxCardWidthHeightRatio, maxCardWidthWidthRatio);
             const cardHeight = cardWidth * (350 / 225);
 
