@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>The Memory Game</title>
     <style>
         html, body {
@@ -20,6 +20,7 @@
             justify-content: center; /* Center horizontally */
             align-items: center; /* Center vertically */
             flex-direction: column; /* Stack vertically */
+            min-height: 100vh; /* Ensure minimum height for viewport */
         }
         #hud {
             background-color: #ff9000;
@@ -47,6 +48,7 @@
             box-sizing: border-box;
             max-width: 100%; /* Allow full width of the window */
             margin: 0 auto; /* Center horizontally */
+            width: 100%; /* Full width initially */
             /* outline: 2px solid red; */ /* Uncomment to debug */
         }
         .card {
@@ -363,7 +365,7 @@
             oscillator.stop(audioContext.currentTime + 0.5);
         }
 
-        // Function to dynamically adjust game height and width
+        // Function to dynamically adjust game height and width, accounting for mobile chrome
         function adjustGameHeight() {
             const gameContainer = document.getElementById('game-container');
             const windowHeight = window.innerHeight || document.documentElement.clientHeight;
@@ -379,6 +381,10 @@
             gameContainer.style.maxWidth = '100%'; // Ensure it fits within window
             gameContainer.style.height = '100%'; // Scale to full available height
             gameContainer.style.minHeight = `${cardHeight * 6 + 10}px`; // Minimum height for 6 rows + padding
+
+            // Ensure the body and container are centered, accounting for mobile chrome
+            document.body.style.height = `${windowHeight}px`;
+            gameContainer.style.minHeight = `${Math.max(cardHeight * 6 + 10, windowHeight - hudHeight - 10)}px`;
         }
 
         // Function to dynamically set grid layout based on cards
@@ -389,10 +395,11 @@
             }
         }
 
-        // Adjust height on load and resize
+        // Adjust height on load, resize, and orientation change for mobile
         window.onload = () => {
             startGame();
             window.addEventListener('resize', adjustGameHeight);
+            window.addEventListener('orientationchange', adjustGameHeight); // Handle mobile orientation changes
         };
     </script>
 </body>
