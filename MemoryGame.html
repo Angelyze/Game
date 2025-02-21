@@ -41,11 +41,15 @@
         }
         #game-container {
             display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(6, 1fr);
             gap: 5px;
             padding: 10px;
             box-sizing: border-box;
-            width: calc(100% - 20px);
+            width: 95vw;
+            height: calc(95vh - 60px); /* 95% of viewport height minus HUD */
             max-width: 95vw;
+            max-height: calc(95vh - 60px);
             overflow: hidden;
         }
         .card {
@@ -98,6 +102,7 @@
             #game-container {
                 gap: 3px;
                 padding: 5px;
+                height: calc(95vh - 55px); /* Adjust for smaller HUD */
             }
             #hud {
                 height: 35px;
@@ -146,7 +151,6 @@
             matchedPairs = 0;
             document.getElementById('game-over').style.display = 'none';
             loadLevel();
-            adjustGameLayout();
         }
 
         function loadLevel() {
@@ -157,7 +161,6 @@
             document.getElementById('time').innerText = `Time: ${formatTime(timeLeft)}`;
             createCards();
             startTimer();
-            adjustGameLayout();
         }
 
         function createCards() {
@@ -175,7 +178,6 @@
                 card.addEventListener('touchstart', handleTouchStart, { passive: false });
                 gameContainer.appendChild(card);
             });
-            adjustGameLayout();
         }
 
         function getCardImages() {
@@ -352,45 +354,7 @@
             oscillator.stop(audioContext.currentTime + 0.5);
         }
 
-        function adjustGameLayout() {
-            const gameContainer = document.getElementById('game-container');
-            const hudHeight = document.getElementById('hud').offsetHeight;
-            const screenHeight = window.innerHeight || document.documentElement.clientHeight;
-            const screenWidth = window.innerWidth || document.documentElement.clientWidth;
-            const padding = 20;
-            const availableHeight = Math.min(screenHeight * 0.95 - hudHeight - padding, screenHeight - hudHeight - padding);
-            const availableWidth = screenWidth * 0.95 - padding;
-
-            const numCols = 5;
-            const numRows = 6;
-            const gap = 5;
-
-            const maxCardHeight = (availableHeight - (numRows - 1) * gap) / numRows;
-            const maxCardWidthHeightRatio = maxCardHeight * (225 / 350);
-            const maxCardWidthWidthRatio = (availableWidth - (numCols - 1) * gap) / numCols;
-
-            const cardWidth = Math.min(maxCardWidthHeightRatio, maxCardWidthWidthRatio);
-            const cardHeight = cardWidth * (350 / 225);
-
-            const totalWidth = (cardWidth * numCols) + (numCols - 1) * gap;
-            const totalHeight = (cardHeight * numRows) + (numRows - 1) * gap;
-
-            gameContainer.style.gridTemplateColumns = `repeat(${numCols}, ${cardWidth}px)`;
-            gameContainer.style.gridTemplateRows = `repeat(${numRows}, ${cardHeight}px)`;
-            gameContainer.style.width = `${totalWidth}px`;
-            gameContainer.style.height = `${totalHeight}px`;
-            gameContainer.style.maxWidth = '100%';
-            gameContainer.style.maxHeight = '100%';
-        }
-
-        window.onload = () => {
-            startGame();
-            window.addEventListener('resize', adjustGameLayout);
-            window.addEventListener('orientationchange', adjustGameLayout);
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', adjustGameLayout);
-            }
-        };
+        window.onload = startGame;
     </script>
 </body>
 </html>
