@@ -17,6 +17,8 @@
             text-align: center;
             position: relative;
             display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
             flex-direction: column; /* Stack vertically */
         }
         #hud {
@@ -29,6 +31,7 @@
             font-size: clamp(12px, 1.5vw, 16px); /* Smaller font for a tighter HUD */
             height: 40px; /* Fixed, smaller height */
             flex-shrink: 0; /* Prevent shrinking */
+            width: 100%; /* Full width */
         }
         #hud > div:first-child { /* Level: */
             margin-left: 10px; /* 10px from left border */
@@ -366,15 +369,16 @@
             const windowHeight = window.innerHeight || document.documentElement.clientHeight;
             const hudHeight = document.getElementById('hud').offsetHeight;
             const availableHeight = windowHeight - hudHeight - 10; // Account for padding
-            const cardHeight = availableHeight / 6; // 6 rows
+            const cardHeight = Math.min(availableHeight / 6, 350); // Limit card height to 350px max
             const cardWidth = cardHeight * (225 / 350); // Maintain 2:3 ratio (225x350)
-            const totalWidth = cardWidth * 5 + 20; // 5 cards + 5px gap * 4 + 10px padding
+            const totalWidth = cardWidth * 5 + 20; // 5 cards + gaps + padding
 
             gameContainer.style.gridTemplateColumns = `repeat(5, ${cardWidth}px)`;
             gameContainer.style.gridTemplateRows = `repeat(6, ${cardHeight}px)`;
             gameContainer.style.width = `${totalWidth}px`; // Set exact width for cards
             gameContainer.style.maxWidth = '100%'; // Ensure it fits within window
-            gameContainer.style.height = `${availableHeight}px`; // Set exact height
+            gameContainer.style.height = '100%'; // Scale to full available height
+            gameContainer.style.minHeight = `${cardHeight * 6 + 10}px`; // Minimum height for 6 rows + padding
         }
 
         // Function to dynamically set grid layout based on cards
