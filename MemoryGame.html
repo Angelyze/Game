@@ -44,18 +44,18 @@
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(6, 1fr);
             gap: 5px;
-            padding: 10px;
+            padding: 5px;
             box-sizing: border-box;
-            width: 95vw;
-            height: calc(95vh - 60px); /* 95% of viewport height minus HUD */
+            width: 100%;
+            height: calc(100vh - 50px); /* Full height minus HUD */
             max-width: 95vw;
-            max-height: calc(95vh - 60px);
+            max-height: calc(95vh - 50px); /* 95% height minus HUD */
             overflow: hidden;
         }
         .card {
             width: 100%;
             height: 0;
-            padding-bottom: calc(350 / 225 * 100%);
+            padding-bottom: calc(350 / 225 * 100%); /* 2:3 aspect ratio */
             border-radius: 10px;
             cursor: pointer;
             position: relative;
@@ -101,8 +101,9 @@
         @media (max-width: 480px) {
             #game-container {
                 gap: 3px;
-                padding: 5px;
-                height: calc(95vh - 55px); /* Adjust for smaller HUD */
+                padding: 3px;
+                height: calc(100vh - 45px); /* Adjust for smaller HUD */
+                max-height: calc(95vh - 45px);
             }
             #hud {
                 height: 35px;
@@ -182,7 +183,7 @@
 
         function getCardImages() {
             return [
-                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg9tw3TLwn1lz4rSrZafttewjkdCt1i-ujQdVE1VJd3hy4fakv6n4FlrbSR1a5TbXQpQIAmzy7ff455xQZF50T2HCCn-YQKB8PbJ4qo6Slkqp6yXM8yTAuJBSzYHDz8nyv36wi8XzSD1DqN0EtlxLalOYvEqszh-iFqbaCwmIPFqnD2arHtQoDV5oZ7hiSUZOmyrqDqbxh6SlMeZGCO5si4YvjH-rVJdHW94SIk5BRPr6ATOsfVGZetORScSTLT/s350/01.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg9tw3TLwn1lz4rSrZafttewjkdCt1i-ujQdVE1VJd3hy4fakv6n4FlrbSR1a5TbXQpQIAmzy7ff455xQZF50T2HCCn-YQKB8PbJ4qo6Slkqp6yXM8yTAuJYXaxsLdZi9NG0xg1w_dKa3Xw6SqRbHzDzGMKALOOPuXuigdnq2wiV6mYv9ovVR5wcJzrr2Bk/s350/01.jpg',
                 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi3YXm1P87EC1jE652kTshUcOsTUmXMGFx2JtpGdtdI3VGEQWYgFuKQtb2ecGywDmJwR-9CbCrCAadsTZfIt-kv_6HEle9r52gb2YyqI9zSxdQjme7AKXcKP_IodqLg-9P9zKEwpEThtLRP8iQjRpzLnDfjKLcMFdSIZC0quERCghZC1QZdmGE49C0RoO8D/s350/02.jpg',
                 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjQhQTxb-P7yEHDenrSdVm5pgHS07Uk3t2Zm3PH3YR_gRNxSQ7ibZNBwWFIUfLPmr8sR8BJ5yxVw_Md1_3YYgfXUFJOCoMDVJyy4SUanrnUMkNmawlAEwEdQSVOPYN2R9aPKsLQzP0laRRelDFRiaiMulBTvjytdaTZHRbAegbcJkSte4VhQE-R2cjyzW5p/s350/03.jpg',
                 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjNh8zAkLps8cqERVNwM2qYi80fZNwC1z2XM4li0K-T202DthaymdZOLdsFcVa8NpZ4h-hfHH2Q0KynfM7StSIPy2Ei_sgsqQas4qFbvq2d0cRzF69D5C0Y-QUpio6FwV9uGwRWkA9q7Af7CxKlclcauU7rwhJg65D_ccTLCfID60uKvlmlmAWTv-Lb1hJ6/s350/04.jpg',
