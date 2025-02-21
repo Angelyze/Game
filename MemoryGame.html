@@ -30,13 +30,20 @@
             height: 40px; /* Fixed, smaller height */
             flex-shrink: 0; /* Prevent shrinking */
         }
+        #hud > div:first-child { /* Level: */
+            margin-left: 10px; /* 10px from left border */
+        }
+        #hud > div:last-child { /* Sound: On/Off */
+            margin-right: 10px; /* 10px from right border */
+        }
         #game-container {
             flex: 1; /* Take remaining height */
             display: grid;
             gap: 5px;
             padding: 5px;
             box-sizing: border-box;
-            /* Remove fixed grid templates and let cards determine size */
+            max-width: 100%; /* Allow full width of the window */
+            margin: 0 auto; /* Center horizontally */
             /* outline: 2px solid red; */ /* Uncomment to debug */
         }
         .card {
@@ -103,6 +110,12 @@
                 padding: 4px 0;
                 height: 35px; /* Even smaller on mobile */
                 font-size: clamp(10px, 1.5vw, 14px);
+            }
+            #hud > div:first-child {
+                margin-left: 8px; /* Slightly reduced for mobile */
+            }
+            #hud > div:last-child {
+                margin-right: 8px; /* Slightly reduced for mobile */
             }
         }
     </style>
@@ -347,16 +360,21 @@
             oscillator.stop(audioContext.currentTime + 0.5);
         }
 
-        // Function to dynamically adjust game height
+        // Function to dynamically adjust game height and width
         function adjustGameHeight() {
             const gameContainer = document.getElementById('game-container');
             const windowHeight = window.innerHeight || document.documentElement.clientHeight;
             const hudHeight = document.getElementById('hud').offsetHeight;
-            const cardHeight = (windowHeight - hudHeight - 10) / 6; // 6 rows, account for padding
-            const cardWidth = cardHeight * (225 / 350); // Maintain 2:3 ratio
+            const availableHeight = windowHeight - hudHeight - 10; // Account for padding
+            const cardHeight = availableHeight / 6; // 6 rows
+            const cardWidth = cardHeight * (225 / 350); // Maintain 2:3 ratio (225x350)
+            const totalWidth = cardWidth * 5 + 20; // 5 cards + 5px gap * 4 + 10px padding
+
             gameContainer.style.gridTemplateColumns = `repeat(5, ${cardWidth}px)`;
             gameContainer.style.gridTemplateRows = `repeat(6, ${cardHeight}px)`;
-            gameContainer.style.height = `calc(${windowHeight}px - ${hudHeight}px)`; // Use exact HUD height
+            gameContainer.style.width = `${totalWidth}px`; // Set exact width for cards
+            gameContainer.style.maxWidth = '100%'; // Ensure it fits within window
+            gameContainer.style.height = `${availableHeight}px`; // Set exact height
         }
 
         // Function to dynamically set grid layout based on cards
