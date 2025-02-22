@@ -38,8 +38,8 @@
         #gameContainer {
             border: 2px solid #ff9000; /* Updated theme color */
             background-color: #111111;
-            width: 99vw;
-            height: calc(99vh - 40px); /* Adjust height to account for HUD */
+            width: 98vw; /* Scale to 98% of viewport width */
+            height: calc(98vh - 40px); /* Scale to 98% of viewport height minus HUD */
             position: relative;
             margin-top: 40px; /* Add margin to push the game area down, matching 10px padding + HUD height */
             padding: 0; /* Remove default padding to ensure exact positioning */
@@ -84,9 +84,9 @@
         const soundToggleElement = document.getElementById('soundToggle');
 
         // Game constants
-        const GRID_SIZE = Math.min(window.innerWidth, window.innerHeight) / 32; // Adjust grid size based on screen size
-        const GAME_WIDTH = Math.floor(window.innerWidth / GRID_SIZE);
-        const GAME_HEIGHT = Math.floor((window.innerHeight - 40) / GRID_SIZE); // Adjust height for HUD
+        const GRID_SIZE = Math.min(window.innerWidth * 0.98, window.innerHeight * 0.98) / 32; // Adjust grid size based on 98% of screen size
+        const GAME_WIDTH = Math.floor((window.innerWidth * 0.98) / GRID_SIZE);
+        const GAME_HEIGHT = Math.floor(((window.innerHeight * 0.98) - 40) / GRID_SIZE); // Adjust height for HUD
         const SNAKE_COLOR = '#ff9000'; // Updated theme color
         const FOOD_COLOR = '#FFFF00'; // Yellow food
         const BONUS_COLOR = '#00FF00'; // Green bonus apple
@@ -101,7 +101,7 @@
         let highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore')) : 0; // Load high score from localStorage
         let gameLoop;
 
-        // Set canvas size to full screen
+        // Set canvas size to 98% of screen
         canvas.width = GAME_WIDTH * GRID_SIZE;
         canvas.height = GAME_HEIGHT * GRID_SIZE;
 
@@ -404,9 +404,9 @@
             // Wait for the resize to complete
             setTimeout(() => {
                 // Recalculate game dimensions
-                const GRID_SIZE = Math.min(window.innerWidth, window.innerHeight) / 32;
-                const GAME_WIDTH = Math.floor(window.innerWidth / GRID_SIZE);
-                const GAME_HEIGHT = Math.floor((window.innerHeight - 40) / GRID_SIZE); // Adjust height for HUD
+                const GRID_SIZE = Math.min(window.innerWidth * 0.98, window.innerHeight * 0.98) / 32;
+                const GAME_WIDTH = Math.floor((window.innerWidth * 0.98) / GRID_SIZE);
+                const GAME_HEIGHT = Math.floor(((window.innerHeight * 0.98) - 40) / GRID_SIZE); // Adjust height for HUD
                 canvas.width = GAME_WIDTH * GRID_SIZE;
                 canvas.height = GAME_HEIGHT * GRID_SIZE;
                 // Restart the game
