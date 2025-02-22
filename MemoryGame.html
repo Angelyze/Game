@@ -23,12 +23,12 @@
         #hud {
             background-color: #ff9000;
             color: white;
-            padding: 5px 0;
+            padding: 10px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: clamp(12px, 1.5vw, 16px);
-            height: 40px;
+            height: 60px; /* Matches your original HUD height with padding */
             flex-shrink: 0;
             width: 100%;
             box-sizing: border-box;
@@ -43,33 +43,38 @@
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
             grid-template-rows: repeat(6, minmax(0, 1fr));
-            gap: 5px;
+            gap: 10px;
             padding: 5px;
             box-sizing: border-box;
-            width: calc((95vh - 50px) * (5 * 225) / (6 * 350)); /* Responsive width based on height and 2:3 ratio */
-            height: calc(95vh - 50px); /* 95% viewport height minus HUD and padding */
+            width: calc((95vh - 70px) * (5 * 225) / (6 * 350)); /* Responsive width based on height and 2:3 ratio */
+            height: calc(95vh - 70px); /* 95% viewport height minus HUD and padding */
             max-width: 95vw; /* Cap width to avoid overflow */
-            max-height: calc(95vh - 50px);
+            max-height: calc(95vh - 70px);
             overflow: hidden;
+            margin: auto; /* Center horizontally */
+            align-items: center; /* Center vertically within the grid */
+            justify-items: center; /* Center items within grid cells */
         }
         .card {
-            width: 100%;
-            height: 0;
-            padding-bottom: calc(350 / 225 * 100%); /* 2:3 aspect ratio */
+            width: 100%; /* Full width of the grid cell */
+            height: 0; /* Set height to 0 */
+            padding-bottom: 150%; /* 2:3 aspect ratio (350px height / 225px width) */
             border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
             position: relative;
+            overflow: hidden;
             background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi4nWmphL_nxFc_lDNsI8G_6-W8f78cK9TJH2nrklDrVANi60y_oGIJBSzYHDz8nyv36wi8XzSD1DqN0EtlxLalOYvEqszh-iFqbaCwmIPFqnD2arHtQoDV5oZ7hiSUZOmyrqDqbxh6SlMeZGCO5si4YvjH-rVJdHW94SIk5BRPr6ATOsfVGZetORScSTLT/s350/image.jpg');
-            background-size: cover;
-            background-position: center;
-            touch-action: manipulation;
+            background-size: cover; /* Ensure the image covers the card */
         }
         .card img {
             width: 100%;
             height: 100%;
-            display: none;
+            display: none; /* Hide by default */
             border-radius: 5px;
-            position: absolute;
+            position: absolute; /* Position images absolutely */
             top: 0;
             left: 0;
             object-fit: cover;
@@ -78,7 +83,7 @@
             background-image: none;
         }
         .card.flipped img.card-front {
-            display: block;
+            display: block; /* Show card front when flipped */
         }
         #game-over {
             display: none;
@@ -92,22 +97,21 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            z-index: 10;
-            font-size: clamp(16px, 3vw, 24px);
+            z-index: 10; /* Ensure it appears above other elements */
         }
         #game-over h2 {
             margin: 20px;
         }
         @media (max-width: 480px) {
             #game-container {
-                gap: 3px;
+                gap: 8px;
                 padding: 3px;
-                height: calc(95vh - 45px);
-                width: calc((95vh - 45px) * (5 * 225) / (6 * 350));
-                max-height: calc(95vh - 45px);
+                height: calc(95vh - 65px); /* Adjust for smaller HUD and padding */
+                width: calc((95vh - 65px) * (5 * 225) / (6 * 350));
+                max-height: calc(95vh - 65px);
             }
             #hud {
-                height: 35px;
+                height: 55px; /* Smaller HUD on mobile */
                 font-size: clamp(10px, 1.5vw, 14px);
             }
             #hud > div:first-child {
@@ -133,11 +137,11 @@
 
     <script>
         const levels = [
-            { time: 600, pairs: 15 },
-            { time: 480, pairs: 15 },
-            { time: 360, pairs: 15 },
-            { time: 240, pairs: 15 },
-            { time: 180, pairs: 15 }
+            { time: 600, pairs: 15 }, // Level 1: 10 minutes (15 pairs for 30 cards)
+            { time: 480, pairs: 15 }, // Level 2: 8 minutes
+            { time: 360, pairs: 15 }, // Level 3: 6 minutes
+            { time: 240, pairs: 15 }, // Level 4: 4 minutes
+            { time: 180, pairs: 15 }   // Level 5: 3 minutes
         ];
 
         let currentLevel = 0;
@@ -146,39 +150,40 @@
         let firstCard, secondCard;
         let lockBoard = false;
         let matchedPairs = 0;
-        let isMuted = false;
+        let isMuted = false; // Global variable to track mute state
 
         function startGame() {
-            currentLevel = 0;
-            matchedPairs = 0;
-            document.getElementById('game-over').style.display = 'none';
-            loadLevel();
+            currentLevel = 0; // Reset to level 1
+            matchedPairs = 0; // Reset matched pairs
+            document.getElementById('game-over').style.display = 'none'; // Hide game over screen
+            loadLevel(); // Load the first level
         }
 
         function loadLevel() {
             const level = levels[currentLevel];
-            timeLeft = level.time;
-            matchedPairs = 0;
+            timeLeft = level.time; // Set time left for the current level
+            matchedPairs = 0; // Reset matched pairs for the new level
             document.getElementById('level').innerText = `Level: ${currentLevel + 1}`;
             document.getElementById('time').innerText = `Time: ${formatTime(timeLeft)}`;
-            createCards();
-            startTimer();
+            createCards(); // Create cards for the current level
+            startTimer(); // Start the timer
         }
 
         function createCards() {
             const gameContainer = document.getElementById('game-container');
-            gameContainer.innerHTML = '';
+            gameContainer.innerHTML = ''; // Clear previous cards
             const cardImages = getCardImages();
-            const cards = [...cardImages, ...cardImages];
-            shuffle(cards);
+            const cards = [...cardImages, ...cardImages]; // Duplicate for pairs
+            shuffle(cards); // Shuffle the cards
 
             cards.forEach(image => {
                 const card = document.createElement('div');
                 card.classList.add('card');
-                card.innerHTML = `<img src="${image}" alt="Card Image" class="card-front">`;
-                card.addEventListener('click', flipCard);
-                card.addEventListener('touchstart', handleTouchStart, { passive: false });
-                gameContainer.appendChild(card);
+                card.innerHTML = `
+                    <img src="${image}" alt="Card Image" class="card-front">
+                `;
+                card.addEventListener('click', flipCard); // Add click event to flip the card
+                gameContainer.appendChild(card); // Add card to the game container
             });
         }
 
@@ -210,24 +215,18 @@
             return array;
         }
 
-        function flipCard(e) {
-            e.preventDefault();
-            if (lockBoard || this.classList.contains('flipped')) return;
-            this.classList.add('flipped');
-            if (!isMuted) playBipSound();
+        function flipCard() {
+            if (lockBoard || this.classList.contains('flipped')) return; // Prevent flipping if already flipped or locked
+            this.classList.add('flipped'); // Mark card as flipped
+            if (!isMuted) playBipSound(); // Play sound when a card is flipped
 
             if (!firstCard) {
-                firstCard = this;
+                firstCard = this; // Store first card
             } else {
-                secondCard = this;
-                lockBoard = true;
-                checkForMatch();
+                secondCard = this; // Store second card
+                lockBoard = true; // Lock the board until the match check is done
+                checkForMatch(); // Check if the two flipped cards match
             }
-        }
-
-        function handleTouchStart(e) {
-            e.preventDefault();
-            flipCard.call(this, e);
         }
 
         function checkForMatch() {
@@ -235,45 +234,45 @@
             const secondImage = secondCard.querySelector('img.card-front').src;
 
             if (firstImage === secondImage) {
-                matchedPairs++;
-                if (!isMuted) playMatchSound();
-                resetCards();
+                matchedPairs++; // Increment matched pairs
+                if (!isMuted) playMatchSound(); // Play match sound
+                resetCards(); // Reset the card variables
                 if (matchedPairs === levels[currentLevel].pairs) {
-                    levelUp();
+                    levelUp(); // Proceed to the next level if all pairs are matched
                 }
             } else {
-                if (!isMuted) playUnmatchSound();
+                if (!isMuted) playUnmatchSound(); // Play unmatch sound
                 setTimeout(() => {
-                    firstCard.classList.remove('flipped');
-                    secondCard.classList.remove('flipped');
-                    resetCards();
+                    firstCard.classList.remove('flipped'); // Flip back the first card
+                    secondCard.classList.remove('flipped'); // Flip back the second card
+                    resetCards(); // Reset the card variables
                 }, 1000);
             }
         }
 
         function resetCards() {
-            [firstCard, secondCard] = [null, null];
-            lockBoard = false;
+            [firstCard, secondCard] = [null, null]; // Reset the card variables
+            lockBoard = false; // Unlock the board
         }
 
         function levelUp() {
-            if (!isMuted) playLevelUpSound();
-            currentLevel++;
+            if (!isMuted) playLevelUpSound(); // Play level up sound
+            currentLevel++; // Increment the current level
             if (currentLevel < levels.length) {
-                setTimeout(loadLevel, 1000);
+                setTimeout(loadLevel, 1000); // Load the next level after a delay
             } else {
-                gameOver(true);
+                gameOver(true); // End the game if all levels are completed
             }
         }
 
         function startTimer() {
-            clearInterval(timer);
+            clearInterval(timer); // Clear any existing timer
             timer = setInterval(() => {
-                timeLeft--;
+                timeLeft--; // Decrement the time left
                 document.getElementById('time').innerText = `Time: ${formatTime(timeLeft)}`;
                 if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    gameOver(false);
+                    clearInterval(timer); // Stop the timer
+                    gameOver(false); // Trigger game over if time runs out
                 }
             }, 1000);
         }
@@ -281,21 +280,22 @@
         function formatTime(seconds) {
             const minutes = Math.floor(seconds / 60);
             const secs = seconds % 60;
-            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`; // Format time as MM:SS
         }
 
         function gameOver(win) {
-            clearInterval(timer);
-            document.getElementById('game-over').style.display = 'flex';
-            document.getElementById('game-over-text').innerText = win ? "Congratulations, you won!" : "Game Over!";
-            if (!isMuted) win ? playGameOverWinSound() : playGameOverLossSound();
+            clearInterval(timer); // Stop the timer
+            document.getElementById('game-over').style.display = 'flex'; // Show the game over screen
+            document.getElementById('game-over-text').innerText = win ? "Congratulations, you won!" : "Game Over!"; // Set the game over message
         }
 
         function toggleSound() {
-            isMuted = !isMuted;
-            document.getElementById('sound').innerText = isMuted ? "Sound: Off" : "Sound: On";
+            const soundButton = document.getElementById('sound');
+            isMuted = !isMuted; // Toggle mute state
+            soundButton.innerText = isMuted ? "Sound: Off" : "Sound: On"; // Update button text
         }
 
+        // Sound functions
         function playBipSound() {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioContext.createOscillator();
@@ -356,7 +356,7 @@
             oscillator.stop(audioContext.currentTime + 0.5);
         }
 
-        window.onload = startGame;
+        window.onload = startGame; // Start the game when the window loads
     </script>
 </body>
 </html>
