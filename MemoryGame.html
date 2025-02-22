@@ -44,12 +44,12 @@
             grid-template-columns: repeat(5, minmax(0, 1fr));
             grid-template-rows: repeat(6, minmax(0, 1fr));
             gap: 10px;
-            padding: 5px;
+            padding: 10px 5px 10px 5px; /* Add 10px padding top and bottom, matching card gap */
             box-sizing: border-box;
-            width: calc((95vh - 70px) * (5 * 225) / (6 * 350)); /* Responsive width based on height and 2:3 ratio */
-            height: calc(95vh - 70px); /* 95% viewport height minus HUD and padding for desktop */
-            max-width: 95vw; /* Cap width to avoid overflow */
-            max-height: calc(95vh - 70px);
+            width: calc((100vh - 80px) * (5 * 225) / (6 * 350)); /* Responsive width based on 100% height minus HUD and padding */
+            height: calc(100vh - 80px); /* 100% viewport height minus HUD and padding */
+            max-width: 100vw; /* Cap width to full viewport width */
+            max-height: calc(100vh - 80px);
             overflow: hidden;
             margin: auto; /* Center horizontally */
             align-items: center; /* Center vertically within the grid */
@@ -105,10 +105,10 @@
         @media (max-width: 480px) {
             #game-container {
                 gap: 8px;
-                padding: 3px;
-                height: calc(95vh - 165px); /* 95% viewport height minus HUD, padding, and ~100px for system controls */
-                width: calc((95vh - 165px) * (5 * 225) / (6 * 350)); /* Responsive width based on adjusted height */
-                max-height: calc(95vh - 165px);
+                padding: 10px 3px 10px 3px; /* Add 10px padding top and bottom, matching card gap */
+                height: calc(100vh - 75px); /* 100% viewport height minus smaller HUD and padding */
+                width: calc((100vh - 75px) * (5 * 225) / (6 * 350)); /* Responsive width based on adjusted height */
+                max-height: calc(100vh - 75px);
             }
             #hud {
                 height: 55px; /* Smaller HUD on mobile */
