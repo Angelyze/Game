@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>Radio Gadget</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #333333;
+            font-family: Arial, sans-serif;
+            color: #ff9000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation; /* Enable touch for controls */
+        }
+        #radioContainer {
+            width: 90vw; /* Responsive width */
+            max-width: 400px; /* Cap width for large screens */
+            background-color: #222222; /* Slightly darker than body for contrast */
+            border: 2px solid #ff9000;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(255, 144, 0, 0.5);
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        #stationInfo {
+            font-size: clamp(1em, 2vw, 1.5em);
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        #trackInfo {
+            font-size: clamp(0.9em, 1.8vw, 1.2em);
+            margin-bottom: 20px;
+            text-align: center;
+            color: #ff9000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .controlButton {
+            background-color: #333333;
+            border: 2px solid #ff9000;
+            color: #ff9000;
+            padding: 10px 15px;
+            font-size: clamp(0.9em, 1.8vw, 1.2em);
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        .controlButton:hover, .controlButton:focus {
+            background-color: #444444;
+            transform: scale(1.05);
+        }
+        .controlButton:active {
+            transform: scale(0.95);
+        }
+        #stationSelect {
+            width: 100%;
+            margin-bottom: 20px;
+            padding: 10px;
+            font-size: clamp(0.9em, 1.8vw, 1.2em);
+            border: 2px solid #ff9000;
+            border-radius: 5px;
+            background-color: #333333;
+            color: #ff9000;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23ff9000" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            cursor: pointer;
+        }
+        #stationSelect:focus {
+            outline: none;
+            border-color: #ff9000;
+            box-shadow: 0 0 5px #ff9000;
+        }
+        @media (max-width: 480px) {
+            #radioContainer {
+                padding: 15px;
+                width: 85vw; /* Slightly smaller on mobile */
+            }
+            #stationInfo, #trackInfo, .controlButton, #stationSelect {
+                font-size: clamp(0.8em, 2.5vw, 1em); /* Slightly smaller on mobile */
+            }
+            #controls {
+                gap: 10px;
+            }
+            .controlButton {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="radioContainer">
+        <select id="stationSelect">
+            <option value="radio1">Radio 1 - Classic Rock Hits</option>
+            <option value="radio2">Radio 2 - Pop Favorites</option>
+            <option value="radio3">Radio 3 - Jazz Lounge</option>
+        </select>
+        <div id="stationInfo">Station: Radio 1 - Classic Rock Hits</div>
+        <div id="trackInfo">Now Playing: Track Title - Artist Name</div>
+        <div id="controls">
+            <button class="controlButton" id="playPause">Play</button>
+            <button class="controlButton" id="stop">Stop</button>
+            <button class="controlButton" id="prevStation">Previous</button>
+            <button class="controlButton" id="nextStation">Next</button>
+        </div>
+    </div>
+
+    <script>
+        // Dummy radio station URLs and details (to be replaced by you)
+        const radioStations = {
+            radio1: { url: 'http://example.com/radio1.mp3', name: 'Radio 1', details: 'Classic Rock Hits' },
+            radio2: { url: 'http://example.com/radio2.mp3', name: 'Radio 2', details: 'Pop Favorites' },
+            radio3: { url: 'http://example.com/radio3.mp3', name: 'Radio 3', details: 'Jazz Lounge' }
+        };
+
+        let currentStation = 'radio1';
+        let audio = new Audio();
+        let isPlaying = false;
+        let trackInfoInterval = null;
+
+        // Initialize station selection
+        const stationSelect = document.getElementById('stationSelect');
+        const stationInfo = document.getElementById('stationInfo');
+        const trackInfo = document.getElementById('trackInfo');
+        const playPauseButton = document.getElementById('playPause');
+        const stopButton = document.getElementById('stop');
+        const prevStationButton = document.getElementById('prevStation');
+        const nextStationButton = document.getElementById('nextStation');
+
+        function updateStationInfo() {
+            const station = radioStations[currentStation];
+            stationInfo.textContent = `Station: ${station.name} - ${station.details}`;
+            stationSelect.value = currentStation;
+        }
+
+        function playRadio() {
+            if (!isPlaying) {
+                audio.src = radioStations[currentStation].url;
+                audio.play().catch(error => console.error('Error playing audio:', error));
+                isPlaying = true;
+                playPauseButton.textContent = 'Pause';
+                startTrackInfo();
+            } else {
+                audio.pause();
+                isPlaying = false;
+                playPauseButton.textContent = 'Play';
+                stopTrackInfo();
+            }
+        }
+
+        function stopRadio() {
+            audio.pause();
+            audio.currentTime = 0;
+            isPlaying = false;
+            playPauseButton.textContent = 'Play';
+            stopTrackInfo();
+        }
+
+        function nextStation() {
+            const stations = Object.keys(radioStations);
+            const currentIndex = stations.indexOf(currentStation);
+            currentStation = stations[(currentIndex + 1) % stations.length];
+            updateStationInfo();
+            if (isPlaying) {
+                stopRadio();
+                playRadio();
+            }
+        }
+
+        function prevStation() {
+            const stations = Object.keys(radioStations);
+            const currentIndex = stations.indexOf(currentStation);
+            currentStation = stations[(currentIndex - 1 + stations.length) % stations.length];
+            updateStationInfo();
+            if (isPlaying) {
+                stopRadio();
+                playRadio();
+            }
+        }
+
+        // Dummy function to simulate pulling track information (replace with real API)
+        function fetchTrackInfo() {
+            // Simulate API call with dummy data
+            const dummyTracks = {
+                radio1: ['Track 1 - Artist 1', 'Track 2 - Artist 2', 'Track 3 - Artist 3'],
+                radio2: ['Pop Song 1 - Pop Artist 1', 'Pop Song 2 - Pop Artist 2', 'Pop Song 3 - Pop Artist 3'],
+                radio3: ['Jazz Tune 1 - Jazz Artist 1', 'Jazz Tune 2 - Jazz Artist 2', 'Jazz Tune 3 - Jazz Artist 3']
+            };
+            const tracks = dummyTracks[currentStation];
+            const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
+            trackInfo.textContent = `Now Playing: ${randomTrack}`;
+        }
+
+        function startTrackInfo() {
+            fetchTrackInfo(); // Initial fetch
+            trackInfoInterval = setInterval(fetchTrackInfo, 30000); // Update every 30 seconds
+        }
+
+        function stopTrackInfo() {
+            if (trackInfoInterval) {
+                clearInterval(trackInfoInterval);
+                trackInfoInterval = null;
+            }
+        }
+
+        // Event listeners for controls
+        playPauseButton.addEventListener('click', playRadio);
+        stopButton.addEventListener('click', stopRadio);
+        nextStationButton.addEventListener('click', nextStation);
+        prevStationButton.addEventListener('click', prevStation);
+        stationSelect.addEventListener('change', (e) => {
+            currentStation = e.target.value;
+            updateStationInfo();
+            if (isPlaying) {
+                stopRadio();
+                playRadio();
+            }
+        });
+
+        // Touch controls for buttons
+        function addTouchControls(element, callback) {
+            element.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                callback();
+                element.classList.add('active');
+            });
+            element.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                element.classList.remove('active');
+            });
+            element.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                element.classList.remove('active');
+            });
+        }
+
+        addTouchControls(playPauseButton, playRadio);
+        addTouchControls(stopButton, stopRadio);
+        addTouchControls(nextStationButton, nextStation);
+        addTouchControls(prevStationButton, prevStation);
+
+        // Keyboard controls
+        document.addEventListener('keydown', handleKeyboardInput);
+
+        function handleKeyboardInput(e) {
+            // Prevent default to avoid scrolling or other browser behaviors
+            e.preventDefault();
+
+            switch (e.key) {
+                case 'p': // Play/Pause
+                case 'P':
+                    playRadio();
+                    break;
+                case 's': // Stop
+                case 'S':
+                    stopRadio();
+                    break;
+                case 'ArrowRight': // Next station
+                case 'd':
+                case 'D':
+                    nextStation();
+                    break;
+                case 'ArrowLeft': // Previous station
+                case 'a':
+                case 'A':
+                    prevStation();
+                    break;
+            }
+        }
+
+        // Handle window resizing for responsiveness
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('radioContainer');
+            container.style.width = '90vw';
+            container.style.maxWidth = '400px';
+        });
+
+        // Initialize
+        updateStationInfo();
+    </script>
+</body>
+</html>
