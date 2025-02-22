@@ -39,7 +39,7 @@
             border: 2px solid #ff9000; /* Updated theme color */
             background-color: #111111;
             width: 98vw; /* Scale to 98% of viewport width */
-            height: calc(98vh - 40px); /* Scale to 98% of viewport height minus HUD */
+            height: calc(98vh - 40px); /* Scale to 98% of viewport height minus HUD for desktop */
             position: relative;
             margin-top: 40px; /* Add margin to push the game area down, matching 10px padding + HUD height */
             padding: 0; /* Remove default padding to ensure exact positioning */
@@ -62,6 +62,11 @@
         #soundToggle {
             cursor: pointer;
         }
+        @media (max-width: 480px) {
+            #gameContainer {
+                height: calc(98vh - 90px); /* Adjust for mobile system buttons (-50px from 98vh - 40px) */
+            }
+        }
     </style>
 </head>
 <body>
@@ -72,7 +77,7 @@
     </div>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
-        <div id="gameOver">Game Over!<br>Press Screen to Restart</div>
+        <div id="gameOver">GAME OVER! Press any button or touch the screen to restart.</div>
     </div>
 
     <script>
@@ -351,10 +356,8 @@
 
         function handleKeyboardInput(e) {
             if (gameOverElement.style.display === 'block') {
-                if (e.key === 'Enter' || e.key === ' ') { // Restart on Enter or Space
-                    startGame();
-                }
-                return; // Ignore other keys when game is over
+                startGame(); // Restart on any key press when game is over
+                return; // Ignore movement keys when game is over
             }
 
             // Prevent default to avoid scrolling or other browser behaviors
