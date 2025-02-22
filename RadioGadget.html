@@ -113,14 +113,14 @@
             <div id="trackInfo">Loading...</div>
         </div>
         <div id="controls">
-            <button class="controlButton" id="playPause"><span>▶</span> Play/Pause</button>
+            <button class="controlButton" id="playPause"><span>▶</span> Play</button>
             <button class="controlButton" id="prevStation"><span>◀</span> Previous</button>
             <button class="controlButton" id="nextStation"><span>▶</span> Next</button>
         </div>
     </div>
 
     <script>
-        // Radio station URLs and details (updated by you)
+        // Radio station URLs and details
         const radioStations = {
             radio1: { url: 'https://quincy.torontocast.com:2940/stream', name: 'Addictive 50s', details: 'Listen to 50s bangers!' },
             radio2: { url: 'https://azuracast.jammimvibez.com/listen/oldies/stream', name: 'Oldies Classics Mix', details: 'Classic Oldies From the 50s and 60s' },
@@ -153,12 +153,12 @@
                 audio.src = radioStations[currentStation].url;
                 audio.play().catch(error => console.error('Error playing audio:', error));
                 isPlaying = true;
-                playPauseButton.querySelector('span').textContent = '❚❚'; // Pause symbol
+                playPauseButton.innerHTML = '<span>❚❚</span> Pause'; // Show pause icon and text
                 startTrackInfo();
             } else {
                 audio.pause();
                 isPlaying = false;
-                playPauseButton.querySelector('span').textContent = '▶'; // Play symbol
+                playPauseButton.innerHTML = '<span>▶</span> Play'; // Show play icon and text
                 stopTrackInfo();
             }
         }
@@ -189,11 +189,11 @@
             audio.pause();
             audio.currentTime = 0;
             isPlaying = false;
-            playPauseButton.querySelector('span').textContent = '▶'; // Play symbol
+            playPauseButton.innerHTML = '<span>▶</span> Play'; // Show play icon and text
             stopTrackInfo();
         }
 
-        // Function to fetch real-time track information from Icecast streams (optimized for Icecast)
+        // Function to fetch real-time track information from Icecast streams
         function fetchTrackInfo() {
             if (!isPlaying) {
                 trackInfo.textContent = 'Now Playing: (Paused)';
@@ -202,64 +202,47 @@
 
             trackInfo.textContent = 'Now Playing: Loading...'; // Show loading state
 
-            // Try to get ICY metadata directly from the audio stream
-            if (audio.readyState >= 1) { // HAVE_ENOUGH_DATA
-                // Check for ICY metadata via the audio element's textTracks or metadata
-                const metadata = audio.textTracks || audio.metadata;
-                if (metadata && metadata.length > 0) {
-                    for (let track of metadata) {
-                        if (track.kind === 'metadata' && track.cues && track.cues.length > 0) {
-                            const cue = track.cues[track.cues.length - 1];
-                            if (cue.text) {
-                                trackInfo.textContent = `Now Playing: ${cue.text}`;
-                                return;
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', radioStations[currentStation].url, true);
+            xhr.setRequestHeader('Icy-MetaData', '1'); // Request ICY metadata
+            xhr.setRequestHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+            xhr.responseType = 'arraybuffer'; // Handle binary response for metadata
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const metaInt = xhr.getResponseHeader('icy-metaint');
+                    if (metaInt) {
+                        const metaDataOffset = parseInt(metaInt);
+                        const response = new Uint8Array(xhr.response);
+                        const metaDataLength = response[metaDataOffset] * 16; // ICY metadata length
+                        if (metaDataLength > 0) {
+                            let metaString = '';
+                            for (let i = metaDataOffset + 1; i < metaDataOffset + 1 + metaDataLength; i++) {
+                                if (response[i] !== 0) { // Skip null bytes
+                                    metaString += String.fromCharCode(response[i]);
+                                }
                             }
-                        }
-                    }
-                }
-
-                // Fallback: Use XMLHttpRequest to fetch ICY metadata from Icecast streams
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', radioStations[currentStation].url, true);
-                xhr.setRequestHeader('Icy-MetaData', '1'); // Request ICY metadata
-                xhr.setRequestHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'); // Common user agent for Icecast
-                xhr.responseType = 'arraybuffer'; // Handle binary response for metadata
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        const metaInt = xhr.getResponseHeader('icy-metaint');
-                        if (metaInt) {
-                            const metaDataOffset = parseInt(metaInt);
-                            const response = new Uint8Array(xhr.response);
-                            const metaDataLength = response[metaDataOffset] * 16; // ICY metadata length
-                            if (metaDataLength > 0) {
-                                let metaString = '';
-                                for (let i = metaDataOffset + 1; i < metaDataOffset + 1 + metaDataLength; i++) {
-                                    if (response[i] !== 0) { // Skip null bytes
-                                        metaString += String.fromCharCode(response[i]);
-                                    }
-                                }
-                                const titleMatch = metaString.match(/StreamTitle='([^']+)'/) || metaString.match(/StreamTitle="([^"]+)"/);
-                                if (titleMatch && titleMatch[1]) {
-                                    trackInfo.textContent = `Now Playing: ${titleMatch[1]}`;
-                                    return;
-                                }
+                            const titleMatch = metaString.match(/StreamTitle='([^']+)'/) || metaString.match(/StreamTitle="([^"]+)"/);
+                            if (titleMatch && titleMatch[1]) {
+                                trackInfo.textContent = `Now Playing: ${titleMatch[1]}`;
+                                return;
                             }
                         }
                     }
                     // Fallback to Icecast status JSON if ICY metadata fails
                     fetchIcecastStatus();
-                };
-                xhr.onerror = function() {
+                } else {
                     trackInfo.textContent = 'Now Playing: Error Fetching Track Info';
                     fetchIcecastStatus(); // Try fallback
-                };
-                xhr.send();
-            } else {
-                trackInfo.textContent = 'Now Playing: Loading...';
-            }
+                }
+            };
+            xhr.onerror = function() {
+                trackInfo.textContent = 'Now Playing: Error Fetching Track Info';
+                fetchIcecastStatus(); // Try fallback
+            };
+            xhr.send();
         }
 
-        // Fallback: Fetch Icecast status JSON for metadata (if stream supports it)
+        // Fallback: Fetch Icecast status JSON for metadata
         function fetchIcecastStatus() {
             const urlParts = new URL(radioStations[currentStation].url);
             const baseUrl = `${urlParts.origin}${urlParts.pathname.split('/').slice(0, -1).join('/')}/status-json.xsl`;
@@ -321,20 +304,18 @@
         document.addEventListener('keydown', handleKeyboardInput);
 
         function handleKeyboardInput(e) {
-            // Prevent default to avoid scrolling or other browser behaviors
             e.preventDefault();
-
             switch (e.key) {
-                case 'p': // Play/Pause
+                case 'p':
                 case 'P':
                     playRadio();
                     break;
-                case 'ArrowRight': // Next station
+                case 'ArrowRight':
                 case 'd':
                 case 'D':
                     nextStation();
                     break;
-                case 'ArrowLeft': // Previous station
+                case 'ArrowLeft':
                 case 'a':
                 case 'A':
                     prevStation();
