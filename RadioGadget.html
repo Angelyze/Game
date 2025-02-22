@@ -104,7 +104,7 @@
     <div id="radioContainer">
         <div id="infoSection">
             <div class="infoLabel">Station:</div>
-            <div id="stationInfo">Addictive 50s - Listen to 50s bangers!</div>
+            <div id="stationInfo">Addictive 50s</div>
             <div class="infoLabel">Description:</div>
             <div id="descriptionInfo">Listen to 50s bangers!</div>
             <div class="infoLabel">Now Playing:</div>
@@ -193,14 +193,16 @@
             }
         }
 
-        // Function to fetch real-time track information from Icecast streams
+        // Function to fetch real-time track information from Icecast streams (optimized for Icecast)
         function fetchTrackInfo() {
             if (!isPlaying) {
                 trackInfo.textContent = 'Now Playing: (Paused)';
                 return;
             }
 
-            // Try to get metadata from the audio element (Icecast streams often use ICY metadata)
+            trackInfo.textContent = 'Now Playing: Loading...'; // Show loading state
+
+            // Try to get ICY metadata directly from the audio stream
             if (audio.readyState >= 1) { // HAVE_ENOUGH_DATA
                 // Check for ICY metadata via the audio element's textTracks or metadata
                 const metadata = audio.textTracks || audio.metadata;
@@ -235,7 +237,7 @@
                                         metaString += String.fromCharCode(response[i]);
                                     }
                                 }
-                                const titleMatch = metaString.match(/StreamTitle='([^']+)'/);
+                                const titleMatch = metaString.match(/StreamTitle='([^']+)'/) || metaString.match(/StreamTitle="([^"]+)"/);
                                 if (titleMatch && titleMatch[1]) {
                                     trackInfo.textContent = `Now Playing: ${titleMatch[1]}`;
                                     return;
@@ -243,15 +245,36 @@
                             }
                         }
                     }
-                    trackInfo.textContent = 'Now Playing: Unknown Track'; // Fallback if metadata not available
+                    // Fallback to Icecast status JSON if ICY metadata fails
+                    fetchIcecastStatus();
                 };
                 xhr.onerror = function() {
                     trackInfo.textContent = 'Now Playing: Error Fetching Track Info';
+                    fetchIcecastStatus(); // Try fallback
                 };
                 xhr.send();
             } else {
                 trackInfo.textContent = 'Now Playing: Loading...';
             }
+        }
+
+        // Fallback: Fetch Icecast status JSON for metadata (if stream supports it)
+        function fetchIcecastStatus() {
+            const urlParts = new URL(radioStations[currentStation].url);
+            const baseUrl = `${urlParts.origin}${urlParts.pathname.split('/').slice(0, -1).join('/')}/status-json.xsl`;
+            fetch(baseUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.icestats && data.icestats.source && data.icestats.source[0] && data.icestats.source[0].title) {
+                        trackInfo.textContent = `Now Playing: ${data.icestats.source[0].title}`;
+                    } else {
+                        trackInfo.textContent = 'Now Playing: Unknown Track';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching Icecast status:', error);
+                    trackInfo.textContent = 'Now Playing: Unknown Track';
+                });
         }
 
         function startTrackInfo() {
