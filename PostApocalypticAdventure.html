@@ -16,7 +16,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start; /* Align to top */
             align-items: center;
             min-height: 100vh;
         }
@@ -24,13 +24,14 @@
             width: 90vw; /* Responsive width, 90% of viewport */
             max-width: 1024px; /* Optional max width for large screens */
             margin: 0 auto; /* Center horizontally */
-            padding: 10px; /* Consistent padding */
+            padding: 10px 10px 10px 10px; /* 10px top padding (matching card gap), 10px sides and bottom */
             box-sizing: border-box;
+            position: relative; /* Ensure fixed positioning within body */
         }
         #game-image {
             width: 100%;
             height: auto;
-            max-height: calc(70vh - 120px); /* 70% of viewport height minus HUD and padding, adjustable for content */
+            max-height: calc(70vh - 120px); /* 70% of viewport height minus padding and HUD space, adjustable for content */
             object-fit: contain;
         }
         #text {
@@ -66,10 +67,10 @@
         }
         @media (max-width: 480px) {
             #game-container {
-                padding: 5px; /* Reduced padding on mobile */
+                padding: 10px 5px 5px 5px; /* 10px top padding, 5px sides, 5px bottom on mobile */
             }
             #game-image {
-                max-height: calc(60vh - 90px); /* Adjusted for smaller mobile screens */
+                max-height: calc(60vh - 110px); /* Adjusted for smaller mobile screens and top padding */
             }
             #text {
                 margin: 10px 0;
@@ -155,7 +156,7 @@
                 ]
             },
             8: {
-                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiusyABGrVEqQfiNnIJXidisv_aksrg64SJiFQ6jjEz8iRu8O4kjnjZJwV2SLEXNuzFrWpPxOA6xRf0zBbHmTgTb5-eGNVNFfF2K1URdWqWKCw-DnlLDYk3T0WKm5rs9NAvFrtZ3Nmv9XxbnFFB4EIadMtho2hg1ssZP-8yeZP4tJbVKrkfrTMuHPZ0uaC3/s1024/8.jpg',
+                image: 'https://blogger.githubusercontent.com/img/b/R29vZ2xl/AVvXsEiusyABGrVEqQfiNnIJXidisv_aksrg64SJiFQ6jjEz8iRu8O4kjnjZJwV2SLEXNuzFrWpPxOA6xRf0zBbHmTgTb5-eGNVNFfF2K1URdWqWKCw-DnlLDYk3T0WKm5rs9NAvFrtZ3Nmv9XxbnFFB4EIadMtho2hg1ssZP-8yeZP4tJbVKrkfrTMuHPZ0uaC3/s1024/8.jpg',
                 text: "At the mall, you find signs of a community. As you approach, someone calls out your name. It's Mia!",
                 choices: [
                     { text: "Run towards Mia for a reunion.", nextScene: 9 },
