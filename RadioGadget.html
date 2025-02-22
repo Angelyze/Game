@@ -20,7 +20,7 @@
         }
         #radioContainer {
             width: 90vw; /* Responsive width */
-            max-width: 400px; /* Cap width for large screens */
+            max-width: 450px; /* Increased from 400px to 450px */
             height: 300px; /* Fixed height */
             background-color: #222222; /* Slightly darker than body for contrast */
             border: 2px solid #ff9000;
@@ -193,7 +193,7 @@
             stopTrackInfo();
         }
 
-        // Function to fetch real-time track information from Icecast streams
+        // Function to fetch real-time track information
         function fetchTrackInfo() {
             if (!isPlaying) {
                 trackInfo.textContent = 'Now Playing: (Paused)';
@@ -201,69 +201,41 @@
             }
 
             trackInfo.textContent = 'Now Playing: Loading...'; // Show loading state
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', radioStations[currentStation].url, true);
-            xhr.setRequestHeader('Icy-MetaData', '1'); // Request ICY metadata
-            xhr.setRequestHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-            xhr.responseType = 'arraybuffer'; // Handle binary response for metadata
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    const metaInt = xhr.getResponseHeader('icy-metaint');
-                    if (metaInt) {
-                        const metaDataOffset = parseInt(metaInt);
-                        const response = new Uint8Array(xhr.response);
-                        const metaDataLength = response[metaDataOffset] * 16; // ICY metadata length
-                        if (metaDataLength > 0) {
-                            let metaString = '';
-                            for (let i = metaDataOffset + 1; i < metaDataOffset + 1 + metaDataLength; i++) {
-                                if (response[i] !== 0) { // Skip null bytes
-                                    metaString += String.fromCharCode(response[i]);
-                                }
-                            }
-                            const titleMatch = metaString.match(/StreamTitle='([^']+)'/) || metaString.match(/StreamTitle="([^"]+)"/);
-                            if (titleMatch && titleMatch[1]) {
-                                trackInfo.textContent = `Now Playing: ${titleMatch[1]}`;
-                                return;
-                            }
-                        }
-                    }
-                    // Fallback to Icecast status JSON if ICY metadata fails
-                    fetchIcecastStatus();
-                } else {
-                    trackInfo.textContent = 'Now Playing: Error Fetching Track Info';
-                    fetchIcecastStatus(); // Try fallback
-                }
-            };
-            xhr.onerror = function() {
-                trackInfo.textContent = 'Now Playing: Error Fetching Track Info';
-                fetchIcecastStatus(); // Try fallback
-            };
-            xhr.send();
+            fetchIcecastStatus(); // Directly use Icecast status JSON
         }
 
-        // Fallback: Fetch Icecast status JSON for metadata
+        // Fetch Icecast status JSON for metadata
         function fetchIcecastStatus() {
             const urlParts = new URL(radioStations[currentStation].url);
-            const baseUrl = `${urlParts.origin}${urlParts.pathname.split('/').slice(0, -1).join('/')}/status-json.xsl`;
-            fetch(baseUrl)
-                .then(response => response.json())
+            // Construct status URL based on common Icecast pattern
+            const baseUrl = `${urlParts.origin}/status-json.xsl`;
+            fetch(baseUrl, { method: 'GET', mode: 'cors' })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.icestats && data.icestats.source && data.icestats.source[0] && data.icestats.source[0].title) {
-                        trackInfo.textContent = `Now Playing: ${data.icestats.source[0].title}`;
+                    console.log('Icecast status data:', data); // Log for debugging
+                    if (data.icestats && data.icestats.source) {
+                        const source = Array.isArray(data.icestats.source) ? data.icestats.source[0] : data.icestats.source;
+                        if (source && source.title) {
+                            trackInfo.textContent = `Now Playing: ${source.title}`;
+                        } else {
+                            trackInfo.textContent = 'Now Playing: Unknown Track';
+                        }
                     } else {
                         trackInfo.textContent = 'Now Playing: Unknown Track';
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching Icecast status:', error);
+                    console.error('Error fetching Icecast status for', radioStations[currentStation].url, ':', error);
                     trackInfo.textContent = 'Now Playing: Unknown Track';
                 });
         }
 
         function startTrackInfo() {
             fetchTrackInfo(); // Initial fetch
-            trackInfoInterval = setInterval(fetchTrackInfo, 30000); // Update every 30 seconds
+            trackInfoInterval = setInterval(fetchTrackInfo, 15000); // Update every 15 seconds
         }
 
         function stopTrackInfo() {
