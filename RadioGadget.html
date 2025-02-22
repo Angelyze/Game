@@ -196,18 +196,17 @@
         // Function to fetch real-time track information
         function fetchTrackInfo() {
             if (!isPlaying) {
-                trackInfo.textContent = 'Now Playing: (Paused)';
+                trackInfo.textContent = '(Paused)';
                 return;
             }
 
-            trackInfo.textContent = 'Now Playing: Loading...'; // Show loading state
+            trackInfo.textContent = 'Loading...'; // Show loading state
             fetchIcecastStatus(); // Directly use Icecast status JSON
         }
 
         // Fetch Icecast status JSON for metadata
         function fetchIcecastStatus() {
             const urlParts = new URL(radioStations[currentStation].url);
-            // Construct status URL based on common Icecast pattern
             const baseUrl = `${urlParts.origin}/status-json.xsl`;
             fetch(baseUrl, { method: 'GET', mode: 'cors' })
                 .then(response => {
@@ -219,17 +218,17 @@
                     if (data.icestats && data.icestats.source) {
                         const source = Array.isArray(data.icestats.source) ? data.icestats.source[0] : data.icestats.source;
                         if (source && source.title) {
-                            trackInfo.textContent = `Now Playing: ${source.title}`;
+                            trackInfo.textContent = `${source.title}`;
                         } else {
-                            trackInfo.textContent = 'Now Playing: Unknown Track';
+                            trackInfo.textContent = 'Unknown Track';
                         }
                     } else {
-                        trackInfo.textContent = 'Now Playing: Unknown Track';
+                        trackInfo.textContent = 'Unknown Track';
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching Icecast status for', radioStations[currentStation].url, ':', error);
-                    trackInfo.textContent = 'Now Playing: Unknown Track';
+                    trackInfo.textContent = 'Unknown Track';
                 });
         }
 
@@ -243,7 +242,7 @@
                 clearInterval(trackInfoInterval);
                 trackInfoInterval = null;
             }
-            trackInfo.textContent = 'Now Playing: (Paused)';
+            trackInfo.textContent = '(Paused)';
         }
 
         // Event listeners for controls
