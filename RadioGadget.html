@@ -29,17 +29,23 @@
             padding: 20px;
             box-sizing: border-box;
             position: relative;
-            overflow: hidden; /* Ensure content fits within fixed height */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Push controls to bottom */
         }
-        #stationInfo {
+        #infoSection {
+            flex-grow: 1; /* Allow info to take up available space above controls */
+            overflow: auto; /* Enable scrolling if content exceeds height */
+        }
+        .infoLabel {
             font-size: clamp(1em, 2vw, 1.5em);
             font-weight: bold;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             text-align: center;
         }
-        #trackInfo {
+        #stationInfo, #descriptionInfo, #trackInfo {
             font-size: clamp(0.9em, 1.8vw, 1.2em);
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             text-align: center;
             color: #ff9000;
             white-space: nowrap;
@@ -50,17 +56,22 @@
             display: flex;
             justify-content: center;
             gap: 15px;
+            padding-top: 15px; /* Padding above controls */
             flex-wrap: wrap;
         }
         .controlButton {
             background-color: #333333;
             border: 2px solid #ff9000;
             color: #ff9000;
-            padding: 10px 15px;
-            font-size: clamp(0.9em, 1.8vw, 1.2em);
+            width: 50px; /* Uniform width */
+            height: 50px; /* Uniform height */
+            font-size: 1.2em; /* Adjust font size for symbols */
             cursor: pointer;
             border-radius: 5px;
             transition: background-color 0.3s, transform 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .controlButton:hover, .controlButton:focus {
             background-color: #444444;
@@ -74,27 +85,36 @@
                 padding: 15px;
                 width: 85vw; /* Slightly smaller on mobile */
             }
-            #stationInfo, #trackInfo, .controlButton {
+            .infoLabel, #stationInfo, #descriptionInfo, #trackInfo {
                 font-size: clamp(0.8em, 2.5vw, 1em); /* Slightly smaller on mobile */
             }
             #controls {
                 gap: 10px;
+                padding-top: 10px; /* Reduced padding on mobile */
             }
             .controlButton {
-                padding: 8px 12px;
+                width: 40px; /* Slightly smaller on mobile */
+                height: 40px; /* Slightly smaller on mobile */
+                font-size: 1em; /* Adjust font size for mobile */
             }
         }
     </style>
 </head>
 <body>
     <div id="radioContainer">
-        <div id="stationInfo">Station: Addictive 50s - Listen to 50s bangers!</div>
-        <div id="trackInfo">Now Playing: Loading...</div>
+        <div id="infoSection">
+            <div class="infoLabel">Station:</div>
+            <div id="stationInfo">Addictive 50s - Listen to 50s bangers!</div>
+            <div class="infoLabel">Description:</div>
+            <div id="descriptionInfo">Listen to 50s bangers!</div>
+            <div class="infoLabel">Now Playing:</div>
+            <div id="trackInfo">Loading...</div>
+        </div>
         <div id="controls">
-            <button class="controlButton" id="playPause">Play</button>
-            <button class="controlButton" id="stop">Stop</button>
-            <button class="controlButton" id="prevStation">Previous</button>
-            <button class="controlButton" id="nextStation">Next</button>
+            <button class="controlButton" id="playPause">▶</button>
+            <button class="controlButton" id="stop">■</button>
+            <button class="controlButton" id="prevStation">◀</button>
+            <button class="controlButton" id="nextStation">▶</button>
         </div>
     </div>
 
@@ -115,6 +135,7 @@
 
         // Initialize station info
         const stationInfo = document.getElementById('stationInfo');
+        const descriptionInfo = document.getElementById('descriptionInfo');
         const trackInfo = document.getElementById('trackInfo');
         const playPauseButton = document.getElementById('playPause');
         const stopButton = document.getElementById('stop');
@@ -123,7 +144,8 @@
 
         function updateStationInfo() {
             const station = radioStations[currentStation];
-            stationInfo.textContent = `Station: ${station.name} - ${station.details}`;
+            stationInfo.textContent = `${station.name}`;
+            descriptionInfo.textContent = `${station.details}`;
         }
 
         function playRadio() {
@@ -131,12 +153,12 @@
                 audio.src = radioStations[currentStation].url;
                 audio.play().catch(error => console.error('Error playing audio:', error));
                 isPlaying = true;
-                playPauseButton.textContent = 'Pause';
+                playPauseButton.textContent = '❚❚'; // Pause symbol
                 startTrackInfo();
             } else {
                 audio.pause();
                 isPlaying = false;
-                playPauseButton.textContent = 'Play';
+                playPauseButton.textContent = '▶'; // Play symbol
                 stopTrackInfo();
             }
         }
@@ -145,7 +167,7 @@
             audio.pause();
             audio.currentTime = 0;
             isPlaying = false;
-            playPauseButton.textContent = 'Play';
+            playPauseButton.textContent = '▶'; // Play symbol
             stopTrackInfo();
         }
 
@@ -171,15 +193,16 @@
             }
         }
 
-        // Function to fetch real-time track information from the radio stream
+        // Function to fetch real-time track information from Icecast streams
         function fetchTrackInfo() {
             if (!isPlaying) {
                 trackInfo.textContent = 'Now Playing: (Paused)';
                 return;
             }
 
-            // Try to get metadata from the audio element (works for some streams)
+            // Try to get metadata from the audio element (Icecast streams often use ICY metadata)
             if (audio.readyState >= 1) { // HAVE_ENOUGH_DATA
+                // Check for ICY metadata via the audio element's textTracks or metadata
                 const metadata = audio.textTracks || audio.metadata;
                 if (metadata && metadata.length > 0) {
                     for (let track of metadata) {
@@ -193,21 +216,28 @@
                     }
                 }
 
-                // Fallback: Use a simple approach to parse stream metadata (e.g., ICY metadata)
+                // Fallback: Use XMLHttpRequest to fetch ICY metadata from Icecast streams
                 const xhr = new XMLHttpRequest();
                 xhr.open('GET', radioStations[currentStation].url, true);
-                xhr.setRequestHeader('Icy-MetaData', '1'); // Request metadata if available
+                xhr.setRequestHeader('Icy-MetaData', '1'); // Request ICY metadata
+                xhr.responseType = 'arraybuffer'; // Handle binary response for metadata
                 xhr.onload = function() {
                     if (xhr.status === 200) {
-                        const metadata = xhr.getResponseHeader('icy-metaint');
-                        if (metadata) {
-                            // This is a simplified approach; real ICY metadata parsing requires more complex handling
-                            const metaDataStart = xhr.responseText.indexOf('StreamTitle=');
-                            if (metaDataStart !== -1) {
-                                const metaDataEnd = xhr.responseText.indexOf(';', metaDataStart);
-                                const title = xhr.responseText.substring(metaDataStart + 12, metaDataEnd).replace(/'/g, '');
-                                if (title) {
-                                    trackInfo.textContent = `Now Playing: ${title}`;
+                        const metaInt = xhr.getResponseHeader('icy-metaint');
+                        if (metaInt) {
+                            const metaDataOffset = parseInt(metaInt);
+                            const response = new Uint8Array(xhr.response);
+                            const metaDataLength = response[metaDataOffset] * 16; // ICY metadata length
+                            if (metaDataLength > 0) {
+                                let metaString = '';
+                                for (let i = metaDataOffset + 1; i < metaDataOffset + 1 + metaDataLength; i++) {
+                                    if (response[i] !== 0) { // Skip null bytes
+                                        metaString += String.fromCharCode(response[i]);
+                                    }
+                                }
+                                const titleMatch = metaString.match(/StreamTitle='([^']+)'/);
+                                if (titleMatch && titleMatch[1]) {
+                                    trackInfo.textContent = `Now Playing: ${titleMatch[1]}`;
                                     return;
                                 }
                             }
