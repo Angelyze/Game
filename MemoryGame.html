@@ -47,7 +47,7 @@
             padding: 5px;
             box-sizing: border-box;
             width: calc((95vh - 70px) * (5 * 225) / (6 * 350)); /* Responsive width based on height and 2:3 ratio */
-            height: calc(95vh - 70px); /* 95% viewport height minus HUD and padding */
+            height: calc(95vh - 70px); /* 95% viewport height minus HUD and padding for desktop */
             max-width: 95vw; /* Cap width to avoid overflow */
             max-height: calc(95vh - 70px);
             overflow: hidden;
@@ -106,9 +106,9 @@
             #game-container {
                 gap: 8px;
                 padding: 3px;
-                height: calc(95vh - 65px); /* Adjust for smaller HUD and padding */
-                width: calc((95vh - 65px) * (5 * 225) / (6 * 350));
-                max-height: calc(95vh - 65px);
+                height: calc(95vh - 165px); /* 95% viewport height minus HUD, padding, and ~100px for system controls */
+                width: calc((95vh - 165px) * (5 * 225) / (6 * 350)); /* Responsive width based on adjusted height */
+                max-height: calc(95vh - 165px);
             }
             #hud {
                 height: 55px; /* Smaller HUD on mobile */
