@@ -23,12 +23,13 @@
         #hud {
             background-color: #ff9000;
             color: white;
-            padding: 10px 0;
+            padding: 5px 0; /* Reduced padding for smaller height */
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: clamp(12px, 1.5vw, 16px);
-            height: 60px; /* Matches your original HUD height with padding */
+            font-size: clamp(16px, 2vw, 20px); /* Larger, bold text */
+            font-weight: bold; /* Make text bold */
+            height: 40px; /* Smaller HUD height */
             flex-shrink: 0;
             width: 100%;
             box-sizing: border-box;
@@ -46,10 +47,10 @@
             gap: 10px;
             padding: 10px 5px 5px 5px; /* 10px top padding (matching card gap), 5px sides and bottom */
             box-sizing: border-box;
-            width: calc((98vh - 80px) * (5 * 225) / (6 * 350)); /* Responsive width based on 98% height minus HUD and padding */
-            height: calc(98vh - 80px); /* 98% viewport height minus HUD and padding */
+            width: calc((98vh - 50px) * (5 * 225) / (6 * 350)); /* Responsive width based on 98% height minus HUD and padding */
+            height: calc(98vh - 50px); /* 98% viewport height minus HUD and padding */
             max-width: 98vw; /* Cap width to 98% of viewport width */
-            max-height: calc(98vh - 80px);
+            max-height: calc(98vh - 50px);
             overflow: hidden;
             margin: auto; /* Center horizontally */
             align-items: flex-start; /* Align cards to the top */
@@ -61,8 +62,8 @@
             padding-bottom: 150%; /* 2:3 aspect ratio (350px height / 225px width) */
             border-radius: 10px;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            justify-content: center; /* Center horizontally */
+            align-items: flex-start; /* Align to top vertically */
             cursor: pointer;
             position: relative;
             overflow: hidden;
@@ -106,13 +107,14 @@
             #game-container {
                 gap: 8px;
                 padding: 10px 3px 5px 3px; /* 10px top padding, 3px sides, 5px bottom */
-                height: calc(98vh - 75px); /* 98% viewport height minus smaller HUD and padding */
-                width: calc((98vh - 75px) * (5 * 225) / (6 * 350)); /* Responsive width based on adjusted height */
-                max-height: calc(98vh - 75px);
+                height: calc(98vh - 45px); /* 98% viewport height minus smaller HUD and padding */
+                width: calc((98vh - 45px) * (5 * 225) / (6 * 350)); /* Responsive width based on adjusted height */
+                max-height: calc(98vh - 45px);
             }
             #hud {
-                height: 55px; /* Smaller HUD on mobile */
-                font-size: clamp(10px, 1.5vw, 14px);
+                height: 35px; /* Even smaller HUD on mobile */
+                font-size: clamp(14px, 2vw, 18px); /* Larger, bold text on mobile */
+                font-weight: bold;
             }
             #hud > div:first-child {
                 margin-left: 8px;
