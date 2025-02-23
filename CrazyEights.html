@@ -25,7 +25,7 @@
                 "player"
                 "controls"
                 "status";
-            grid-template-rows: 200px 1fr 200px auto auto; /* Increased hand heights for full rows */
+            grid-template-rows: 200px 1fr 200px auto auto; /* Increased hand heights for clear separation */
             width: 600px;
             height: 800px;
             background-color: #222222;
@@ -36,7 +36,7 @@
             position: relative;
         }
         #computerHand, #playerHand {
-            max-height: 200px; /* Increased to 200px for full visibility of two rows */
+            max-height: 200px; /* Increased to 200px for full visibility of two rows with spacing */
             overflow-y: auto; /* Allow scrolling if cards exceed space */
             display: flex;
             flex-wrap: wrap;
@@ -69,8 +69,8 @@
             position: relative; /* Ensure it stays fixed */
         }
         .selected {
-            outline: 4px solid #ff9000; /* Increased outline for more prominence */
-            transform: translateY(-10px); /* Pop up selected card slightly */
+            outline: 4px solid #ff9000; /* Prominent outline for visibility */
+            transform: translateY(-20px); /* Pull selected card up vertically by 20px */
             z-index: 1; /* Ensure it stays above other cards */
         }
         #controls {
@@ -158,7 +158,7 @@
             }
             .selected {
                 outline: 4px solid #ff9000;
-                transform: translateY(-2vw); /* Scaled pop-up for mobile */
+                transform: translateY(-4vw); /* Scaled pop-up for mobile (20px equivalent) */
             }
             button {
                 padding: 8px 16px;
@@ -397,8 +397,8 @@
                     callSuit();
                 } else {
                     currentSuit = card.suit;
-                    statusDiv.textContent = `You played ${rankMap[card.rank]}${suitMap[card.suit]}. Computer's turn.`;
                 }
+                statusDiv.textContent = `You played ${rankMap[card.rank]}${suitMap[card.suit]}. Computer's turn.`;
                 selectedCardIndex = null;
                 displayHands();
                 checkWin();
@@ -414,6 +414,13 @@
         /** Checks if a card can be discarded */
         function canDiscard(card) {
             const topCard = discardPile[discardPile.length - 1];
+            console.log("Checking discard:", {
+                cardSuit: suitMap[card.suit],
+                cardRank: rankMap[card.rank],
+                currentSuit: suitMap[currentSuit],
+                topCardSuit: suitMap[topCard.suit],
+                topCardRank: rankMap[topCard.rank]
+            });
             return card.suit === currentSuit || rankMap[card.rank] === rankMap[topCard.rank] || rankMap[card.rank] === '8';
         }
 
