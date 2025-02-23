@@ -31,7 +31,16 @@
             overflow: hidden;
             position: relative;
         }
-        #computerHand, #playerHand {
+        #computerHand {
+            max-height: 180px; /* Limit to two rows (90px each) with overlap */
+            overflow-y: hidden; /* Prevent scrolling, ensure two rows max */
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 10px;
+            position: relative; /* Ensure fixed positioning context */
+        }
+        #playerHand {
             max-height: 180px; /* Limit to two rows (90px each) with overlap */
             overflow-y: hidden; /* Prevent scrolling, ensure two rows max */
             display: flex;
@@ -50,6 +59,12 @@
         }
         #computerHand .card:first-child, #playerHand .card:first-child {
             margin-left: 0; /* No overlap for the first card */
+        }
+        .row1 {
+            /* Default first row, no additional styling needed */
+        }
+        .row2 {
+            margin-top: 90px; /* Position second row below first, matching card height */
         }
         #discardPile {
             flex-grow: 1;
@@ -375,7 +390,7 @@
         async function drawCard() {
             if (!playerTurn) return;
             if (deck.length === 0) {
-                statusDiv.textContent = "Deck empty. Your turn ends.";
+                statusDiv.textContent = "Deck empty. Computer’s turn.";
                 playerTurn = false;
                 setTimeout(computerTurn, 1000);
                 return;
@@ -393,7 +408,7 @@
                 }
             }
             if (!canPlay) {
-                statusDiv.textContent = "No playable cards drawn. Your turn ends.";
+                statusDiv.textContent = "No playable cards drawn. Computer’s turn.";
                 playerTurn = false;
                 setTimeout(computerTurn, 1000);
             }
@@ -469,7 +484,7 @@
                     }
                 }
                 if (!canPlay) {
-                    statusDiv.textContent = "Computer couldn't play. Your turn.";
+                    statusDiv.textContent = "Computer couldn’t play. Your turn.";
                     playerTurn = true;
                 } else {
                     computerTurn();
