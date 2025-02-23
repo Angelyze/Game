@@ -33,15 +33,23 @@
         #computerHand, #playerHand, #discardPile {
             display: flex;
             justify-content: center;
-            flex-wrap: wrap;
             margin: 10px 0;
         }
-        .card {
+        #computerHand .card, #discardPile .card {
             width: 60px;
             height: 90px;
             margin: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        #playerHand .card {
+            width: 60px;
+            height: 90px;
+            margin-left: -20px; /* Overlap by ~1/3 of width (60px / 3 = 20px) */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             cursor: pointer;
+        }
+        #playerHand .card:first-child {
+            margin-left: 0; /* No overlap for the first card */
         }
         .selected {
             border: 2px solid #ff9000;
@@ -75,9 +83,17 @@
                 border: none;
                 border-radius: 0;
             }
-            .card {
+            #computerHand .card, #discardPile .card {
                 width: 12vw;
                 height: auto;
+            }
+            #playerHand .card {
+                width: 12vw;
+                height: auto;
+                margin-left: -4vw; /* Scaled overlap for mobile (~1/3 of 12vw) */
+            }
+            #playerHand .card:first-child {
+                margin-left: 0;
             }
             button {
                 padding: 8px 16px;
@@ -210,6 +226,8 @@
             if (rankMap[discardPile[0].rank] === '8') {
                 currentSuit = suitMap[Math.floor(Math.random() * 4)]; // Random suit for first Eight
                 statusDiv.textContent = `Game started with an 8. Suit is ${suitMap[currentSuit]}.`;
+            } else {
+                statusDiv.textContent = `Game started. Match ${suitMap[currentSuit]} or ${rankMap[discardPile[0].rank]}.`;
             }
         }
 
@@ -269,6 +287,7 @@
                     callSuit();
                 } else {
                     currentSuit = card.suit;
+                    statusDiv.textContent = `You played ${rankMap[card.rank]}${suitMap[card.suit]}. Computer's turn.`;
                 }
                 selectedCardIndex = null;
                 displayHands();
@@ -291,7 +310,7 @@
         /** Assigns a new suit when an Eight is played */
         function callSuit() {
             currentSuit = suitMap[Math.floor(Math.random() * 4)]; // Random for simplicity
-            statusDiv.textContent = `You played an 8 and chose ${currentSuit}.`;
+            statusDiv.textContent = `You played an 8 and chose ${currentSuit}. Computer's turn.`;
         }
 
         /** Handles the computer's turn */
@@ -305,16 +324,15 @@
                 discardPile.push(cardToDiscard);
                 if (rankMap[cardToDiscard.rank] === '8') {
                     currentSuit = suitMap[Math.floor(Math.random() * 4)];
-                    statusDiv.textContent = `Computer played an 8 and chose ${currentSuit}.`;
+                    statusDiv.textContent = `Computer played an 8 and chose ${currentSuit}. Your turn.`;
                 } else {
                     currentSuit = cardToDiscard.suit;
-                    statusDiv.textContent = `Computer played ${rankMap[cardToDiscard.rank]}${suitMap[cardToDiscard.suit]}.`;
+                    statusDiv.textContent = `Computer played ${rankMap[cardToDiscard.rank]}${suitMap[cardToDiscard.suit]}. Your turn.`;
                 }
                 displayHands();
                 checkWin();
                 if (computerHand.length > 0) {
                     playerTurn = true;
-                    statusDiv.textContent = "Your turn.";
                 }
             } else if (deck.length > 0) {
                 computerHand.push(deck.pop());
@@ -352,7 +370,6 @@
             shuffle(deck);
             dealCards();
             displayHands();
-            statusDiv.textContent = "Your turn.";
             playerTurn = true;
             selectedCardIndex = null;
             drawButton.disabled = false;
