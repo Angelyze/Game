@@ -19,7 +19,7 @@
         }
         #gameContainer {
             width: 450px;
-            height: 750px;
+            height: 750px; /* Changed from 800px to 750px */
             background-image: url('https://angelyze.github.io/Cards/Background.jpg');
             background-size: cover;
             background-position: center;
@@ -86,7 +86,7 @@
             margin: 5px 0;
             font-size: 18px;
         }
-        #endScreen {
+        #endScreen, #welcomeScreen {
             display: none;
             position: absolute;
             top: 0;
@@ -103,6 +103,9 @@
             align-items: center;
             text-align: center;
             cursor: pointer;
+        }
+        #welcomeScreen {
+            display: flex; /* Visible by default when game loads */
         }
         @media (max-width: 600px) {
             #gameContainer {
@@ -122,7 +125,7 @@
             #status, #playerCaps, #houseCaps, #pot, h3 {
                 font-size: 14px;
             }
-            #endScreen {
+            #endScreen, #welcomeScreen {
                 font-size: 20px;
             }
         }
@@ -156,7 +159,7 @@
             <div id="playerCaps">Your Caps: 100</div>
         </div>
         <div id="controls">
-            <button id="startButton">Start Round</button>
+            <button id="startButton" style="display:none">Start Round</button>
             <button id="betButton" style="display:none">Bet</button>
             <button id="checkButton" style="display:none">Check</button>
             <button id="foldButton" style="display:none">Fold</button>
@@ -164,6 +167,7 @@
         <div id="status"></div>
         <div id="pot">Pot: 0</div>
         <div id="endScreen"></div>
+        <div id="welcomeScreen">Welcome to Caps Poker! Tap anywhere to start.</div>
     </div>
 
     <script>
@@ -261,6 +265,7 @@
         const houseCapsDiv = document.getElementById('houseCaps');
         const potDiv = document.getElementById('pot');
         const endScreen = document.getElementById('endScreen');
+        const welcomeScreen = document.getElementById('welcomeScreen');
 
         function addButtonListeners(button, callback) {
             button.addEventListener('click', callback);
@@ -278,6 +283,11 @@
         endScreen.addEventListener('touchstart', (e) => {
             e.preventDefault();
             restartGame();
+        });
+        welcomeScreen.addEventListener('click', startGame);
+        welcomeScreen.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startGame();
         });
 
         function createDeck() {
@@ -335,6 +345,14 @@
                 communityCardImgs[i].src = cardURLs["back"];
             }
             statusDiv.textContent = "";
+            welcomeScreen.style.display = "flex"; // Show welcome screen again on restart
+            startButton.style.display = "none";
+            updateDisplays();
+        }
+
+        function startGame() {
+            welcomeScreen.style.display = "none";
+            startButton.style.display = "inline";
             updateDisplays();
         }
 
