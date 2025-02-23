@@ -6,8 +6,7 @@
     <title>Poker Game</title>
     <style>
         body {
-            background-image: url('https://example.com/background.jpg');
-            background-size: cover;
+            background-color: #333333; /* Updated to solid dark gray */
             font-family: Arial, sans-serif;
             color: white;
             text-align: center;
@@ -26,9 +25,9 @@
             margin: 15px 0;
         }
         img {
-            width: 12vw; /* Scales with viewport width */
+            width: 12vw;
             height: auto;
-            max-width: 70px; /* Caps size for desktop */
+            max-width: 70px;
             margin: 5px;
         }
         #controls {
@@ -43,7 +42,7 @@
             background-color: #4CAF50;
             color: white;
             cursor: pointer;
-            touch-action: manipulation; /* Prevents zooming on touch */
+            touch-action: manipulation;
         }
         button:hover {
             background-color: #45a049;
@@ -173,11 +172,10 @@
         const chipsDiv = document.getElementById('chips');
         const potDiv = document.getElementById('pot');
 
-        // Add both click and touchstart events for cross-device compatibility
         function addButtonListeners(button, callback) {
             button.addEventListener('click', callback);
             button.addEventListener('touchstart', (e) => {
-                e.preventDefault(); // Prevents double-tap zoom or other defaults
+                e.preventDefault();
                 callback();
             });
         }
@@ -313,7 +311,7 @@
             let isStraight = checkStraight(hand);
 
             if (isFlush && isStraight) {
-                if (hand[4].rank === 12 && hand[0].rank === 8) { // 10,J,Q,K,A
+                if (hand[4].rank === 12 && hand[0].rank === 8) {
                     return 9; // Royal Flush
                 }
                 return 8; // Straight Flush
