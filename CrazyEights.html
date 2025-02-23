@@ -37,24 +37,23 @@
         }
         #computerHand {
             grid-area: computer;
-            height: 180px;
+            max-height: 180px; /* Limit to two rows (90px each) with overlap */
+            overflow-y: hidden; /* Prevent scrolling, ensure two rows max */
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            justify-content: center;
             padding: 10px;
+            position: relative; /* Ensure fixed positioning context */
         }
         #playerHand {
             grid-area: player;
-            height: 180px;
+            max-height: 180px; /* Limit to two rows (90px each) with overlap */
+            overflow-y: hidden; /* Prevent scrolling, ensure two rows max */
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 10px;
-        }
-        .hand-row {
-            display: flex;
+            flex-wrap: wrap;
             justify-content: center;
-            height: 90px; /* Height of one row */
+            padding: 10px;
+            position: relative; /* Ensure fixed positioning context */
         }
         #computerHand .card, #playerHand .card {
             width: 60px;
@@ -151,10 +150,8 @@
                 border-radius: 0;
             }
             #computerHand, #playerHand {
-                height: 24vh; /* Two rows scaled for mobile */
-            }
-            .hand-row {
-                height: 12vh; /* Adjust for mobile */
+                max-height: 24vh; /* Two rows scaled for mobile */
+                overflow-y: hidden;
             }
             #computerHand .card, #playerHand .card {
                 width: 12vw;
@@ -334,52 +331,22 @@
         /** Updates the UI with current hands and discard pile */
         function displayHands() {
             playerHandDiv.innerHTML = '';
-            const playerRow1Div = document.createElement('div');
-            playerRow1Div.className = 'hand-row';
-            const playerRow2Div = document.createElement('div');
-            playerRow2Div.className = 'hand-row';
-            const row1 = playerHand.slice(0, 5);
-            const row2 = playerHand.slice(5, 10); // Limit to 5 cards in second row
-            row1.forEach((card, index) => {
+            playerHand.forEach((card, index) => {
                 const img = document.createElement('img');
                 img.src = cardURLs[`${rankMap[card.rank]}${suitMap[card.suit]}`];
                 img.className = 'card';
                 if (index === selectedCardIndex) img.classList.add('selected');
                 img.addEventListener('click', () => selectCard(index));
-                playerRow1Div.appendChild(img);
+                playerHandDiv.appendChild(img);
             });
-            row2.forEach((card, index) => {
-                const img = document.createElement('img');
-                img.src = cardURLs[`${rankMap[card.rank]}${suitMap[card.suit]}`];
-                img.className = 'card';
-                if (index + 5 === selectedCardIndex) img.classList.add('selected');
-                img.addEventListener('click', () => selectCard(index + 5));
-                playerRow2Div.appendChild(img);
-            });
-            playerHandDiv.appendChild(playerRow1Div);
-            playerHandDiv.appendChild(playerRow2Div);
 
             computerHandDiv.innerHTML = '';
-            const compRow1Div = document.createElement('div');
-            compRow1Div.className = 'hand-row';
-            const compRow2Div = document.createElement('div');
-            compRow2Div.className = 'hand-row';
-            const compRow1 = computerHand.slice(0, 5);
-            const compRow2 = computerHand.slice(5, 10);
-            compRow1.forEach(() => {
+            computerHand.forEach(() => {
                 const img = document.createElement('img');
                 img.src = cardURLs["back"];
                 img.className = 'card';
-                compRow1Div.appendChild(img);
+                computerHandDiv.appendChild(img);
             });
-            compRow2.forEach(() => {
-                const img = document.createElement('img');
-                img.src = cardURLs["back"];
-                img.className = 'card';
-                compRow2Div.appendChild(img);
-            });
-            computerHandDiv.appendChild(compRow1Div);
-            computerHandDiv.appendChild(compRow2Div);
 
             discardPileDiv.innerHTML = '';
             if (discardPile.length > 0) {
