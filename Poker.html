@@ -32,18 +32,21 @@
             justify-content: space-between;
             overflow: hidden;
         }
+        #houseSection, #communitySection, #playerSection {
+            margin: 10px 0;
+        }
         #houseCards, #communityCards, #playerCards {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100px; /* Fixed height for card rows */
-            margin: 10px 0;
+            height: 100px;
+            margin: 5px 0;
         }
         img {
             width: 60px;
             height: 90px;
             margin: 0 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Shadow for cards */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         #controls {
             margin: 10px 0;
@@ -63,9 +66,13 @@
         button:hover {
             background-color: #e68300;
         }
-        #status, #chips, #pot {
+        #status, #playerCaps, #houseCaps, #pot {
             margin: 5px 0;
             font-size: 16px;
+        }
+        h3 {
+            margin: 5px 0;
+            font-size: 18px;
         }
         @media (max-width: 600px) {
             #gameContainer {
@@ -82,7 +89,7 @@
                 padding: 8px 16px;
                 font-size: 14px;
             }
-            #status, #chips, #pot {
+            #status, #playerCaps, #houseCaps, #pot, h3 {
                 font-size: 14px;
             }
         }
@@ -90,20 +97,31 @@
 </head>
 <body>
     <div id="gameContainer">
-        <div id="houseCards">
-            <img id="house1" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
-            <img id="house2" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+        <div id="houseSection">
+            <h3>House Cards</h3>
+            <div id="houseCards">
+                <img id="house1" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+                <img id="house2" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+            </div>
+            <div id="houseCaps">House Caps: 100</div>
         </div>
-        <div id="communityCards">
-            <img id="comm1" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
-            <img id="comm2" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
-            <img id="comm3" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
-            <img id="comm4" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
-            <img id="comm5" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+        <div id="communitySection">
+            <h3>Community Cards</h3>
+            <div id="communityCards">
+                <img id="comm1" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+                <img id="comm2" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+                <img id="comm3" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+                <img id="comm4" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+                <img id="comm5" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+            </div>
         </div>
-        <div id="playerCards">
-            <img id="player1" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
-            <img id="player2" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+        <div id="playerSection">
+            <h3>Your Cards</h3>
+            <div id="playerCards">
+                <img id="player1" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+                <img id="player2" src="https://raw.githubusercontent.com/Angelyze/Cards/main/back.png">
+            </div>
+            <div id="playerCaps">Your Caps: 100</div>
         </div>
         <div id="controls">
             <button id="startButton">Start Round</button>
@@ -112,7 +130,6 @@
             <button id="foldButton" style="display:none">Fold</button>
         </div>
         <div id="status"></div>
-        <div id="chips">Chips: 100</div>
         <div id="pot">Pot: 0</div>
     </div>
 
@@ -177,8 +194,8 @@
         const suitMap = ['H', 'D', 'C', 'S'];
         const handRankNames = ["High Card", "One Pair", "Two Pair", "Three of a Kind", "Straight", "Flush", "Full House", "Four of a Kind", "Straight Flush", "Royal Flush"];
 
-        let playerChips = 100;
-        let houseChips = 100;
+        let playerCaps = 100;
+        let houseCaps = 100;
         let pot = 0;
         let deck = [];
         let playerHand = [];
@@ -207,7 +224,8 @@
         const checkButton = document.getElementById('checkButton');
         const foldButton = document.getElementById('foldButton');
         const statusDiv = document.getElementById('status');
-        const chipsDiv = document.getElementById('chips');
+        const playerCapsDiv = document.getElementById('playerCaps');
+        const houseCapsDiv = document.getElementById('houseCaps');
         const potDiv = document.getElementById('pot');
 
         function addButtonListeners(button, callback) {
@@ -244,13 +262,14 @@
         }
 
         function updateDisplays() {
-            chipsDiv.textContent = `Chips: ${playerChips}`;
+            playerCapsDiv.textContent = `Your Caps: ${playerCaps}`;
+            houseCapsDiv.textContent = `House Caps: ${houseCaps}`;
             potDiv.textContent = `Pot: ${pot}`;
         }
 
         function startRound() {
-            if (playerChips < 1 || houseChips < 1) {
-                alert("Not enough chips to play!");
+            if (playerCaps < 1 || houseCaps < 1) {
+                alert("Not enough caps to play!");
                 return;
             }
             pot = 0;
@@ -280,11 +299,11 @@
 
         function playerBet() {
             let betAmount = 5; // Fixed bet amount
-            if (playerChips < betAmount) {
-                alert("Not enough chips to bet!");
+            if (playerCaps < betAmount) {
+                alert("Not enough caps to bet!");
                 return;
             }
-            playerChips -= betAmount;
+            playerCaps -= betAmount;
             pot += betAmount;
             currentBet = betAmount;
             updateDisplays();
@@ -300,8 +319,8 @@
         }
 
         function playerFold() {
-            statusDiv.textContent = `You folded. House wins the pot of ${pot} chips.`;
-            houseChips += pot;
+            statusDiv.textContent = `You folded. House wins the pot of ${pot} caps.`;
+            houseCaps += pot;
             pot = 0;
             updateDisplays();
             endRound();
@@ -312,7 +331,7 @@
                 let houseRank = evaluatePreFlop(houseHand);
                 if (currentBet > 0 && houseRank < 1 && Math.random() < 0.5) {
                     statusDiv.textContent = "House folds. You win the pot!";
-                    playerChips += pot;
+                    playerCaps += pot;
                     pot = 0;
                     updateDisplays();
                     endRound();
@@ -322,16 +341,15 @@
                 let houseBestRank = evaluateHand(getBestHandRank(houseHand.concat(communityCards.slice(0, stage === "flop" ? 3 : stage === "turn" ? 4 : 5))));
                 if (currentBet > 0 && houseBestRank < 1) {
                     statusDiv.textContent = "House folds. You win the pot!";
-                    playerChips += pot;
+                    playerCaps += pot;
                     pot = 0;
                     updateDisplays();
                     endRound();
                     return;
                 }
             }
-            // Otherwise, House calls or checks
             if (currentBet > 0) {
-                houseChips -= currentBet;
+                houseCaps -= currentBet;
                 pot += currentBet;
             }
             nextStage();
@@ -385,15 +403,15 @@
             let houseRank = evaluateHand(houseBest);
 
             if (playerRank > houseRank) {
-                statusDiv.textContent = `You win with ${handRankNames[playerRank]}! You win the pot of ${pot} chips.`;
-                playerChips += pot;
+                statusDiv.textContent = `You win with ${handRankNames[playerRank]}! You win the pot of ${pot} caps.`;
+                playerCaps += pot;
             } else if (houseRank > playerRank) {
-                statusDiv.textContent = `House wins with ${handRankNames[houseRank]}! House wins the pot of ${pot} chips.`;
-                houseChips += pot;
+                statusDiv.textContent = `House wins with ${handRankNames[houseRank]}! House wins the pot of ${pot} caps.`;
+                houseCaps += pot;
             } else {
                 statusDiv.textContent = `It's a tie! Pot is split.`;
-                playerChips += pot / 2;
-                houseChips += pot / 2;
+                playerCaps += pot / 2;
+                houseCaps += pot / 2;
             }
             pot = 0;
             updateDisplays();
