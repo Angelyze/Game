@@ -29,29 +29,38 @@
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
+            position: relative;
         }
         #computerHand, #playerHand {
+            max-height: 200px; /* Allow for two rows with margin, scroll if needed */
+            overflow-y: auto;
             display: flex;
-            justify-content: center;
             flex-wrap: wrap;
-            height: 180px;
-            margin: 10px 0;
-            overflow: hidden;
-        }
-        #discardPile {
-            display: flex;
             justify-content: center;
-            margin: 10px 0;
+            padding: 10px;
         }
-        #computerHand .card, #playerHand .card {
+        #computerHand {
+            /* Top area for computer, fixed position */
+        }
+        #playerHand {
+            /* Bottom area for player, fixed position */
+        }
+        .card {
             width: 60px;
             height: 90px;
-            margin-left: -20px;
+            margin: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            cursor: pointer;
+            background-size: cover;
+            position: relative; /* Ensure cards stay in place */
         }
-        #computerHand .card:first-child, #playerHand .card:first-child {
-            margin-left: 0;
+        .selected {
+            outline: 2px solid #ff9000; /* Use outline to prevent movement */
+        }
+        #discardPile {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         #discardPile .card {
             width: 60px;
@@ -59,11 +68,10 @@
             margin: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-        .selected {
-            border: 2px solid #ff9000;
-        }
         #controls {
-            margin: 10px 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
         }
         button {
             padding: 10px 20px;
@@ -81,8 +89,42 @@
             background-color: #e68300;
         }
         #status {
-            margin: 10px 0;
-            font-size: 18px;
+            text-align: center;
+            padding: 10px;
+            color: white;
+        }
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: white;
+            z-index: 10;
+        }
+        #welcomeScreen {
+            display: flex;
+        }
+        #winScreen, #loseScreen {
+            display: none;
+        }
+        .overlay button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #ff9000;
+            color: white;
+            cursor: pointer;
+        }
+        .overlay button:hover {
+            background-color: #e68300;
         }
         @media (max-width: 600px) {
             #gameContainer {
@@ -92,15 +134,12 @@
                 border-radius: 0;
             }
             #computerHand, #playerHand {
-                height: 24vh;
+                max-height: 30vh; /* Adjusted for mobile, two rows */
+                overflow-y: auto;
             }
-            #computerHand .card, #playerHand .card {
+            .card {
                 width: 12vw;
                 height: auto;
-                margin-left: -4vw;
-            }
-            #computerHand .card:first-child, #playerHand .card:first-child {
-                margin-left: 0;
             }
             #discardPile .card {
                 width: 12vw;
@@ -113,6 +152,13 @@
             #status {
                 font-size: 16px;
             }
+            .overlay {
+                font-size: 20px;
+            }
+            .overlay button {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -122,11 +168,14 @@
         <div id="discardPile"></div>
         <div id="playerHand"></div>
         <div id="controls">
-            <button id="drawButton">Draw Card</button>
+            <button id="drawCardButton">Draw Card</button>
             <button id="discardButton">Discard Selected Card</button>
             <button id="newGameButton">New Game</button>
         </div>
-        <div id="status">Your turn.</div>
+        <div id="status">Your turn</div>
+        <div id="welcomeScreen" class="overlay">Welcome to Crazy Eights! Click to start.</div>
+        <div id="winScreen" class="overlay">You win! <button id="playAgainWin">Play Again</button></div>
+        <div id="loseScreen" class="overlay">You lose! <button id="playAgainLose">Play Again</button></div>
     </div>
 
     <script>
@@ -201,13 +250,21 @@
         const discardPileDiv = document.getElementById('discardPile');
         const playerHandDiv = document.getElementById('playerHand');
         const statusDiv = document.getElementById('status');
-        const drawButton = document.getElementById('drawButton');
+        const drawCardButton = document.getElementById('drawCardButton');
         const discardButton = document.getElementById('discardButton');
         const newGameButton = document.getElementById('newGameButton');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const winScreen = document.getElementById('winScreen');
+        const loseScreen = document.getElementById('loseScreen');
+        const playAgainWin = document.getElementById('playAgainWin');
+        const playAgainLose = document.getElementById('playAgainLose');
 
-        drawButton.addEventListener('click', drawCard);
+        drawCardButton.addEventListener('click', drawCard);
         discardButton.addEventListener('click', discardSelectedCard);
         newGameButton.addEventListener('click', startNewGame);
+        welcomeScreen.addEventListener('click', startGame);
+        playAgainWin.addEventListener('click', restartGame);
+        playAgainLose.addEventListener('click', restartGame);
 
         /** Waits for a specified time (helper for delays) */
         function wait(ms) {
@@ -253,7 +310,7 @@
             playerHand.forEach((card, index) => {
                 const img = document.createElement('img');
                 img.src = cardURLs[`${rankMap[card.rank]}${suitMap[card.suit]}`];
-                img.classList.add('card');
+                img.className = 'card';
                 if (index === selectedCardIndex) img.classList.add('selected');
                 img.addEventListener('click', () => selectCard(index));
                 playerHandDiv.appendChild(img);
@@ -263,14 +320,14 @@
             computerHand.forEach(() => {
                 const img = document.createElement('img');
                 img.src = cardURLs["back"];
-                img.classList.add('card');
+                img.className = 'card';
                 computerHandDiv.appendChild(img);
             });
 
             discardPileDiv.innerHTML = '';
             const img = document.createElement('img');
             img.src = cardURLs[`${rankMap[discardPile[discardPile.length - 1].rank]}${suitMap[discardPile[discardPile.length - 1].suit]}`];
-            img.classList.add('card');
+            img.className = 'card';
             discardPileDiv.appendChild(img);
         }
 
@@ -393,20 +450,37 @@
         /** Checks for a win condition */
         function checkWin() {
             if (playerHand.length === 0) {
-                statusDiv.textContent = "You win!";
-                playerTurn = false;
+                winScreen.style.display = 'flex';
                 disableButtons();
             } else if (computerHand.length === 0) {
-                statusDiv.textContent = "Computer wins!";
-                playerTurn = false;
+                loseScreen.style.display = 'flex';
                 disableButtons();
             }
         }
 
         /** Disables interaction buttons on game end */
         function disableButtons() {
-            drawButton.disabled = true;
+            drawCardButton.disabled = true;
             discardButton.disabled = true;
+        }
+
+        /** Enables interaction buttons at game start */
+        function enableButtons() {
+            drawCardButton.disabled = false;
+            discardButton.disabled = false;
+        }
+
+        /** Starts the game after welcome screen */
+        function startGame() {
+            welcomeScreen.style.display = 'none';
+            startNewGame();
+        }
+
+        /** Restarts the game after win/lose */
+        function restartGame() {
+            winScreen.style.display = 'none';
+            loseScreen.style.display = 'none';
+            startNewGame();
         }
 
         /** Starts a new game */
@@ -415,14 +489,11 @@
             shuffle(deck);
             dealCards();
             displayHands();
+            statusDiv.textContent = 'Your turn';
             playerTurn = true;
             selectedCardIndex = null;
-            drawButton.disabled = false;
-            discardButton.disabled = false;
+            enableButtons();
         }
-
-        // Start the game on page load
-        startNewGame();
     </script>
 </body>
 </html>
