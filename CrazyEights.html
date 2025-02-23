@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crazy Eights</title>
+    <style>
+        body {
+            background-color: #333333;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #gameContainer {
+            width: 800px;
+            height: 600px;
+            background-color: #222222;
+            border: 2px solid #ff9000;
+            border-radius: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+        #computerHand, #playerHand, #discardPile {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .card {
+            width: 60px;
+            height: 90px;
+            margin: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+        .selected {
+            border: 2px solid #ff9000;
+        }
+        #controls {
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #ff9000;
+            color: white;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #e68300;
+        }
+        #status {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        @media (max-width: 600px) {
+            #gameContainer {
+                width: 100vw;
+                height: 100vh;
+                border: none;
+                border-radius: 0;
+            }
+            .card {
+                width: 12vw;
+                height: auto;
+            }
+            button {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+            #status {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="computerHand"></div>
+        <div id="discardPile"></div>
+        <div id="playerHand"></div>
+        <div id="controls">
+            <button id="drawButton">Draw Card</button>
+            <button id="discardButton">Discard Selected Card</button>
+            <button id="newGameButton">New Game</button>
+        </div>
+        <div id="status">Your turn.</div>
+    </div>
+
+    <script>
+        const cardURLs = {
+            "2H": "https://raw.githubusercontent.com/Angelyze/Cards/main/24.png",
+            "3H": "https://raw.githubusercontent.com/Angelyze/Cards/main/34.png",
+            "4H": "https://raw.githubusercontent.com/Angelyze/Cards/main/44.png",
+            "5H": "https://raw.githubusercontent.com/Angelyze/Cards/main/54.png",
+            "6H": "https://raw.githubusercontent.com/Angelyze/Cards/main/64.png",
+            "7H": "https://raw.githubusercontent.com/Angelyze/Cards/main/74.png",
+            "8H": "https://raw.githubusercontent.com/Angelyze/Cards/main/84.png",
+            "9H": "https://raw.githubusercontent.com/Angelyze/Cards/main/94.png",
+            "10H": "https://raw.githubusercontent.com/Angelyze/Cards/main/104.png",
+            "JH": "https://raw.githubusercontent.com/Angelyze/Cards/main/J4.png",
+            "QH": "https://raw.githubusercontent.com/Angelyze/Cards/main/Q4.png",
+            "KH": "https://raw.githubusercontent.com/Angelyze/Cards/main/K4.png",
+            "AH": "https://raw.githubusercontent.com/Angelyze/Cards/main/A4.png",
+            "2D": "https://raw.githubusercontent.com/Angelyze/Cards/main/23.png",
+            "3D": "https://raw.githubusercontent.com/Angelyze/Cards/main/33.png",
+            "4D": "https://raw.githubusercontent.com/Angelyze/Cards/main/43.png",
+            "5D": "https://raw.githubusercontent.com/Angelyze/Cards/main/53.png",
+            "6D": "https://raw.githubusercontent.com/Angelyze/Cards/main/63.png",
+            "7D": "https://raw.githubusercontent.com/Angelyze/Cards/main/73.png",
+            "8D": "https://raw.githubusercontent.com/Angelyze/Cards/main/83.png",
+            "9D": "https://raw.githubusercontent.com/Angelyze/Cards/main/93.png",
+            "10D": "https://raw.githubusercontent.com/Angelyze/Cards/main/103.png",
+            "JD": "https://raw.githubusercontent.com/Angelyze/Cards/main/J3.png",
+            "QD": "https://raw.githubusercontent.com/Angelyze/Cards/main/Q3.png",
+            "KD": "https://raw.githubusercontent.com/Angelyze/Cards/main/K3.png",
+            "AD": "https://raw.githubusercontent.com/Angelyze/Cards/main/A3.png",
+            "2C": "https://raw.githubusercontent.com/Angelyze/Cards/main/22.png",
+            "3C": "https://raw.githubusercontent.com/Angelyze/Cards/main/32.png",
+            "4C": "https://raw.githubusercontent.com/Angelyze/Cards/main/42.png",
+            "5C": "https://raw.githubusercontent.com/Angelyze/Cards/main/52.png",
+            "6C": "https://raw.githubusercontent.com/Angelyze/Cards/main/62.png",
+            "7C": "https://raw.githubusercontent.com/Angelyze/Cards/main/72.png",
+            "8C": "https://raw.githubusercontent.com/Angelyze/Cards/main/82.png",
+            "9C": "https://raw.githubusercontent.com/Angelyze/Cards/main/92.png",
+            "10C": "https://raw.githubusercontent.com/Angelyze/Cards/main/102.png",
+            "JC": "https://raw.githubusercontent.com/Angelyze/Cards/main/J2.png",
+            "QC": "https://raw.githubusercontent.com/Angelyze/Cards/main/Q2.png",
+            "KC": "https://raw.githubusercontent.com/Angelyze/Cards/main/K2.png",
+            "AC": "https://raw.githubusercontent.com/Angelyze/Cards/main/A2.png",
+            "2S": "https://raw.githubusercontent.com/Angelyze/Cards/main/21.png",
+            "3S": "https://raw.githubusercontent.com/Angelyze/Cards/main/31.png",
+            "4S": "https://raw.githubusercontent.com/Angelyze/Cards/main/41.png",
+            "5S": "https://raw.githubusercontent.com/Angelyze/Cards/main/51.png",
+            "6S": "https://raw.githubusercontent.com/Angelyze/Cards/main/61.png",
+            "7S": "https://raw.githubusercontent.com/Angelyze/Cards/main/71.png",
+            "8S": "https://raw.githubusercontent.com/Angelyze/Cards/main/81.png",
+            "9S": "https://raw.githubusercontent.com/Angelyze/Cards/main/91.png",
+            "10S": "https://raw.githubusercontent.com/Angelyze/Cards/main/101.png",
+            "JS": "https://raw.githubusercontent.com/Angelyze/Cards/main/J1.png",
+            "QS": "https://raw.githubusercontent.com/Angelyze/Cards/main/Q1.png",
+            "KS": "https://raw.githubusercontent.com/Angelyze/Cards/main/K1.png",
+            "AS": "https://raw.githubusercontent.com/Angelyze/Cards/main/A1.png",
+            "back": "https://raw.githubusercontent.com/Angelyze/Cards/main/back.png"
+        };
+
+        const rankMap = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        const suitMap = ['H', 'D', 'C', 'S'];
+
+        let deck = [];
+        let playerHand = [];
+        let computerHand = [];
+        let discardPile = [];
+        let currentSuit = '';
+        let playerTurn = true;
+        let selectedCardIndex = null;
+
+        const computerHandDiv = document.getElementById('computerHand');
+        const discardPileDiv = document.getElementById('discardPile');
+        const playerHandDiv = document.getElementById('playerHand');
+        const statusDiv = document.getElementById('status');
+        const drawButton = document.getElementById('drawButton');
+        const discardButton = document.getElementById('discardButton');
+        const newGameButton = document.getElementById('newGameButton');
+
+        drawButton.addEventListener('click', drawCard);
+        discardButton.addEventListener('click', discardSelectedCard);
+        newGameButton.addEventListener('click', startNewGame);
+
+        /** Creates a new 52-card deck */
+        function createDeck() {
+            deck = [];
+            for (let rank = 0; rank < 13; rank++) {
+                for (let suit = 0; suit < 4; suit++) {
+                    deck.push({ rank, suit });
+                }
+            }
+        }
+
+        /** Shuffles an array using Fisher-Yates algorithm */
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /** Deals initial cards to player and computer */
+        function dealCards() {
+            playerHand = deck.slice(0, 5);
+            computerHand = deck.slice(5, 10);
+            deck = deck.slice(10);
+            discardPile = [deck.pop()];
+            currentSuit = discardPile[0].suit;
+            if (rankMap[discardPile[0].rank] === '8') {
+                currentSuit = suitMap[Math.floor(Math.random() * 4)]; // Random suit for first Eight
+                statusDiv.textContent = `Game started with an 8. Suit is ${suitMap[currentSuit]}.`;
+            }
+        }
+
+        /** Updates the UI with current hands and discard pile */
+        function displayHands() {
+            playerHandDiv.innerHTML = '';
+            playerHand.forEach((card, index) => {
+                const img = document.createElement('img');
+                img.src = cardURLs[`${rankMap[card.rank]}${suitMap[card.suit]}`];
+                img.classList.add('card');
+                if (index === selectedCardIndex) img.classList.add('selected');
+                img.addEventListener('click', () => selectCard(index));
+                playerHandDiv.appendChild(img);
+            });
+
+            computerHandDiv.innerHTML = '';
+            computerHand.forEach(() => {
+                const img = document.createElement('img');
+                img.src = cardURLs["back"];
+                img.classList.add('card');
+                computerHandDiv.appendChild(img);
+            });
+
+            discardPileDiv.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = cardURLs[`${rankMap[discardPile[discardPile.length - 1].rank]}${suitMap[discardPile[discardPile.length - 1].suit]}`];
+            img.classList.add('card');
+            discardPileDiv.appendChild(img);
+        }
+
+        /** Selects a card in the player's hand */
+        function selectCard(index) {
+            if (!playerTurn) return;
+            selectedCardIndex = index;
+            displayHands();
+        }
+
+        /** Draws a card from the deck for the player */
+        function drawCard() {
+            if (!playerTurn) return;
+            if (deck.length === 0) {
+                statusDiv.textContent = "The deck is empty!";
+                return;
+            }
+            playerHand.push(deck.pop());
+            displayHands();
+            statusDiv.textContent = "You drew a card.";
+        }
+
+        /** Discards the player's selected card if valid */
+        function discardSelectedCard() {
+            if (!playerTurn || selectedCardIndex === null) return;
+            const card = playerHand[selectedCardIndex];
+            if (canDiscard(card)) {
+                discardPile.push(playerHand.splice(selectedCardIndex, 1)[0]);
+                if (rankMap[card.rank] === '8') {
+                    callSuit();
+                } else {
+                    currentSuit = card.suit;
+                }
+                selectedCardIndex = null;
+                displayHands();
+                checkWin();
+                if (playerHand.length > 0) {
+                    playerTurn = false;
+                    setTimeout(computerTurn, 1000); // Delay for natural feel
+                }
+            } else {
+                statusDiv.textContent = "Invalid card! Must match suit, rank, or be an 8.";
+            }
+        }
+
+        /** Checks if a card can be discarded */
+        function canDiscard(card) {
+            const topCard = discardPile[discardPile.length - 1];
+            return card.suit === currentSuit || rankMap[card.rank] === rankMap[topCard.rank] || rankMap[card.rank] === '8';
+        }
+
+        /** Assigns a new suit when an Eight is played */
+        function callSuit() {
+            currentSuit = suitMap[Math.floor(Math.random() * 4)]; // Random for simplicity
+            statusDiv.textContent = `You played an 8 and chose ${currentSuit}.`;
+        }
+
+        /** Handles the computer's turn */
+        function computerTurn() {
+            if (playerTurn) return;
+            statusDiv.textContent = "Computer's turn...";
+            let validCards = computerHand.filter(card => canDiscard(card));
+            if (validCards.length > 0) {
+                const cardToDiscard = validCards[Math.floor(Math.random() * validCards.length)];
+                computerHand.splice(computerHand.indexOf(cardToDiscard), 1);
+                discardPile.push(cardToDiscard);
+                if (rankMap[cardToDiscard.rank] === '8') {
+                    currentSuit = suitMap[Math.floor(Math.random() * 4)];
+                    statusDiv.textContent = `Computer played an 8 and chose ${currentSuit}.`;
+                } else {
+                    currentSuit = cardToDiscard.suit;
+                    statusDiv.textContent = `Computer played ${rankMap[cardToDiscard.rank]}${suitMap[cardToDiscard.suit]}.`;
+                }
+                displayHands();
+                checkWin();
+                if (computerHand.length > 0) {
+                    playerTurn = true;
+                    statusDiv.textContent = "Your turn.";
+                }
+            } else if (deck.length > 0) {
+                computerHand.push(deck.pop());
+                displayHands();
+                statusDiv.textContent = "Computer drew a card.";
+                setTimeout(computerTurn, 1000); // Try again after drawing
+            } else {
+                statusDiv.textContent = "Computer passes. Your turn.";
+                playerTurn = true;
+            }
+        }
+
+        /** Checks for a win condition */
+        function checkWin() {
+            if (playerHand.length === 0) {
+                statusDiv.textContent = "You win!";
+                playerTurn = false;
+                disableButtons();
+            } else if (computerHand.length === 0) {
+                statusDiv.textContent = "Computer wins!";
+                playerTurn = false;
+                disableButtons();
+            }
+        }
+
+        /** Disables interaction buttons on game end */
+        function disableButtons() {
+            drawButton.disabled = true;
+            discardButton.disabled = true;
+        }
+
+        /** Starts a new game */
+        function startNewGame() {
+            createDeck();
+            shuffle(deck);
+            dealCards();
+            displayHands();
+            statusDiv.textContent = "Your turn.";
+            playerTurn = true;
+            selectedCardIndex = null;
+            drawButton.disabled = false;
+            discardButton.disabled = false;
+        }
+
+        // Start the game on page load
+        startNewGame();
+    </script>
+</body>
+</html>
