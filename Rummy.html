@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rummy Game</title>
+    <style>
+        body {
+            background-color: #333333;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #gameContainer {
+            width: 800px;
+            height: 600px;
+            background-color: #222222;
+            border: 2px solid #ff9000;
+            border-radius: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+        #computerHand, #playerHand, #discardPile {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        img {
+            width: 60px;
+            height: 90px;
+            margin: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        #controls {
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #ff9000;
+            color: white;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #e68300;
+        }
+        #status {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        @media (max-width: 600px) {
+            #gameContainer {
+                width: 100vw;
+                height: 100vh;
+                border: none;
+                border-radius: 0;
+            }
+            img {
+                width: 12vw;
+                height: auto;
+            }
+            button {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+            #status {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="computerHand"></div>
+        <div id="discardPile"></div>
+        <div id="playerHand"></div>
+        <div id="controls">
+            <button id="drawDeckButton">Draw from Deck</button>
+            <button id="drawDiscardButton">Draw from Discard</button>
+            <button id="layDownMeldsButton">Lay Down Melds</button>
+            <button id="discardButton">Discard</button>
+            <button id="newGameButton">New Game</button>
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const cardURLs = {
+            "2H": "https://raw.githubusercontent.com/Angelyze/Cards/main/24.png",
+            "3H": "https://raw.githubusercontent.com/Angelyze/Cards/main/34.png",
+            "4H": "https://raw.githubusercontent.com/Angelyze/Cards/main/44.png",
+            "5H": "https://raw.githubusercontent.com/Angelyze/Cards/main/54.png",
+            "6H": "https://raw.githubusercontent.com/Angelyze/Cards/main/64.png",
+            "7H": "https://raw.githubusercontent.com/Angelyze/Cards/main/74.png",
+            "8H": "https://raw.githubusercontent.com/Angelyze/Cards/main/84.png",
+            "9H": "https://raw.githubusercontent.com/Angelyze/Cards/main/94.png",
+            "10H": "https://raw.githubusercontent.com/Angelyze/Cards/main/104.png",
+            "JH": "https://raw.githubusercontent.com/Angelyze/Cards/main/J4.png",
+            "QH": "https://raw.githubusercontent.com/Angelyze/Cards/main/Q4.png",
+            "KH": "https://raw.githubusercontent.com/Angelyze/Cards/main/K4.png",
+            "AH": "https://raw.githubusercontent.com/Angelyze/Cards/main/A4.png",
+            "2D": "https://raw.githubusercontent.com/Angelyze/Cards/main/23.png",
+            "3D": "https://raw.githubusercontent.com/Angelyze/Cards/main/33.png",
+            "4D": "https://raw.githubusercontent.com/Angelyze/Cards/main/43.png",
+            "5D": "https://raw.githubusercontent.com/Angelyze/Cards/main/53.png",
+            "6D": "https://raw.githubusercontent.com/Angelyze/Cards/main/63.png",
+            "7D": "https://raw.githubusercontent.com/Angelyze/Cards/main/73.png",
+            "8D": "https://raw.githubusercontent.com/Angelyze/Cards/main/83.png",
+            "9D": "https://raw.githubusercontent.com/Angelyze/Cards/main/93.png",
+            "10D": "https://raw.githubusercontent.com/Angelyze/Cards/main/103.png",
+            "JD": "https://raw.githubusercontent.com/Angelyze/Cards/main/J3.png",
+            "QD": "https://raw.githubusercontent.com/Angelyze/Cards/main/Q3.png",
+            "KD": "https://raw.githubusercontent.com/Angelyze/Cards/main/K3.png",
+            "AD": "https://raw.githubusercontent.com/Angelyze/Cards/main/A3.png",
+            "2C": "https://raw.githubusercontent.com/Angelyze/Cards/main/22.png",
+            "3C": "https://raw.githubusercontent.com/Angelyze/Cards/main/32.png",
+            "4C": "https://raw.githubusercontent.com/Angelyze/Cards/main/42.png",
+            "5C": "https://raw.githubusercontent.com/Angelyze/Cards/main/52.png",
+            "6C": "https://raw.githubusercontent.com/Angelyze/Cards/main/62.png",
+            "7C": "https://raw.githubusercontent.com/Angelyze/Cards/main/72.png",
+            "8C": "https://raw.githubusercontent.com/Angelyze/Cards/main/82.png",
+            "9C": "https://raw.githubusercontent.com/Angelyze/Cards/main/92.png",
+            "10C": "https://raw.githubusercontent.com/Angelyze/Cards/main/102.png",
+            "JC": "https://raw.githubusercontent.com/Angelyze/Cards/main/J2.png",
+            "QC": "https://raw.githubusercontent.com/Angelyze/Cards/main/Q2.png",
+            "KC": "https://raw.githubusercontent.com/Angelyze/Cards/main/K2.png",
+            "AC": "https://raw.githubusercontent.com/Angelyze/Cards/main/A2.png",
+            "2S": "https://raw.githubusercontent.com/Angelyze/Cards/main/21.png",
+            "3S": "https://raw.githubusercontent.com/Angelyze/Cards/main/31.png",
+            "4S": "https://raw.githubusercontent.com/Angelyze/Cards/main/41.png",
+            "5S": "https://raw.githubusercontent.com/Angelyze/Cards/main/51.png",
+            "6S": "https://raw.githubusercontent.com/Angelyze/Cards/main/61.png",
+            "7S": "https://raw.githubusercontent.com/Angelyze/Cards/main/71.png",
+            "8S": "https://raw.githubusercontent.com/Angelyze/Cards/main/81.png",
+            "9S": "https://raw.githubusercontent.com/Angelyze/Cards/main/91.png",
+            "10S": "https://raw.githubusercontent.com/Angelyze/Cards/main/101.png",
+            "JS": "https://raw.githubusercontent.com/Angelyze/Cards/main/J1.png",
+            "QS": "https://raw.githubusercontent.com/Angelyze/Cards/main/Q1.png",
+            "KS": "https://raw.githubusercontent.com/Angelyze/Cards/main/K1.png",
+            "AS": "https://raw.githubusercontent.com/Angelyze/Cards/main/A1.png",
+            "back": "https://raw.githubusercontent.com/Angelyze/Cards/main/back.png"
+        };
+
+        const rankMap = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        const suitMap = ['H', 'D', 'C', 'S'];
+
+        let deck = [];
+        let playerHand = [];
+        let computerHand = [];
+        let discardPile = [];
+        let playerTurn = true;
+
+        const computerHandDiv = document.getElementById('computerHand');
+        const discardPileDiv = document.getElementById('discardPile');
+        const playerHandDiv = document.getElementById('playerHand');
+        const statusDiv = document.getElementById('status');
+        const drawDeckButton = document.getElementById('drawDeckButton');
+        const drawDiscardButton = document.getElementById('drawDiscardButton');
+        const layDownMeldsButton = document.getElementById('layDownMeldsButton');
+        const discardButton = document.getElementById('discardButton');
+        const newGameButton = document.getElementById('newGameButton');
+
+        drawDeckButton.addEventListener('click', drawFromDeck);
+        drawDiscardButton.addEventListener('click', drawFromDiscard);
+        layDownMeldsButton.addEventListener('click', layDownMelds);
+        discardButton.addEventListener('click', discardCard);
+        newGameButton.addEventListener('click', startNewGame);
+
+        function createDeck() {
+            deck = [];
+            for (let rank = 0; rank < 13; rank++) {
+                for (let suit = 0; suit < 4; suit++) {
+                    deck.push({ rank, suit });
+                }
+            }
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function dealCards() {
+            playerHand = deck.slice(0, 7);
+            computerHand = deck.slice(7, 14);
+            deck = deck.slice(14);
+            discardPile = [deck.pop()];
+        }
+
+        function displayHands() {
+            playerHandDiv.innerHTML = '';
+            playerHand.forEach(card => {
+                const img = document.createElement('img');
+                img.src = cardURLs[`${rankMap[card.rank]}${suitMap[card.suit]}`];
+                playerHandDiv.appendChild(img);
+            });
+
+            computerHandDiv.innerHTML = '';
+            computerHand.forEach(() => {
+                const img = document.createElement('img');
+                img.src = cardURLs["back"];
+                computerHandDiv.appendChild(img);
+            });
+
+            discardPileDiv.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = cardURLs[`${rankMap[discardPile[discardPile.length - 1].rank]}${suitMap[discardPile[discardPile.length - 1].suit]}`];
+            discardPileDiv.appendChild(img);
+        }
+
+        function drawFromDeck() {
+            if (deck.length === 0) {
+                statusDiv.textContent = "The deck is empty!";
+                return;
+            }
+            if (playerTurn) {
+                playerHand.push(deck.pop());
+                displayHands();
+                statusDiv.textContent = "You drew a card from the deck.";
+            }
+        }
+
+        function drawFromDiscard() {
+            if (discardPile.length === 0) {
+                statusDiv.textContent = "The discard pile is empty!";
+                return;
+            }
+            if (playerTurn) {
+                playerHand.push(discardPile.pop());
+                displayHands();
+                statusDiv.textContent = "You drew a card from the discard pile.";
+            }
+        }
+
+        function layDownMelds() {
+            // Placeholder for meld logic
+            statusDiv.textContent = "Melds laid down (placeholder).";
+        }
+
+        function discardCard() {
+            // Placeholder for discard logic
+            if (playerHand.length > 0) {
+                discardPile.push(playerHand.pop());
+                displayHands();
+                statusDiv.textContent = "You discarded a card.";
+                playerTurn = false;
+                computerTurn();
+            }
+        }
+
+        function computerTurn() {
+            if (deck.length > 0) {
+                computerHand.push(deck.pop());
+                const discardIndex = Math.floor(Math.random() * computerHand.length);
+                discardPile.push(computerHand.splice(discardIndex, 1)[0]);
+                displayHands();
+                statusDiv.textContent = "Computer took its turn.";
+            }
+            playerTurn = true;
+        }
+
+        function startNewGame() {
+            createDeck();
+            shuffle(deck);
+            dealCards();
+            displayHands();
+            statusDiv.textContent = "New game started!";
+            playerTurn = true;
+        }
+
+        // Initialize the game
+        startNewGame();
+    </script>
+</body>
+</html>
