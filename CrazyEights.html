@@ -69,7 +69,7 @@
             position: relative;
         }
         .selected {
-            transform: translateY(-15px); /* Only vertical upward shift, no outline or z-index */
+            transform: translateY(-15px); /* Only vertical upward shift, no outline */
         }
         #controls {
             grid-area: controls;
@@ -416,7 +416,7 @@
             const matchesSuit = currentSuit !== null && card.suit === currentSuit;
             const matchesRank = rankMap[card.rank] === rankMap[topCard.rank];
 
-            // Debugging logs for verification
+            // Enhanced debugging logs for verification
             console.log("Checking discard:", {
                 cardSuit: suitMap[card.suit],
                 cardRank: rankMap[card.rank],
@@ -446,6 +446,7 @@
             if (playerTurn) return;
             statusDiv.textContent = "Computer's turn...";
             let validCards = computerHand.filter(card => canDiscard(card));
+            console.log("Computer valid cards:", validCards);
             if (validCards.length > 0) {
                 const cardToDiscard = validCards[Math.floor(Math.random() * validCards.length)];
                 computerHand.splice(computerHand.indexOf(cardToDiscard), 1);
