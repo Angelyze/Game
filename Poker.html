@@ -20,8 +20,10 @@
         #gameContainer {
             width: 450px;
             height: 800px;
-            background-color: #222222;
-            border: 2px solid #ffffff;
+            background-image: url('https://angelyze.github.io/Cards/Background.jpg');
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #ff9000;
             border-radius: 10px;
             padding: 10px;
             box-sizing: border-box;
@@ -30,33 +32,36 @@
             justify-content: space-between;
             overflow: hidden;
         }
-        #communityCards, #playerCards, #houseCards {
+        #houseCards, #communityCards, #playerCards {
             display: flex;
             justify-content: center;
-            flex-wrap: wrap;
+            align-items: center;
+            height: 100px; /* Fixed height for card rows */
             margin: 10px 0;
         }
         img {
             width: 60px;
             height: 90px;
-            margin: 3px;
+            margin: 0 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Shadow for cards */
         }
         #controls {
             margin: 10px 0;
         }
         button {
-            padding: 8px 16px;
-            font-size: 14px;
-            margin: 3px;
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
             border: none;
             border-radius: 5px;
-            background-color: #4CAF50;
+            background-color: #ff9000;
             color: white;
             cursor: pointer;
             touch-action: manipulation;
+            transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #45a049;
+            background-color: #e68300;
         }
         #status, #chips, #pot {
             margin: 5px 0;
@@ -74,7 +79,7 @@
                 height: auto;
             }
             button {
-                padding: 10px 20px;
+                padding: 8px 16px;
                 font-size: 14px;
             }
             #status, #chips, #pot {
@@ -274,7 +279,7 @@
         }
 
         function playerBet() {
-            let betAmount = 5; // Fixed bet for simplicity
+            let betAmount = 5; // Fixed bet amount
             if (playerChips < betAmount) {
                 alert("Not enough chips to bet!");
                 return;
@@ -303,12 +308,40 @@
         }
 
         function houseAction() {
-            // Simplified AI: always call or check
+            if (stage === "pre-flop") {
+                let houseRank = evaluatePreFlop(houseHand);
+                if (currentBet > 0 && houseRank < 1 && Math.random() < 0.5) {
+                    statusDiv.textContent = "House folds. You win the pot!";
+                    playerChips += pot;
+                    pot = 0;
+                    updateDisplays();
+                    endRound();
+                    return;
+                }
+            } else if (stage === "flop" || stage === "turn" || stage === "river") {
+                let houseBestRank = evaluateHand(getBestHandRank(houseHand.concat(communityCards.slice(0, stage === "flop" ? 3 : stage === "turn" ? 4 : 5))));
+                if (currentBet > 0 && houseBestRank < 1) {
+                    statusDiv.textContent = "House folds. You win the pot!";
+                    playerChips += pot;
+                    pot = 0;
+                    updateDisplays();
+                    endRound();
+                    return;
+                }
+            }
+            // Otherwise, House calls or checks
             if (currentBet > 0) {
                 houseChips -= currentBet;
                 pot += currentBet;
             }
             nextStage();
+        }
+
+        function evaluatePreFlop(hand) {
+            let ranks = hand.map(card => card.rank).sort((a, b) => a - b);
+            if (ranks[0] === ranks[1]) return 1; // Pair
+            if (ranks[1] >= 8) return 1; // High cards
+            return 0;
         }
 
         function nextStage() {
