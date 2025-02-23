@@ -25,7 +25,7 @@
                 "player"
                 "controls"
                 "status";
-            grid-template-rows: 200px 1fr 200px auto auto;
+            grid-template-rows: 220px 1fr 220px auto auto;
             width: 600px;
             height: 800px;
             background-color: #222222;
@@ -36,24 +36,34 @@
             position: relative;
         }
         #computerHand, #playerHand {
-            max-height: 200px; /* Increased for full visibility of two rows */
-            overflow-y: auto; /* Allow scrolling if cards exceed space */
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            padding: 20px 10px 10px 10px; /* Added top padding for selected card space */
-            position: relative;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px 10px 10px 10px;
+            height: 220px;
+            overflow-y: auto;
         }
-        #computerHand .card, #playerHand .card {
+        .hand-row {
+            display: flex;
+            justify-content: center;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+        .hand-row .card {
             width: 60px;
             height: 90px;
-            margin-left: -20px; /* Overlap by ~1/3 of width (60px / 3 = 20px) */
+            margin-left: -20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             cursor: pointer;
             position: relative;
         }
-        #computerHand .card:first-child, #playerHand .card:first-child {
-            margin-left: 0; /* No overlap for the first card */
+        .hand-row .card:first-child {
+            margin-left: 0;
+        }
+        .selected {
+            outline: 4px solid #ff9000;
+            transform: translateY(-15px);
+            z-index: 1;
         }
         #discardPile {
             grid-area: discard;
@@ -66,12 +76,6 @@
             height: 90px;
             margin: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-        .selected {
-            outline: 4px solid #ff9000; /* Prominent outline */
-            transform: translateY(-15px); /* Reduced upward shift for visibility without cutoff */
-            z-index: 1; /* Ensure selected card is above others */
         }
         #controls {
             grid-area: controls;
@@ -88,8 +92,6 @@
             background-color: #ff9000;
             color: white;
             cursor: pointer;
-            touch-action: manipulation;
-            transition: background-color 0.3s ease;
         }
         button:hover {
             background-color: #e68300;
@@ -132,49 +134,6 @@
         }
         .overlay button:hover {
             background-color: #e68300;
-        }
-        @media (max-width: 600px) {
-            #gameContainer {
-                width: 100vw;
-                height: 100vh;
-                border: none;
-                border-radius: 0;
-            }
-            #computerHand, #playerHand {
-                max-height: 26vh;
-                overflow-y: auto;
-                padding: 4vw 2vw 2vw 2vw; /* Scaled padding for mobile */
-            }
-            #computerHand .card, #playerHand .card {
-                width: 12vw;
-                height: auto;
-                margin-left: -4vw; /* Scaled overlap (~1/3 of 12vw) */
-            }
-            #computerHand .card:first-child, #playerHand .card:first-child {
-                margin-left: 0;
-            }
-            #discardPile .card {
-                width: 12vw;
-                height: auto;
-            }
-            .selected {
-                outline: 4px solid #ff9000;
-                transform: translateY(-3vw); /* Scaled pop-up for mobile */
-            }
-            button {
-                padding: 8px 16px;
-                font-size: 14px;
-            }
-            #status {
-                font-size: 16px;
-            }
-            .overlay {
-                font-size: 20px;
-            }
-            .overlay button {
-                padding: 8px 16px;
-                font-size: 14px;
-            }
         }
     </style>
 </head>
@@ -318,7 +277,7 @@
             currentSuit = discardPile[0].suit;
             if (rankMap[discardPile[0].rank] === '8') {
                 currentSuit = suitMap[Math.floor(Math.random() * 4)];
-                statusDiv.textContent = `Game started with an 8. Suit is ${suitMap[currentSuit]}.`;
+                statusDiv.textContent = `Game started with an 8. Suit is ${currentSuit}.`;
             } else {
                 statusDiv.textContent = `Game started. Match ${suitMap[currentSuit]} or ${rankMap[discardPile[0].rank]}.`;
             }
@@ -327,22 +286,42 @@
         /** Updates the UI with current hands and discard pile */
         function displayHands() {
             playerHandDiv.innerHTML = '';
+            const playerRow1 = document.createElement('div');
+            playerRow1.className = 'hand-row';
+            const playerRow2 = document.createElement('div');
+            playerRow2.className = 'hand-row';
             playerHand.forEach((card, index) => {
                 const img = document.createElement('img');
                 img.src = cardURLs[`${rankMap[card.rank]}${suitMap[card.suit]}`];
                 img.className = 'card';
                 if (index === selectedCardIndex) img.classList.add('selected');
                 img.addEventListener('click', () => selectCard(index));
-                playerHandDiv.appendChild(img);
+                if (index < 5) {
+                    playerRow1.appendChild(img);
+                } else {
+                    playerRow2.appendChild(img);
+                }
             });
+            playerHandDiv.appendChild(playerRow1);
+            playerHandDiv.appendChild(playerRow2);
 
             computerHandDiv.innerHTML = '';
-            computerHand.forEach(() => {
+            const computerRow1 = document.createElement('div');
+            computerRow1.className = 'hand-row';
+            const computerRow2 = document.createElement('div');
+            computerRow2.className = 'hand-row';
+            computerHand.forEach((_, index) => {
                 const img = document.createElement('img');
                 img.src = cardURLs["back"];
                 img.className = 'card';
-                computerHandDiv.appendChild(img);
+                if (index < 5) {
+                    computerRow1.appendChild(img);
+                } else {
+                    computerRow2.appendChild(img);
+                }
             });
+            computerHandDiv.appendChild(computerRow1);
+            computerHandDiv.appendChild(computerRow2);
 
             discardPileDiv.innerHTML = '';
             if (discardPile.length > 0) {
@@ -434,7 +413,7 @@
         /** Assigns a new suit when an Eight is played */
         function callSuit() {
             currentSuit = suitMap[Math.floor(Math.random() * 4)];
-            statusDiv.textContent = `You played an 8 and chose ${suitMap[currentSuit]}. Computer's turn.`;
+            statusDiv.textContent = `You played an 8 and chose ${currentSuit}. Computer's turn.`;
         }
 
         /** Handles the computer's turn */
@@ -448,7 +427,7 @@
                 discardPile.push(cardToDiscard);
                 if (rankMap[cardToDiscard.rank] === '8') {
                     currentSuit = suitMap[Math.floor(Math.random() * 4)];
-                    statusDiv.textContent = `Computer played an 8 and chose ${suitMap[currentSuit]}. Your turn.`;
+                    statusDiv.textContent = `Computer played an 8 and chose ${currentSuit}. Your turn.`;
                 } else {
                     currentSuit = cardToDiscard.suit;
                     statusDiv.textContent = `Computer played ${rankMap[cardToDiscard.rank]}${suitMap[cardToDiscard.suit]}. Your turn.`;
