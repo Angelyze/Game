@@ -19,7 +19,7 @@
         }
         #gameContainer {
             width: 450px;
-            height: 750px; /* Changed from 800px to 750px */
+            height: 750px;
             background-image: url('https://angelyze.github.io/Cards/Background.jpg');
             background-size: cover;
             background-position: center;
@@ -82,12 +82,14 @@
             margin: 5px 0;
             font-size: 16px;
         }
+        #status {
+            color: #222222; /* Default dot color */
+        }
         h3 {
             margin: 5px 0;
             font-size: 18px;
         }
         #endScreen, #welcomeScreen {
-            display: none;
             position: absolute;
             top: 0;
             left: 0;
@@ -103,9 +105,10 @@
             align-items: center;
             text-align: center;
             cursor: pointer;
+            display: none;
         }
-        #welcomeScreen {
-            display: flex; /* Visible by default when game loads */
+        #welcomeScreen.active {
+            display: flex;
         }
         @media (max-width: 600px) {
             #gameContainer {
@@ -164,10 +167,10 @@
             <button id="checkButton" style="display:none">Check</button>
             <button id="foldButton" style="display:none">Fold</button>
         </div>
-        <div id="status"></div>
+        <div id="status">.</div> <!-- Placeholder dot -->
         <div id="pot">Pot: 0</div>
         <div id="endScreen"></div>
-        <div id="welcomeScreen">Welcome to Caps Poker! Tap anywhere to start.</div>
+        <div id="welcomeScreen" class="active">Welcome to Caps Poker! Tap anywhere to start.</div>
     </div>
 
     <script>
@@ -279,16 +282,8 @@
         addButtonListeners(betButton, playerBet);
         addButtonListeners(checkButton, playerCheck);
         addButtonListeners(foldButton, playerFold);
-        endScreen.addEventListener('click', restartGame);
-        endScreen.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            restartGame();
-        });
-        welcomeScreen.addEventListener('click', startGame);
-        welcomeScreen.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startGame();
-        });
+        addButtonListeners(endScreen, restartGame);
+        addButtonListeners(welcomeScreen, startGame);
 
         function createDeck() {
             deck = [];
@@ -344,14 +339,15 @@
             for (let i = 0; i < 5; i++) {
                 communityCardImgs[i].src = cardURLs["back"];
             }
-            statusDiv.textContent = "";
-            welcomeScreen.style.display = "flex"; // Show welcome screen again on restart
+            statusDiv.textContent = ".";
+            statusDiv.style.color = "#222222";
+            welcomeScreen.classList.add("active");
             startButton.style.display = "none";
             updateDisplays();
         }
 
         function startGame() {
-            welcomeScreen.style.display = "none";
+            welcomeScreen.classList.remove("active");
             startButton.style.display = "inline";
             updateDisplays();
         }
@@ -383,6 +379,7 @@
             checkButton.style.display = "inline";
             foldButton.style.display = "inline";
             statusDiv.textContent = "Pre-flop: Bet, Check, or Fold?";
+            statusDiv.style.color = "white"; // Reset to white for visibility
             updateDisplays();
         }
 
