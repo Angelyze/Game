@@ -32,12 +32,13 @@
             position: relative;
         }
         #computerHand, #playerHand {
-            max-height: 200px; /* Allow for two rows with margin, scroll if needed */
-            overflow-y: auto;
+            max-height: 180px; /* Limit to two rows (90px each) with overlap */
+            overflow-y: hidden; /* Prevent scrolling, ensure two rows max */
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             padding: 10px;
+            position: relative; /* Ensure fixed positioning context */
         }
         #computerHand .card, #playerHand .card {
             width: 60px;
@@ -55,12 +56,18 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: absolute; /* Fixed position for discard pile */
+            top: 50%; /* Center vertically in gameContainer */
+            left: 50%; /* Center horizontally in gameContainer */
+            transform: translate(-50%, -50%); /* Center precisely */
         }
         #discardPile .card {
             width: 60px;
             height: 90px;
             margin: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            position: relative; /* Ensure it stays fixed */
+            z-index: 5; /* Above hands if they overlap */
         }
         .selected {
             outline: 2px solid #ff9000; /* Use outline to prevent movement */
@@ -131,7 +138,8 @@
                 border-radius: 0;
             }
             #computerHand, #playerHand {
-                max-height: 30vh; /* Adjusted for mobile, two rows */
+                max-height: 24vh; /* Two rows scaled for mobile */
+                overflow-y: hidden;
             }
             #computerHand .card, #playerHand .card {
                 width: 12vw;
@@ -140,6 +148,11 @@
             }
             #computerHand .card:first-child, #playerHand .card:first-child {
                 margin-left: 0;
+            }
+            #discardPile {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
             }
             #discardPile .card {
                 width: 12vw;
@@ -307,20 +320,40 @@
         /** Updates the UI with current hands and discard pile */
         function displayHands() {
             playerHandDiv.innerHTML = '';
-            playerHand.forEach((card, index) => {
+            // Split player hand into two rows, first 5 cards in row 1, rest in row 2
+            const row1 = playerHand.slice(0, 5);
+            const row2 = playerHand.slice(5);
+            row1.forEach((card, index) => {
                 const img = document.createElement('img');
                 img.src = cardURLs[`${rankMap[card.rank]}${suitMap[card.suit]}`];
-                img.className = 'card';
+                img.className = 'card row1';
                 if (index === selectedCardIndex) img.classList.add('selected');
                 img.addEventListener('click', () => selectCard(index));
                 playerHandDiv.appendChild(img);
             });
+            row2.forEach((card, index) => {
+                const img = document.createElement('img');
+                img.src = cardURLs[`${rankMap[card.rank]}${suitMap[card.suit]}`];
+                img.className = 'card row2';
+                if (index + 5 === selectedCardIndex) img.classList.add('selected');
+                img.addEventListener('click', () => selectCard(index + 5));
+                playerHandDiv.appendChild(img);
+            });
 
             computerHandDiv.innerHTML = '';
-            computerHand.forEach(() => {
+            // Split computer hand into two rows, first 5 cards in row 1, rest in row 2
+            const compRow1 = computerHand.slice(0, 5);
+            const compRow2 = computerHand.slice(5);
+            compRow1.forEach(() => {
                 const img = document.createElement('img');
                 img.src = cardURLs["back"];
-                img.className = 'card';
+                img.className = 'card row1';
+                computerHandDiv.appendChild(img);
+            });
+            compRow2.forEach(() => {
+                const img = document.createElement('img');
+                img.src = cardURLs["back"];
+                img.className = 'card row2';
                 computerHandDiv.appendChild(img);
             });
 
