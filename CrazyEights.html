@@ -69,9 +69,7 @@
             position: relative;
         }
         .selected {
-            outline: 4px solid #ff9000;
-            transform: translateY(-15px);
-            z-index: 1;
+            transform: translateY(-15px); /* Only vertical upward shift, no outline or z-index */
         }
         #controls {
             grid-area: controls;
@@ -158,7 +156,6 @@
                 height: auto;
             }
             .selected {
-                outline: 4px solid #ff9000;
                 transform: translateY(-3vw);
             }
             button {
@@ -397,7 +394,7 @@
                 if (rankMap[card.rank] === '8') {
                     callSuit();
                 } else {
-                    currentSuit = card.suit; // Update to numeric index (0-3)
+                    currentSuit = card.suit; // Use numeric index (0-3)
                 }
                 statusDiv.textContent = `You played ${rankMap[card.rank]}${suitMap[card.suit]}. Computer's turn.`;
                 selectedCardIndex = null;
@@ -457,7 +454,7 @@
                     currentSuit = Math.floor(Math.random() * 4); // Set as numeric index (0-3)
                     statusDiv.textContent = `Computer played an 8 and chose ${suitMap[currentSuit]}. Your turn.`;
                 } else {
-                    currentSuit = cardToDiscard.suit; // Update to numeric index (0-3)
+                    currentSuit = cardToDiscard.suit; // Use numeric index (0-3)
                     statusDiv.textContent = `Computer played ${rankMap[cardToDiscard.rank]}${suitMap[cardToDiscard.suit]}. Your turn.`;
                 }
                 displayHands();
