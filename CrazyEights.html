@@ -25,7 +25,7 @@
                 "player"
                 "controls"
                 "status";
-            grid-template-rows: 180px 1fr 180px auto auto;
+            grid-template-rows: 200px 1fr 200px auto auto; /* Increased hand heights for full rows */
             width: 600px;
             height: 800px;
             background-color: #222222;
@@ -35,20 +35,9 @@
             box-sizing: border-box;
             position: relative;
         }
-        #computerHand {
-            grid-area: computer;
-            max-height: 180px; /* Limit to two rows (90px each) with overlap */
-            overflow-y: hidden; /* Prevent scrolling, ensure two rows max */
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            padding: 10px;
-            position: relative; /* Ensure fixed positioning context */
-        }
-        #playerHand {
-            grid-area: player;
-            max-height: 180px; /* Limit to two rows (90px each) with overlap */
-            overflow-y: hidden; /* Prevent scrolling, ensure two rows max */
+        #computerHand, #playerHand {
+            max-height: 200px; /* Increased to 200px for full visibility of two rows */
+            overflow-y: auto; /* Allow scrolling if cards exceed space */
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -80,7 +69,9 @@
             position: relative; /* Ensure it stays fixed */
         }
         .selected {
-            outline: 2px solid #ff9000; /* Use outline to prevent movement */
+            outline: 4px solid #ff9000; /* Increased outline for more prominence */
+            transform: translateY(-10px); /* Pop up selected card slightly */
+            z-index: 1; /* Ensure it stays above other cards */
         }
         #controls {
             grid-area: controls;
@@ -150,8 +141,8 @@
                 border-radius: 0;
             }
             #computerHand, #playerHand {
-                max-height: 24vh; /* Two rows scaled for mobile */
-                overflow-y: hidden;
+                max-height: 26vh; /* Adjusted for mobile, two rows with more space */
+                overflow-y: auto;
             }
             #computerHand .card, #playerHand .card {
                 width: 12vw;
@@ -164,6 +155,10 @@
             #discardPile .card {
                 width: 12vw;
                 height: auto;
+            }
+            .selected {
+                outline: 4px solid #ff9000;
+                transform: translateY(-2vw); /* Scaled pop-up for mobile */
             }
             button {
                 padding: 8px 16px;
