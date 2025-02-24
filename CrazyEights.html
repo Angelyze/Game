@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crazy Eights</title>
     <style>
-body {
-    background-color: #333333;
-    font-family: Arial, sans-serif;
-    color: white;
-    text-align: center;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
+        body {
+            background-color: #333333;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
         #gameContainer {
             display: grid;
             grid-template-areas:
@@ -28,10 +28,10 @@ body {
             grid-template-rows: 235px 1fr 235px auto auto;
             width: 500px;
             height: 700px;
- background-image: url('https://angelyze.github.io/Cards/Background.jpg');
-    background-size: cover; /* Ensures the image covers the entire background */
-    background-position: center; /* Centers the image */
-    background-repeat: no-repeat; /* Prevents the image from repeating */
+            background-image: url('https://angelyze.github.io/Cards/Background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             border: 2px solid #ff9000;
             border-radius: 10px;
             padding: 10px;
@@ -52,12 +52,13 @@ body {
             position: relative;
         }
         #computerHand .card, #playerHand .card {
-            width: 65px;
-            height: 100px;
+            width: 65px; /* Base width */
+            height: 100px; /* Base height, maintaining 65:100 aspect ratio */
             margin-left: -20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             cursor: pointer;
             position: relative;
+            object-fit: contain; /* Prevents stretching */
         }
         #computerHand .card:first-child, #playerHand .card:first-child {
             margin-left: 0;
@@ -69,11 +70,12 @@ body {
             align-items: center;
         }
         #discardPile .card {
-            width: 65px;
-            height: 100px;
+            width: 65px; /* Consistent with hand cards */
+            height: 100px; /* Maintains aspect ratio */
             margin: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             position: relative;
+            object-fit: contain; /* Prevents stretching */
         }
         .selected {
             transform: translateY(-10px);
@@ -143,23 +145,25 @@ body {
                 height: 100vh;
                 border: none;
                 border-radius: 0;
+                grid-template-rows: 26vh 1fr 26vh auto auto; /* Proportional rows */
             }
             #computerHand, #playerHand {
                 max-height: 26vh;
-                overflow-y: auto;
                 padding: 4vw 2vw 2vw 2vw;
             }
             #computerHand .card, #playerHand .card {
-                width: 12vw;
-                height: auto;
+                width: 12vw; /* Scales with viewport width */
+                height: calc(12vw * 1.538); /* Maintains 65:100 ratio (100/65 ≈ 1.538) */
                 margin-left: -4vw;
+                object-fit: contain; /* Ensures no stretching */
             }
             #computerHand .card:first-child, #playerHand .card:first-child {
                 margin-left: 0;
             }
             #discardPile .card {
                 width: 12vw;
-                height: auto;
+                height: calc(12vw * 1.538); /* Maintains 65:100 ratio */
+                object-fit: contain; /* Ensures no stretching */
             }
             .selected {
                 transform: translateY(-3vw);
@@ -265,7 +269,7 @@ body {
         let playerHand = [];
         let computerHand = [];
         let discardPile = [];
-        let currentSuit = null; // Numeric index (0-3) for suitMap
+        let currentSuit = null;
         let playerTurn = true;
         let selectedCardIndex = null;
 
@@ -289,12 +293,10 @@ body {
         playAgainWin.addEventListener('click', restartGame);
         playAgainLose.addEventListener('click', restartGame);
 
-        /** Waits for a specified time (helper for delays) */
         function wait(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        /** Creates a new 52-card deck */
         function createDeck() {
             deck = [];
             for (let rank = 0; rank < 13; rank++) {
@@ -304,7 +306,6 @@ body {
             }
         }
 
-        /** Shuffles an array using Fisher-Yates algorithm */
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -312,7 +313,6 @@ body {
             }
         }
 
-        /** Deals initial cards to player and computer */
         function dealCards() {
             if (deck.length < 11) {
                 console.error("Not enough cards in deck to deal!");
@@ -322,25 +322,24 @@ body {
             computerHand = deck.slice(5, 10);
             deck = deck.slice(10);
             discardPile = [deck.pop()];
-            currentSuit = discardPile[0].suit; // Numeric index (0-3)
+            currentSuit = discardPile[0].suit;
             if (rankMap[discardPile[0].rank] === 'Eight') {
-                currentSuit = Math.floor(Math.random() * 4); // Random suit if first card is 8
+                currentSuit = Math.floor(Math.random() * 4);
             }
             updateStatusMessage();
         }
 
-        /** Updates the UI with current hands and discard pile */
         function displayHands() {
             playerHandDiv.innerHTML = '';
             playerHand.forEach((card, index) => {
                 const img = document.createElement('img');
                 const rankAbbr = rankToAbbr[rankMap[card.rank]];
                 const suitAbbr = suitMap[card.suit][0];
-                img.src = cardURLs[`${rankAbbr}${suitAbbr}`] || cardURLs["back"]; // Fallback to back if URL is invalid
+                img.src = cardURLs[`${rankAbbr}${suitAbbr}`] || cardURLs["back"];
                 img.className = 'card';
                 if (index === selectedCardIndex) img.classList.add('selected');
                 img.addEventListener('click', () => selectCard(index));
-                img.onerror = () => img.src = cardURLs["back"]; // Fallback if image fails to load
+                img.onerror = () => img.src = cardURLs["back"];
                 playerHandDiv.appendChild(img);
             });
 
@@ -349,7 +348,7 @@ body {
                 const img = document.createElement('img');
                 img.src = cardURLs["back"];
                 img.className = 'card';
-                img.onerror = () => img.src = cardURLs["back"]; // Ensure back image loads
+                img.onerror = () => img.src = cardURLs["back"];
                 computerHandDiv.appendChild(img);
             });
 
@@ -359,21 +358,19 @@ body {
                 const topCard = discardPile[discardPile.length - 1];
                 const rankAbbr = rankToAbbr[rankMap[topCard.rank]];
                 const suitAbbr = suitMap[topCard.suit][0];
-                img.src = cardURLs[`${rankAbbr}${suitAbbr}`] || cardURLs["back"]; // Fallback to back if URL is invalid
+                img.src = cardURLs[`${rankAbbr}${suitAbbr}`] || cardURLs["back"];
                 img.className = 'card';
-                img.onerror = () => img.src = cardURLs["back"]; // Fallback if image fails to load
+                img.onerror = () => img.src = cardURLs["back"];
                 discardPileDiv.appendChild(img);
             }
         }
 
-        /** Selects a card in the player's hand */
         function selectCard(index) {
             if (!playerTurn) return;
             selectedCardIndex = index;
             displayHands();
         }
 
-        /** Draws cards from the deck until playable or deck is empty */
         async function drawCard() {
             if (!playerTurn) return;
             if (deck.length === 0) {
@@ -405,7 +402,6 @@ body {
             }
         }
 
-        /** Discards the player's selected card if valid */
         function discardSelectedCard() {
             if (!playerTurn || selectedCardIndex === null) return;
             const card = playerHand[selectedCardIndex];
@@ -414,7 +410,7 @@ body {
                 if (rankMap[card.rank] === 'Eight') {
                     callSuit();
                 } else {
-                    currentSuit = card.suit; // Numeric index (0-3)
+                    currentSuit = card.suit;
                 }
                 displayHands();
                 checkWin();
@@ -428,7 +424,6 @@ body {
             updateStatusMessage();
         }
 
-        /** Checks if a card can be discarded */
         function canDiscard(card) {
             const topCard = discardPile[discardPile.length - 1];
             const isEight = rankMap[card.rank] === 'Eight';
@@ -437,14 +432,12 @@ body {
             return isEight || matchesSuit || matchesRank;
         }
 
-        /** Assigns a new suit when an Eight is played */
         function callSuit() {
-            currentSuit = Math.floor(Math.random() * 4); // Random suit (0-3)
+            currentSuit = Math.floor(Math.random() * 4);
             statusDiv.textContent = `You played an Eight and chose ${suitMap[currentSuit]}. Computer's turn.`;
             updateStatusMessage();
         }
 
-        /** Handles the computer's turn */
         async function computerTurn() {
             if (playerTurn) return;
             let validCards = computerHand.filter(card => canDiscard(card));
@@ -453,9 +446,9 @@ body {
                 computerHand.splice(computerHand.indexOf(cardToDiscard), 1);
                 discardPile.push(cardToDiscard);
                 if (rankMap[cardToDiscard.rank] === 'Eight') {
-                    currentSuit = Math.floor(Math.random() * 4); // Random suit (0-3)
+                    currentSuit = Math.floor(Math.random() * 4);
                 } else {
-                    currentSuit = cardToDiscard.suit; // Numeric index (0-3)
+                    currentSuit = cardToDiscard.suit;
                 }
                 displayHands();
                 checkWin();
@@ -482,7 +475,6 @@ body {
             updateStatusMessage();
         }
 
-        /** Checks for a win condition */
         function checkWin() {
             if (playerHand.length === 0) {
                 winScreen.style.display = 'flex';
@@ -495,26 +487,22 @@ body {
             }
         }
 
-        /** Disables interaction buttons on game end */
         function disableButtons() {
             drawCardButton.disabled = true;
             discardButton.disabled = true;
         }
 
-        /** Enables interaction buttons at game start */
         function enableButtons() {
             drawCardButton.disabled = false;
             discardButton.disabled = false;
         }
 
-        /** Starts the game after welcome screen */
         function startGame() {
             welcomeScreen.style.display = 'none';
             document.getElementById('gameContainer').classList.remove('blurred');
             startNewGame();
         }
 
-        /** Restarts the game after win/lose */
         function restartGame() {
             winScreen.style.display = 'none';
             loseScreen.style.display = 'none';
@@ -522,7 +510,6 @@ body {
             startNewGame();
         }
 
-        /** Starts a new game */
         function startNewGame() {
             createDeck();
             shuffle(deck);
@@ -534,7 +521,6 @@ body {
             updateStatusMessage();
         }
 
-        /** Updates the status message based on the current game state */
         function updateStatusMessage() {
             if (discardPile.length === 0) {
                 statusDiv.textContent = "Game starting...";
