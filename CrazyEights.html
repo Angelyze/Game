@@ -253,24 +253,9 @@
 
         const rankMap = ['Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King', 'Ace'];
         const suitMap = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
-        const abbrToFull = {
-            'H': 'Hearts',
-            'D': 'Diamonds',
-            'C': 'Clubs',
-            'S': 'Spades',
-            '2': 'Two',
-            '3': 'Three',
-            '4': 'Four',
-            '5': 'Five',
-            '6': 'Six',
-            '7': 'Seven',
-            '8': 'Eight',
-            '9': 'Nine',
-            '10': 'Ten',
-            'J': 'Jack',
-            'Q': 'Queen',
-            'K': 'King',
-            'A': 'Ace'
+        const rankToAbbr = {
+            'Two': '2', 'Three': '3', 'Four': '4', 'Five': '5', 'Six': '6', 'Seven': '7', 'Eight': '8', 'Nine': '9',
+            'Ten': '10', 'Jack': 'J', 'Queen': 'Q', 'King': 'K', 'Ace': 'A'
         };
 
         let deck = [];
@@ -346,12 +331,13 @@
             playerHandDiv.innerHTML = '';
             playerHand.forEach((card, index) => {
                 const img = document.createElement('img');
-                const rankAbbr = rankMap[card.rank] === 'Ten' ? '10' : rankMap[card.rank][0];
+                const rankAbbr = rankToAbbr[rankMap[card.rank]];
                 const suitAbbr = suitMap[card.suit][0];
-                img.src = cardURLs[`${rankAbbr}${suitAbbr}`];
+                img.src = cardURLs[`${rankAbbr}${suitAbbr}`] || cardURLs["back"]; // Fallback to back if URL is invalid
                 img.className = 'card';
                 if (index === selectedCardIndex) img.classList.add('selected');
                 img.addEventListener('click', () => selectCard(index));
+                img.onerror = () => img.src = cardURLs["back"]; // Fallback if image fails to load
                 playerHandDiv.appendChild(img);
             });
 
@@ -360,6 +346,7 @@
                 const img = document.createElement('img');
                 img.src = cardURLs["back"];
                 img.className = 'card';
+                img.onerror = () => img.src = cardURLs["back"]; // Ensure back image loads
                 computerHandDiv.appendChild(img);
             });
 
@@ -367,10 +354,11 @@
             if (discardPile.length > 0) {
                 const img = document.createElement('img');
                 const topCard = discardPile[discardPile.length - 1];
-                const rankAbbr = rankMap[topCard.rank] === 'Ten' ? '10' : rankMap[topCard.rank][0];
+                const rankAbbr = rankToAbbr[rankMap[topCard.rank]];
                 const suitAbbr = suitMap[topCard.suit][0];
-                img.src = cardURLs[`${rankAbbr}${suitAbbr}`];
+                img.src = cardURLs[`${rankAbbr}${suitAbbr}`] || cardURLs["back"]; // Fallback to back if URL is invalid
                 img.className = 'card';
+                img.onerror = () => img.src = cardURLs["back"]; // Fallback if image fails to load
                 discardPileDiv.appendChild(img);
             }
         }
