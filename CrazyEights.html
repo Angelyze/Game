@@ -25,7 +25,7 @@
                 "player"
                 "controls"
                 "status";
-            grid-template-rows: 180px 100px 180px auto auto;
+            grid-template-rows: 120px 120px 120px auto auto; /* Increased row spacing */
             width: 500px;
             height: 800px;
             background-color: #222222;
@@ -40,29 +40,26 @@
             filter: blur(5px);
         }
         #computerHand, #playerHand {
-            max-height: 180px;
+            max-height: 120px; /* Adjusted height for larger cards */
             overflow-y: auto;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
+            padding: 10px 10px; /* Reduced padding for better spacing */
             position: relative;
         }
         #computerHand {
             grid-area: computer;
-            align-self: flex-end;
-            padding-top: 40px;
-            padding-bottom: 0;
+            align-self: flex-end; /* Move computer cards down */
         }
         #playerHand {
             grid-area: player;
-            align-self: flex-start;
-            padding-bottom: 40px;
-            padding-top: 0;
+            align-self: flex-start; /* Move player cards up */
         }
         #computerHand .card, #playerHand .card {
-            width: 60px; /* Reverted to 60px width, keeping height at 100px */
-            height: 100px; /* Maintained height at 100px as requested */
-            margin-left: -20px; /* Adjusted margin for 60px width */
+            width: 100px;
+            height: 100px; /* Reverted to 100px */
+            margin-left: -30px; /* Adjusted margin for larger cards */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             cursor: pointer;
             position: relative;
@@ -75,17 +72,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 0 10px;
         }
         #discardPile .card {
-            width: 60px; /* Reverted to 60px width, keeping height at 100px */
-            height: 100px; /* Maintained height at 100px as requested */
+            width: 100px;
+            height: 100px; /* Reverted to 100px */
             margin: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             position: relative;
         }
         .selected {
-            transform: translateY(-5px);
+            transform: translateY(-10px); /* Reduced upward shift for selected card */
         }
         #controls {
             grid-area: controls;
@@ -126,7 +122,7 @@
             font-size: 24px;
             color: #ff9000;
             z-index: 10;
-            filter: none;
+            filter: none; /* Removed blur from overlay text */
         }
         #welcomeScreen {
             display: flex;
@@ -160,19 +156,19 @@
                 padding: 4vw 2vw 2vw 2vw;
             }
             #computerHand .card, #playerHand .card {
-                width: 12vw; /* Adjusted for mobile, proportional to 60px */
-                height: 20vw; /* Proportional to 100px height */
-                margin-left: -4vw;
+                width: 20vw; /* Adjusted for mobile, proportional to 100px */
+                height: 20vw;
+                margin-left: -6vw; /* Adjusted margin for larger cards on mobile */
             }
             #computerHand .card:first-child, #playerHand .card:first-child {
                 margin-left: 0;
             }
             #discardPile .card {
-                width: 12vw;
+                width: 20vw;
                 height: 20vw;
             }
             .selected {
-                transform: translateY(-2vw);
+                transform: translateY(-2vw); /* Reduced upward shift for mobile */
             }
             button {
                 padding: 8px 16px;
