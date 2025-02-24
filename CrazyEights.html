@@ -34,6 +34,10 @@
             padding: 10px;
             box-sizing: border-box;
             position: relative;
+            transition: filter 0.3s ease;
+        }
+        #gameContainer.blurred {
+            filter: blur(5px);
         }
         #computerHand, #playerHand {
             max-height: 200px;
@@ -86,7 +90,6 @@
             background-color: #ff9000;
             color: white;
             cursor: pointer;
-            touch-action: manipulation;
             transition: background-color 0.3s ease;
         }
         button:hover {
@@ -109,7 +112,7 @@
             justify-content: center;
             align-items: center;
             font-size: 24px;
-            color: white;
+            color: #ff9000;
             z-index: 10;
         }
         #welcomeScreen {
@@ -248,8 +251,27 @@
             "back": "https://raw.githubusercontent.com/Angelyze/Cards/main/back.png"
         };
 
-        const rankMap = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-        const suitMap = ['H', 'D', 'C', 'S'];
+        const rankMap = ['Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King', 'Ace'];
+        const suitMap = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
+        const abbrToFull = {
+            'H': 'Hearts',
+            'D': 'Diamonds',
+            'C': 'Clubs',
+            'S': 'Spades',
+            '2': 'Two',
+            '3': 'Three',
+            '4': 'Four',
+            '5': 'Five',
+            '6': 'Six',
+            '7': 'Seven',
+            '8': 'Eight',
+            '9': 'Nine',
+            '10': 'Ten',
+            'J': 'Jack',
+            'Q': 'Queen',
+            'K': 'King',
+            'A': 'Ace'
+        };
 
         let deck = [];
         let playerHand = [];
@@ -313,7 +335,7 @@
             deck = deck.slice(10);
             discardPile = [deck.pop()];
             currentSuit = discardPile[0].suit; // Numeric index (0-3)
-            if (rankMap[discardPile[0].rank] === '8') {
+            if (rankMap[discardPile[0].rank] === 'Eight') {
                 currentSuit = Math.floor(Math.random() * 4); // Random suit if first card is 8
             }
             updateStatusMessage();
@@ -324,7 +346,9 @@
             playerHandDiv.innerHTML = '';
             playerHand.forEach((card, index) => {
                 const img = document.createElement('img');
-                img.src = cardURLs[`${rankMap[card.rank]}${suitMap[card.suit]}`];
+                const abbrRank = abbrToFull[rankMap[card.rank][0]] || rankMap[card.rank];
+                const abbrSuit = suitMap[card.suit][0];
+                img.src = cardURLs[`${abbrRank[0]}${abbrSuit}`];
                 img.className = 'card';
                 if (index === selectedCardIndex) img.classList.add('selected');
                 img.addEventListener('click', () => selectCard(index));
@@ -342,7 +366,10 @@
             discardPileDiv.innerHTML = '';
             if (discardPile.length > 0) {
                 const img = document.createElement('img');
-                img.src = cardURLs[`${rankMap[discardPile[discardPile.length - 1].rank]}${suitMap[discardPile[discardPile.length - 1].suit]}`];
+                const topCard = discardPile[discardPile.length - 1];
+                const abbrRank = abbrToFull[rankMap[topCard.rank][0]] || rankMap[topCard.rank];
+                const abbrSuit = suitMap[topCard.suit][0];
+                img.src = cardURLs[`${abbrRank[0]}${abbrSuit}`];
                 img.className = 'card';
                 discardPileDiv.appendChild(img);
             }
@@ -393,7 +420,7 @@
             const card = playerHand[selectedCardIndex];
             if (canDiscard(card)) {
                 discardPile.push(playerHand.splice(selectedCardIndex, 1)[0]);
-                if (rankMap[card.rank] === '8') {
+                if (rankMap[card.rank] === 'Eight') {
                     callSuit();
                 } else {
                     currentSuit = card.suit; // Numeric index (0-3)
@@ -405,7 +432,7 @@
                     setTimeout(computerTurn, 1000);
                 }
             } else {
-                statusDiv.textContent = "Invalid card! Must match suit, rank, or be an 8.";
+                statusDiv.textContent = "Invalid card! Must match suit, rank, or be an Eight.";
             }
             updateStatusMessage();
         }
@@ -413,7 +440,7 @@
         /** Checks if a card can be discarded */
         function canDiscard(card) {
             const topCard = discardPile[discardPile.length - 1];
-            const isEight = rankMap[card.rank] === '8';
+            const isEight = rankMap[card.rank] === 'Eight';
             const matchesSuit = currentSuit !== null && card.suit === currentSuit;
             const matchesRank = rankMap[card.rank] === rankMap[topCard.rank];
             return isEight || matchesSuit || matchesRank;
@@ -422,25 +449,22 @@
         /** Assigns a new suit when an Eight is played */
         function callSuit() {
             currentSuit = Math.floor(Math.random() * 4); // Random suit (0-3)
-            statusDiv.textContent = `You played an 8 and chose ${suitMap[currentSuit]}. Computer's turn.`;
+            statusDiv.textContent = `You played an Eight and chose ${suitMap[currentSuit]}. Computer's turn.`;
             updateStatusMessage();
         }
 
         /** Handles the computer's turn */
         async function computerTurn() {
             if (playerTurn) return;
-            statusDiv.textContent = "Computer's turn...";
             let validCards = computerHand.filter(card => canDiscard(card));
             if (validCards.length > 0) {
                 const cardToDiscard = validCards[Math.floor(Math.random() * validCards.length)];
                 computerHand.splice(computerHand.indexOf(cardToDiscard), 1);
                 discardPile.push(cardToDiscard);
-                if (rankMap[cardToDiscard.rank] === '8') {
+                if (rankMap[cardToDiscard.rank] === 'Eight') {
                     currentSuit = Math.floor(Math.random() * 4); // Random suit (0-3)
-                    statusDiv.textContent = `Computer played an 8 and chose ${suitMap[currentSuit]}. Your turn.`;
                 } else {
                     currentSuit = cardToDiscard.suit; // Numeric index (0-3)
-                    statusDiv.textContent = `Computer played ${rankMap[cardToDiscard.rank]}${suitMap[cardToDiscard.suit]}. Your turn.`;
                 }
                 displayHands();
                 checkWin();
@@ -454,21 +478,14 @@
                     computerHand.push(newCard);
                     canPlay = canDiscard(newCard);
                     displayHands();
-                    if (canPlay) {
-                        statusDiv.textContent = "Computer drew a playable card!";
-                    } else {
-                        statusDiv.textContent = "Computer drew a card.";
-                    }
                     await wait(500);
                 }
                 if (!canPlay) {
-                    statusDiv.textContent = "Computer couldn’t play. Your turn.";
                     playerTurn = true;
                 } else {
                     computerTurn();
                 }
             } else {
-                statusDiv.textContent = "Computer passes. Your turn.";
                 playerTurn = true;
             }
             updateStatusMessage();
@@ -479,9 +496,11 @@
             if (playerHand.length === 0) {
                 winScreen.style.display = 'flex';
                 disableButtons();
+                document.getElementById('gameContainer').classList.add('blurred');
             } else if (computerHand.length === 0) {
                 loseScreen.style.display = 'flex';
                 disableButtons();
+                document.getElementById('gameContainer').classList.add('blurred');
             }
         }
 
@@ -500,6 +519,7 @@
         /** Starts the game after welcome screen */
         function startGame() {
             welcomeScreen.style.display = 'none';
+            document.getElementById('gameContainer').classList.remove('blurred');
             startNewGame();
         }
 
@@ -507,6 +527,7 @@
         function restartGame() {
             winScreen.style.display = 'none';
             loseScreen.style.display = 'none';
+            document.getElementById('gameContainer').classList.remove('blurred');
             startNewGame();
         }
 
@@ -529,13 +550,13 @@
                 return;
             }
             const topCard = discardPile[discardPile.length - 1];
-            const isEight = rankMap[topCard.rank] === '8';
+            const isEight = rankMap[topCard.rank] === 'Eight';
             if (isEight) {
-                statusDiv.textContent = `Match ${suitMap[currentSuit]} or play an 8.`;
+                statusDiv.textContent = `Match ${suitMap[currentSuit]} or play an Eight.`;
             } else {
                 const suit = suitMap[topCard.suit];
                 const rank = rankMap[topCard.rank];
-                statusDiv.textContent = `Match ${suit} or ${rank}, or play an 8.`;
+                statusDiv.textContent = `Match ${suit} or ${rank}, or play an Eight.`;
             }
         }
     </script>
