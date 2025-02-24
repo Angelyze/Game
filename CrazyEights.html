@@ -346,9 +346,9 @@
             playerHandDiv.innerHTML = '';
             playerHand.forEach((card, index) => {
                 const img = document.createElement('img');
-                const abbrRank = abbrToFull[rankMap[card.rank][0]] || rankMap[card.rank];
-                const abbrSuit = suitMap[card.suit][0];
-                img.src = cardURLs[`${abbrRank[0]}${abbrSuit}`];
+                const rankAbbr = rankMap[card.rank] === 'Ten' ? '10' : rankMap[card.rank][0];
+                const suitAbbr = suitMap[card.suit][0];
+                img.src = cardURLs[`${rankAbbr}${suitAbbr}`];
                 img.className = 'card';
                 if (index === selectedCardIndex) img.classList.add('selected');
                 img.addEventListener('click', () => selectCard(index));
@@ -367,9 +367,9 @@
             if (discardPile.length > 0) {
                 const img = document.createElement('img');
                 const topCard = discardPile[discardPile.length - 1];
-                const abbrRank = abbrToFull[rankMap[topCard.rank][0]] || rankMap[topCard.rank];
-                const abbrSuit = suitMap[topCard.suit][0];
-                img.src = cardURLs[`${abbrRank[0]}${abbrSuit}`];
+                const rankAbbr = rankMap[topCard.rank] === 'Ten' ? '10' : rankMap[topCard.rank][0];
+                const suitAbbr = suitMap[topCard.suit][0];
+                img.src = cardURLs[`${rankAbbr}${suitAbbr}`];
                 img.className = 'card';
                 discardPileDiv.appendChild(img);
             }
