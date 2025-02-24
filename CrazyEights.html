@@ -25,7 +25,7 @@
                 "player"
                 "controls"
                 "status";
-            grid-template-rows: 120px 120px 120px auto auto;
+            grid-template-rows: 140px 120px 140px auto auto; /* Increased spacing between rows */
             width: 500px;
             height: 800px;
             background-color: #222222;
@@ -40,21 +40,24 @@
             filter: blur(5px);
         }
         #computerHand, #playerHand {
-            max-height: 120px;
+            max-height: 140px; /* Increased height to accommodate spacing */
             overflow-y: auto;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            padding: 10px 10px;
             position: relative;
         }
         #computerHand {
             grid-area: computer;
             align-self: flex-end;
+            padding-top: 20px; /* Push computer cards down further */
+            padding-bottom: 0; /* Remove bottom padding */
         }
         #playerHand {
             grid-area: player;
             align-self: flex-start;
+            padding-bottom: 20px; /* Push player cards up further */
+            padding-top: 0; /* Remove top padding */
         }
         #computerHand .card, #playerHand .card {
             width: 100px;
@@ -72,6 +75,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 0 10px; /* Ensure centered within the row */
         }
         #discardPile .card {
             width: 100px;
@@ -81,7 +85,7 @@
             position: relative;
         }
         .selected {
-            transform: translateY(-10px);
+            transform: translateY(-5px); /* Further reduced upward shift to prevent overlap */
         }
         #controls {
             grid-area: controls;
