@@ -36,7 +36,7 @@
             border-radius: 10px;
             padding: 10px;
             box-sizing: border-box;
-            position: top;
+            position: relative;
             transition: filter 0.3s ease;
         }
         #gameContainer.blurred {
@@ -141,6 +141,7 @@
             #gameContainer {
                 width: 100vw;
                 height: 95vh;
+                position: top;
                 border: none;
                 border-radius: 0;
                 grid-template-rows: 33.57vh 1fr 33.57vh auto auto; /* 235/700 ≈ 33.57% of viewport height */
