@@ -25,7 +25,7 @@
                 "player"
                 "controls"
                 "status";
-            grid-template-rows: 140px 120px 140px auto auto; /* Increased spacing between rows */
+            grid-template-rows: 180px 100px 180px auto auto;
             width: 500px;
             height: 800px;
             background-color: #222222;
@@ -40,7 +40,7 @@
             filter: blur(5px);
         }
         #computerHand, #playerHand {
-            max-height: 140px; /* Increased height to accommodate spacing */
+            max-height: 180px;
             overflow-y: auto;
             display: flex;
             flex-wrap: wrap;
@@ -50,19 +50,19 @@
         #computerHand {
             grid-area: computer;
             align-self: flex-end;
-            padding-top: 20px; /* Push computer cards down further */
-            padding-bottom: 0; /* Remove bottom padding */
+            padding-top: 40px;
+            padding-bottom: 0;
         }
         #playerHand {
             grid-area: player;
             align-self: flex-start;
-            padding-bottom: 20px; /* Push player cards up further */
-            padding-top: 0; /* Remove top padding */
+            padding-bottom: 40px;
+            padding-top: 0;
         }
         #computerHand .card, #playerHand .card {
-            width: 100px;
-            height: 100px;
-            margin-left: -30px;
+            width: 60px; /* Reverted to 60px width, keeping height at 100px */
+            height: 100px; /* Maintained height at 100px as requested */
+            margin-left: -20px; /* Adjusted margin for 60px width */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             cursor: pointer;
             position: relative;
@@ -75,17 +75,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 0 10px; /* Ensure centered within the row */
+            padding: 0 10px;
         }
         #discardPile .card {
-            width: 100px;
-            height: 100px;
+            width: 60px; /* Reverted to 60px width, keeping height at 100px */
+            height: 100px; /* Maintained height at 100px as requested */
             margin: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             position: relative;
         }
         .selected {
-            transform: translateY(-5px); /* Further reduced upward shift to prevent overlap */
+            transform: translateY(-5px);
         }
         #controls {
             grid-area: controls;
@@ -160,15 +160,15 @@
                 padding: 4vw 2vw 2vw 2vw;
             }
             #computerHand .card, #playerHand .card {
-                width: 20vw;
-                height: 20vw;
-                margin-left: -6vw;
+                width: 12vw; /* Adjusted for mobile, proportional to 60px */
+                height: 20vw; /* Proportional to 100px height */
+                margin-left: -4vw;
             }
             #computerHand .card:first-child, #playerHand .card:first-child {
                 margin-left: 0;
             }
             #discardPile .card {
-                width: 20vw;
+                width: 12vw;
                 height: 20vw;
             }
             .selected {
