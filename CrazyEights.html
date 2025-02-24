@@ -140,8 +140,9 @@
         @media (max-width: 500px) {
             #gameContainer {
                 width: 100vw;
-                height: 95vh;
-                position: absolute;
+                height: 94vh;
+                position: fixed; /* or 'absolute', depending on your needs */
+                top: 0; /* Aligns it to the top */
                 border: none;
                 border-radius: 0;
                 grid-template-rows: 33.57vh 1fr 33.57vh auto auto; /* 235/700 ≈ 33.57% of viewport height */
