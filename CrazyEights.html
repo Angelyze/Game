@@ -69,7 +69,7 @@
             position: relative;
         }
         .selected {
-            transform: translateY(-15px); /* Only vertical upward shift, no outline */
+            transform: translateY(-15px);
         }
         #controls {
             grid-area: controls;
@@ -185,7 +185,7 @@
             <button id="discardButton">Discard Selected Card</button>
             <button id="newGameButton">New Game</button>
         </div>
-        <div id="status">Your turn</div>
+        <div id="status"></div>
         <div id="welcomeScreen" class="overlay">Welcome to Crazy Eights! Click to start.</div>
         <div id="winScreen" class="overlay">You win! <button id="playAgainWin">Play Again</button></div>
         <div id="loseScreen" class="overlay">You lose! <button id="playAgainLose">Play Again</button></div>
@@ -255,7 +255,7 @@
         let playerHand = [];
         let computerHand = [];
         let discardPile = [];
-        let currentSuit = null; // Initialize as null, will be set as a numeric index (0-3)
+        let currentSuit = null; // Numeric index (0-3) for suitMap
         let playerTurn = true;
         let selectedCardIndex = null;
 
@@ -312,13 +312,11 @@
             computerHand = deck.slice(5, 10);
             deck = deck.slice(10);
             discardPile = [deck.pop()];
-            currentSuit = discardPile[0].suit; // Set initial suit as numeric index (0-3)
+            currentSuit = discardPile[0].suit; // Numeric index (0-3)
             if (rankMap[discardPile[0].rank] === '8') {
                 currentSuit = Math.floor(Math.random() * 4); // Random suit if first card is 8
-                statusDiv.textContent = `Game started with an 8. Suit is ${suitMap[currentSuit]}.`;
-            } else {
-                statusDiv.textContent = `Game started. Match ${suitMap[currentSuit]} or ${rankMap[discardPile[0].rank]}.`;
             }
+            updateStatusMessage();
         }
 
         /** Updates the UI with current hands and discard pile */
@@ -373,15 +371,19 @@
                 playerHand.push(newCard);
                 canPlay = canDiscard(newCard);
                 displayHands();
-                statusDiv.textContent = canPlay ? "You drew a playable card!" : "You drew a card.";
-                if (!canPlay) {
-                    await wait(500);
+                if (canPlay) {
+                    statusDiv.textContent = "You drew a playable card!";
+                } else {
+                    statusDiv.textContent = "You drew a card.";
                 }
+                await wait(500);
             }
             if (!canPlay) {
                 statusDiv.textContent = "No playable cards drawn. Computer’s turn.";
                 playerTurn = false;
                 setTimeout(computerTurn, 1000);
+            } else {
+                updateStatusMessage();
             }
         }
 
@@ -394,10 +396,8 @@
                 if (rankMap[card.rank] === '8') {
                     callSuit();
                 } else {
-                    currentSuit = card.suit; // Use numeric index (0-3)
+                    currentSuit = card.suit; // Numeric index (0-3)
                 }
-                statusDiv.textContent = `You played ${rankMap[card.rank]}${suitMap[card.suit]}. Computer's turn.`;
-                selectedCardIndex = null;
                 displayHands();
                 checkWin();
                 if (playerHand.length > 0) {
@@ -407,6 +407,7 @@
             } else {
                 statusDiv.textContent = "Invalid card! Must match suit, rank, or be an 8.";
             }
+            updateStatusMessage();
         }
 
         /** Checks if a card can be discarded */
@@ -415,30 +416,14 @@
             const isEight = rankMap[card.rank] === '8';
             const matchesSuit = currentSuit !== null && card.suit === currentSuit;
             const matchesRank = rankMap[card.rank] === rankMap[topCard.rank];
-
-            // Enhanced debugging logs for verification
-            console.log("Checking discard:", {
-                cardSuit: suitMap[card.suit],
-                cardRank: rankMap[card.rank],
-                currentSuit: currentSuit !== null ? suitMap[currentSuit] : 'None',
-                topCardSuit: suitMap[topCard.suit],
-                topCardRank: rankMap[topCard.rank],
-                isEight: isEight,
-                matchesSuit: matchesSuit,
-                matchesRank: matchesRank
-            });
-
-            // Allow discarding if:
-            // 1. The card is an 8 (always playable)
-            // 2. The card matches the current suit (set after an 8 or from the top card)
-            // 3. The card matches the rank of the top card
             return isEight || matchesSuit || matchesRank;
         }
 
         /** Assigns a new suit when an Eight is played */
         function callSuit() {
-            currentSuit = Math.floor(Math.random() * 4); // Set as numeric index (0-3)
+            currentSuit = Math.floor(Math.random() * 4); // Random suit (0-3)
             statusDiv.textContent = `You played an 8 and chose ${suitMap[currentSuit]}. Computer's turn.`;
+            updateStatusMessage();
         }
 
         /** Handles the computer's turn */
@@ -446,16 +431,15 @@
             if (playerTurn) return;
             statusDiv.textContent = "Computer's turn...";
             let validCards = computerHand.filter(card => canDiscard(card));
-            console.log("Computer valid cards:", validCards);
             if (validCards.length > 0) {
                 const cardToDiscard = validCards[Math.floor(Math.random() * validCards.length)];
                 computerHand.splice(computerHand.indexOf(cardToDiscard), 1);
                 discardPile.push(cardToDiscard);
                 if (rankMap[cardToDiscard.rank] === '8') {
-                    currentSuit = Math.floor(Math.random() * 4); // Set as numeric index (0-3)
+                    currentSuit = Math.floor(Math.random() * 4); // Random suit (0-3)
                     statusDiv.textContent = `Computer played an 8 and chose ${suitMap[currentSuit]}. Your turn.`;
                 } else {
-                    currentSuit = cardToDiscard.suit; // Use numeric index (0-3)
+                    currentSuit = cardToDiscard.suit; // Numeric index (0-3)
                     statusDiv.textContent = `Computer played ${rankMap[cardToDiscard.rank]}${suitMap[cardToDiscard.suit]}. Your turn.`;
                 }
                 displayHands();
@@ -470,10 +454,12 @@
                     computerHand.push(newCard);
                     canPlay = canDiscard(newCard);
                     displayHands();
-                    statusDiv.textContent = canPlay ? "Computer drew a playable card!" : "Computer drew a card.";
-                    if (!canPlay) {
-                        await wait(500);
+                    if (canPlay) {
+                        statusDiv.textContent = "Computer drew a playable card!";
+                    } else {
+                        statusDiv.textContent = "Computer drew a card.";
                     }
+                    await wait(500);
                 }
                 if (!canPlay) {
                     statusDiv.textContent = "Computer couldn’t play. Your turn.";
@@ -485,6 +471,7 @@
                 statusDiv.textContent = "Computer passes. Your turn.";
                 playerTurn = true;
             }
+            updateStatusMessage();
         }
 
         /** Checks for a win condition */
@@ -525,19 +512,31 @@
 
         /** Starts a new game */
         function startNewGame() {
-            console.log("Starting new game...");
             createDeck();
-            console.log("Deck created:", deck.length, "cards");
             shuffle(deck);
-            console.log("Deck shuffled");
             dealCards();
-            console.log("Cards dealt. Player hand:", playerHand, "Computer hand:", computerHand, "Discard pile:", discardPile);
             displayHands();
-            console.log("Hands displayed");
-            statusDiv.textContent = 'Your turn';
             playerTurn = true;
             selectedCardIndex = null;
             enableButtons();
+            updateStatusMessage();
+        }
+
+        /** Updates the status message based on the current game state */
+        function updateStatusMessage() {
+            if (discardPile.length === 0) {
+                statusDiv.textContent = "Game starting...";
+                return;
+            }
+            const topCard = discardPile[discardPile.length - 1];
+            const isEight = rankMap[topCard.rank] === '8';
+            if (isEight) {
+                statusDiv.textContent = `Match ${suitMap[currentSuit]} or play an 8.`;
+            } else {
+                const suit = suitMap[topCard.suit];
+                const rank = rankMap[topCard.rank];
+                statusDiv.textContent = `Match ${suit} or ${rank}, or play an 8.`;
+            }
         }
     </script>
 </body>
