@@ -58,7 +58,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             cursor: pointer;
             position: relative;
-            object-fit: contain; /* Prevents stretching */
+            object-fit: contain; /* Prevents stretching, maintains aspect ratio */
         }
         #computerHand .card:first-child, #playerHand .card:first-child {
             margin-left: 0;
@@ -71,7 +71,7 @@
         }
         #discardPile .card {
             width: 65px; /* Consistent with hand cards */
-            height: 100px; /* Maintains aspect ratio */
+            height: 100px; /* Maintains 65:100 aspect ratio */
             margin: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             position: relative;
@@ -269,7 +269,7 @@
         let playerHand = [];
         let computerHand = [];
         let discardPile = [];
-        let currentSuit = null;
+        let currentSuit = null; // Numeric index (0-3) for suitMap
         let playerTurn = true;
         let selectedCardIndex = null;
 
@@ -293,10 +293,12 @@
         playAgainWin.addEventListener('click', restartGame);
         playAgainLose.addEventListener('click', restartGame);
 
+        /** Waits for a specified time (helper for delays) */
         function wait(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
+        /** Creates a new 52-card deck */
         function createDeck() {
             deck = [];
             for (let rank = 0; rank < 13; rank++) {
@@ -306,6 +308,7 @@
             }
         }
 
+        /** Shuffles an array using Fisher-Yates algorithm */
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -313,6 +316,7 @@
             }
         }
 
+        /** Deals initial cards to player and computer */
         function dealCards() {
             if (deck.length < 11) {
                 console.error("Not enough cards in deck to deal!");
@@ -322,24 +326,25 @@
             computerHand = deck.slice(5, 10);
             deck = deck.slice(10);
             discardPile = [deck.pop()];
-            currentSuit = discardPile[0].suit;
+            currentSuit = discardPile[0].suit; // Numeric index (0-3)
             if (rankMap[discardPile[0].rank] === 'Eight') {
-                currentSuit = Math.floor(Math.random() * 4);
+                currentSuit = Math.floor(Math.random() * 4); // Random suit if first card is 8
             }
             updateStatusMessage();
         }
 
+        /** Updates the UI with current hands and discard pile */
         function displayHands() {
             playerHandDiv.innerHTML = '';
             playerHand.forEach((card, index) => {
                 const img = document.createElement('img');
                 const rankAbbr = rankToAbbr[rankMap[card.rank]];
                 const suitAbbr = suitMap[card.suit][0];
-                img.src = cardURLs[`${rankAbbr}${suitAbbr}`] || cardURLs["back"];
+                img.src = cardURLs[`${rankAbbr}${suitAbbr}`] || cardURLs["back"]; // Fallback to back if URL is invalid
                 img.className = 'card';
                 if (index === selectedCardIndex) img.classList.add('selected');
                 img.addEventListener('click', () => selectCard(index));
-                img.onerror = () => img.src = cardURLs["back"];
+                img.onerror = () => img.src = cardURLs["back"]; // Fallback if image fails to load
                 playerHandDiv.appendChild(img);
             });
 
@@ -348,7 +353,7 @@
                 const img = document.createElement('img');
                 img.src = cardURLs["back"];
                 img.className = 'card';
-                img.onerror = () => img.src = cardURLs["back"];
+                img.onerror = () => img.src = cardURLs["back"]; // Ensure back image loads
                 computerHandDiv.appendChild(img);
             });
 
@@ -358,19 +363,21 @@
                 const topCard = discardPile[discardPile.length - 1];
                 const rankAbbr = rankToAbbr[rankMap[topCard.rank]];
                 const suitAbbr = suitMap[topCard.suit][0];
-                img.src = cardURLs[`${rankAbbr}${suitAbbr}`] || cardURLs["back"];
+                img.src = cardURLs[`${rankAbbr}${suitAbbr}`] || cardURLs["back"]; // Fallback to back if URL is invalid
                 img.className = 'card';
-                img.onerror = () => img.src = cardURLs["back"];
+                img.onerror = () => img.src = cardURLs["back"]; // Fallback if image fails to load
                 discardPileDiv.appendChild(img);
             }
         }
 
+        /** Selects a card in the player's hand */
         function selectCard(index) {
             if (!playerTurn) return;
             selectedCardIndex = index;
             displayHands();
         }
 
+        /** Draws cards from the deck until playable or deck is empty */
         async function drawCard() {
             if (!playerTurn) return;
             if (deck.length === 0) {
@@ -402,6 +409,7 @@
             }
         }
 
+        /** Discards the player's selected card if valid */
         function discardSelectedCard() {
             if (!playerTurn || selectedCardIndex === null) return;
             const card = playerHand[selectedCardIndex];
@@ -410,7 +418,7 @@
                 if (rankMap[card.rank] === 'Eight') {
                     callSuit();
                 } else {
-                    currentSuit = card.suit;
+                    currentSuit = card.suit; // Numeric index (0-3)
                 }
                 displayHands();
                 checkWin();
@@ -424,6 +432,7 @@
             updateStatusMessage();
         }
 
+        /** Checks if a card can be discarded */
         function canDiscard(card) {
             const topCard = discardPile[discardPile.length - 1];
             const isEight = rankMap[card.rank] === 'Eight';
@@ -432,12 +441,14 @@
             return isEight || matchesSuit || matchesRank;
         }
 
+        /** Assigns a new suit when an Eight is played */
         function callSuit() {
-            currentSuit = Math.floor(Math.random() * 4);
+            currentSuit = Math.floor(Math.random() * 4); // Random suit (0-3)
             statusDiv.textContent = `You played an Eight and chose ${suitMap[currentSuit]}. Computer's turn.`;
             updateStatusMessage();
         }
 
+        /** Handles the computer's turn */
         async function computerTurn() {
             if (playerTurn) return;
             let validCards = computerHand.filter(card => canDiscard(card));
@@ -446,9 +457,9 @@
                 computerHand.splice(computerHand.indexOf(cardToDiscard), 1);
                 discardPile.push(cardToDiscard);
                 if (rankMap[cardToDiscard.rank] === 'Eight') {
-                    currentSuit = Math.floor(Math.random() * 4);
+                    currentSuit = Math.floor(Math.random() * 4); // Random suit (0-3)
                 } else {
-                    currentSuit = cardToDiscard.suit;
+                    currentSuit = cardToDiscard.suit; // Numeric index (0-3)
                 }
                 displayHands();
                 checkWin();
@@ -475,6 +486,7 @@
             updateStatusMessage();
         }
 
+        /** Checks for a win condition */
         function checkWin() {
             if (playerHand.length === 0) {
                 winScreen.style.display = 'flex';
@@ -487,22 +499,26 @@
             }
         }
 
+        /** Disables interaction buttons on game end */
         function disableButtons() {
             drawCardButton.disabled = true;
             discardButton.disabled = true;
         }
 
+        /** Enables interaction buttons at game start */
         function enableButtons() {
             drawCardButton.disabled = false;
             discardButton.disabled = false;
         }
 
+        /** Starts the game after welcome screen */
         function startGame() {
             welcomeScreen.style.display = 'none';
             document.getElementById('gameContainer').classList.remove('blurred');
             startNewGame();
         }
 
+        /** Restarts the game after win/lose */
         function restartGame() {
             winScreen.style.display = 'none';
             loseScreen.style.display = 'none';
@@ -510,6 +526,7 @@
             startNewGame();
         }
 
+        /** Starts a new game */
         function startNewGame() {
             createDeck();
             shuffle(deck);
@@ -521,6 +538,7 @@
             updateStatusMessage();
         }
 
+        /** Updates the status message based on the current game state */
         function updateStatusMessage() {
             if (discardPile.length === 0) {
                 statusDiv.textContent = "Game starting...";
