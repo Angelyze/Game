@@ -25,7 +25,7 @@
                 "player"
                 "controls"
                 "status";
-            grid-template-rows: 260px 1fr 260px auto auto; /* Adjusted for 110px card height + padding */
+            grid-template-rows: 235px 1fr 235px auto auto;
             width: 500px;
             height: 700px;
             background-image: url('https://angelyze.github.io/Cards/Background.jpg');
@@ -43,17 +43,17 @@
             filter: blur(0px);
         }
         #computerHand, #playerHand {
-            max-height: 260px; /* Adjusted for 110px card height + padding */
+            max-height: 235px;
             overflow-y: auto;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            padding: 20px 10px 0 10px; /* Removed bottom padding to eliminate extra space */
+            padding: 20px 10px 10px 10px;
             position: relative;
         }
         #computerHand .card, #playerHand .card {
-            width: 70px; /* Base width */
-            height: 110px; /* Base height, maintaining 70:110 aspect ratio */
+            width: 65px; /* Base width */
+            height: 100px; /* Base height, maintaining 65:100 aspect ratio */
             margin-left: -20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             cursor: pointer;
@@ -68,11 +68,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 0; /* Removed padding to prevent extra space */
         }
         #discardPile .card {
-            width: 70px; /* Consistent with hand cards */
-            height: 110px; /* Maintains 70:110 aspect ratio */
+            width: 65px; /* Consistent with hand cards */
+            height: 100px; /* Maintains 65:100 aspect ratio */
             margin: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             position: relative;
@@ -146,16 +145,16 @@
                 height: 100vh;
                 border: none;
                 border-radius: 0;
-                grid-template-rows: 37.14vh 1fr 37.14vh auto auto; /* 260/700 ≈ 37.14% of viewport height */
+                grid-template-rows: 33.57vh 1fr 33.57vh auto auto; /* 235/700 ≈ 33.57% of viewport height */
                 padding: 2vw;
             }
             #computerHand, #playerHand {
-                max-height: 37.14vh; /* Matches core 260px scaled proportionally */
-                padding: 4vw 2vw 0 2vw; /* Removed bottom padding to eliminate extra space */
+                max-height: 33.57vh; /* Matches core 235px scaled proportionally */
+                padding: 4vw 2vw 2vw 2vw;
             }
             #computerHand .card, #playerHand .card {
                 width: 12vw; /* Scales with viewport width */
-                height: calc(12vw * 1.571); /* Maintains 70:110 ratio (110/70 ≈ 1.571) */
+                height: calc(12vw * 1.538); /* Maintains 65:100 ratio (100/65 ≈ 1.538) */
                 margin-left: -4vw;
                 object-fit: contain; /* Ensures no stretching */
             }
@@ -164,7 +163,7 @@
             }
             #discardPile .card {
                 width: 12vw;
-                height: calc(12vw * 1.571); /* Maintains 70:110 ratio */
+                height: calc(12vw * 1.538); /* Maintains 65:100 ratio */
                 object-fit: contain; /* Ensures no stretching */
             }
             .selected {
