@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wasteland Candy Crush</title>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #2a2a2a; }
+        canvas { border: 2px solid #666; background: #3c3c3c; }
+        #ui { color: #fff; font-family: Arial, sans-serif; font-size: 20px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div id="ui">Score: 0</div>
+    <canvas id="gameCanvas" width="360" height="360"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const ui = document.getElementById('ui');
+
+        // Game settings
+        const GRID_SIZE = 6;
+        const TILE_SIZE = 60;
+        const CANDY_TYPES = [
+            '#ff5555', // Red (Glowing Gum)
+            '#55ff55', // Green (Toxic Taffy)
+            '#5555ff', // Blue (Rad Rocks)
+            '#ffff55', // Yellow (Mutant Mints)
+            '#ff55ff'  // Purple (Irradiated Drops)
+        ];
+
+        // Game state
+        let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0).map(() => Math.floor(Math.random() * CANDY_TYPES.length)));
+        let score = 0;
+        let selected = null;
+        let gameOver = false;
+
+        // Draw candy
+        function drawCandy(x, y, type) {
+            ctx.fillStyle = CANDY_TYPES[type];
+            ctx.beginPath();
+            ctx.arc(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE / 2 - 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw grid
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    drawCandy(x, y, grid[y][x]);
+                }
+            }
+            if (selected) {
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(selected.x * TILE_SIZE, selected.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+
+        // Check for matches
+        function findMatches() {
+            let matches = [];
+
+            // Horizontal
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE - 2; x++) {
+                    if (grid[y][x] === grid[y][x + 1] && grid[y][x] === grid[y][x + 2]) {
+                        matches.push({ x: x, y: y }, { x: x + 1, y: y }, { x: x + 2, y: y });
+                    }
+                }
+            }
+
+            // Vertical
+            for (let x = 0; x < GRID_SIZE; x++) {
+                for (let y = 0; y < GRID_SIZE - 2; y++) {
+                    if (grid[y][x] === grid[y + 1][x] && grid[y][x] === grid[y + 2][x]) {
+                        matches.push({ x: x, y: y }, { x: x, y: y + 1 }, { x: x, y: y + 2 });
+                    }
+                }
+            }
+
+            return matches;
+        }
+
+        // Remove matches and drop new candies
+        function clearMatches() {
+            let matches = findMatches();
+            if (matches.length === 0) return false;
+
+            matches.forEach(match => {
+                grid[match.y][match.x] = -1; // Mark for removal
+                score += 10;
+            });
+
+            // Drop candies
+            for (let x = 0; x < GRID_SIZE; x++) {
+                let column = [];
+                for (let y = GRID_SIZE - 1; y >= 0; y--) {
+                    if (grid[y][x] !== -1) column.push(grid[y][x]);
+                }
+                while (column.length < GRID_SIZE) column.unshift(Math.floor(Math.random() * CANDY_TYPES.length));
+                for (let y = 0; y < GRID_SIZE; y++) grid[y][x] = column[y];
+            }
+
+            return true;
+        }
+
+        // Check if move is valid (adjacent)
+        function isAdjacent(pos1, pos2) {
+            return (Math.abs(pos1.x - pos2.x) === 1 && pos1.y === pos2.y) ||
+                   (Math.abs(pos1.y - pos2.y) === 1 && pos1.x === pos2.x);
+        }
+
+        // Swap candies
+        function swapCandies(pos1, pos2) {
+            let temp = grid[pos1.y][pos1.x];
+            grid[pos1.y][pos1.x] = grid[pos2.y][pos2.x];
+            grid[pos2.y][pos2.x] = temp;
+
+            let hasMatch = clearMatches();
+            if (!hasMatch) { // Undo if no match
+                temp = grid[pos1.y][pos1.x];
+                grid[pos1.y][pos1.x] = grid[pos2.y][pos2.x];
+                grid[pos2.y][pos2.x] = temp;
+            }
+        }
+
+        // Check for possible moves
+        function hasMoves() {
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    let current = grid[y][x];
+                    if (x < GRID_SIZE - 1 && grid[y][x + 1] !== current) {
+                        [grid[y][x], grid[y][x + 1]] = [grid[y][x + 1], grid[y][x]];
+                        if (findMatches().length > 0) {
+                            [grid[y][x], grid[y][x + 1]] = [grid[y][x + 1], grid[y][x]];
+                            return true;
+                        }
+                        [grid[y][x], grid[y][x + 1]] = [grid[y][x + 1], grid[y][x]];
+                    }
+                    if (y < GRID_SIZE - 1 && grid[y + 1][x] !== current) {
+                        [grid[y][x], grid[y + 1][x]] = [grid[y + 1][x], grid[y][x]];
+                        if (findMatches().length > 0) {
+                            [grid[y][x], grid[y + 1][x]] = [grid[y + 1][x], grid[y][x]];
+                            return true;
+                        }
+                        [grid[y][x], grid[y + 1][x]] = [grid[y + 1][x], grid[y][x]];
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Click handling
+        canvas.addEventListener('click', (e) => {
+            if (gameOver) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+
+            if (!selected) {
+                selected = { x, y };
+            } else if (isAdjacent(selected, { x, y })) {
+                swapCandies(selected, { x, y });
+                selected = null;
+                if (!hasMoves()) {
+                    gameOver = true;
+                    alert(`Game Over! Score: ${score}\nReload to retry.`);
+                }
+            } else {
+                selected = { x, y };
+            }
+            drawGrid();
+            ui.textContent = `Score: ${score}`;
+        });
+
+        // Game loop
+        function gameLoop() {
+            clearMatches(); // Clear any initial matches
+            drawGrid();
+            ui.textContent = `Score: ${score}`;
+            if (!gameOver) requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        gameLoop();
+    </script>
+</body>
+</html>
