@@ -55,6 +55,7 @@
         let selected = null;
         let gameOver = false;
         let lastFrame = performance.now();
+        let animations = []; // For transition effects
 
         // Initialize grid
         function initGrid() {
@@ -63,29 +64,60 @@
         }
         initGrid();
 
-        // Draw candy
-        function drawCandy(x, y, type) {
-            ctx.fillStyle = CANDY_TYPES[type];
-            ctx.beginPath();
-            ctx.arc(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE / 2 - 10, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.beginPath();
-            ctx.arc(x * TILE_SIZE + TILE_SIZE / 2 - 10, y * TILE_SIZE + TILE_SIZE / 2 - 10, 5, 0, Math.PI * 2);
-            ctx.fill();
+        // Candy object with position and animation state
+        class Candy {
+            constructor(x, y, type) {
+                this.x = x * TILE_SIZE + TILE_SIZE / 2;
+                this.y = y * TILE_SIZE + TILE_SIZE / 2;
+                this.targetX = this.x;
+                this.targetY = this.y;
+                this.type = type;
+                this.size = TILE_SIZE / 2 - 10;
+                this.opacity = 1;
+                this.fallingSpeed = 0;
+                this.isClearing = false;
+            }
+
+            update(delta) {
+                if (this.isClearing) {
+                    this.opacity -= delta * 2;
+                    if (this.opacity <= 0) return false;
+                } else if (this.y < this.targetY) {
+                    this.fallingSpeed += 200 * delta; // Gravity-like fall
+                    this.y += this.fallingSpeed * delta;
+                    if (this.y >= this.targetY) this.y = this.targetY;
+                }
+                return true;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = CANDY_TYPES[this.type];
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x - 10, this.y - 10, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
         }
 
-        // Draw grid
+        // Draw grid with animations
         function drawGrid() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE; x++) {
                     ctx.fillStyle = '#333';
                     ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE - 2, TILE_SIZE - 2);
-                    if (grid[y][x] !== -1) drawCandy(x, y, grid[y][x]);
+                    if (grid[y][x] !== -1) {
+                        const candy = grid[y][x];
+                        if (candy instanceof Candy) candy.draw();
+                    }
                 }
             }
             if (selected) {
@@ -95,12 +127,22 @@
             }
         }
 
+        // Update animations
+        function updateAnimations(delta) {
+            animations = animations.filter(anim => {
+                anim.update(delta);
+                return anim.exists;
+            });
+            if (animations.length === 0) return false;
+            return true;
+        }
+
         // Find matches
         function findMatches() {
             let matches = new Set();
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE - 2; x++) {
-                    if (grid[y][x] >= 0 && grid[y][x] === grid[y][x + 1] && grid[y][x] === grid[y][x + 2]) {
+                    if (grid[y][x] instanceof Candy && grid[y][x].type === grid[y][x + 1]?.type && grid[y][x].type === grid[y][x + 2]?.type) {
                         matches.add(`${x},${y}`);
                         matches.add(`${x + 1},${y}`);
                         matches.add(`${x + 2},${y}`);
@@ -109,7 +151,7 @@
             }
             for (let x = 0; x < GRID_SIZE; x++) {
                 for (let y = 0; y < GRID_SIZE - 2; y++) {
-                    if (grid[y][x] >= 0 && grid[y][x] === grid[y + 1][x] && grid[y][x] === grid[y + 2][x]) {
+                    if (grid[y][x] instanceof Candy && grid[y][x].type === grid[y + 1][x]?.type && grid[y][x].type === grid[y + 2][x]?.type) {
                         matches.add(`${x},${y}`);
                         matches.add(`${x},${y + 1}`);
                         matches.add(`${x},${y + 2}`);
@@ -128,30 +170,44 @@
             if (matches.length === 0) return false;
             let comboSize = matches.length;
             score += comboSize >= 5 ? 30 : comboSize === 4 ? 20 : 10;
-            matches.forEach(match => grid[match.y][match.x] = -1);
+            matches.forEach(match => {
+                if (grid[match.y][match.x] instanceof Candy) {
+                    grid[match.y][match.x].isClearing = true;
+                    animations.push(grid[match.y][match.x]);
+                    grid[match.y][match.x] = -1;
+                }
+            });
             return true;
         }
 
-        // Drop candies (fixed to only fill gaps)
+        // Drop candies with animation
         function dropCandies() {
             for (let x = 0; x < GRID_SIZE; x++) {
-                // Shift candies down
-                for (let y = GRID_SIZE - 1; y >= 0; y--) {
-                    if (grid[y][x] === -1) {
-                        for (let above = y - 1; above >= 0; above--) {
-                            if (grid[above][x] !== -1) {
-                                grid[y][x] = grid[above][x];
-                                grid[above][x] = -1;
-                                break;
-                            }
-                        }
+                let emptySpots = [];
+                let candies = [];
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    if (grid[y][x] === -1) emptySpots.push(y);
+                    else if (grid[y][x] instanceof Candy) candies.push({ y, candy: grid[y][x] });
+                }
+
+                // Shift existing candies down
+                candies.sort((a, b) => a.y - b.y); // Sort by y-position
+                for (let i = 0; i < candies.length; i++) {
+                    let newY = GRID_SIZE - 1 - i;
+                    if (emptySpots.includes(newY)) {
+                        candies[i].candy.targetY = newY * TILE_SIZE + TILE_SIZE / 2;
+                        grid[newY][x] = candies[i].candy;
+                        grid[candies[i].y][x] = -1;
                     }
                 }
-                // Fill empty spaces at the top
-                for (let y = 0; y < GRID_SIZE; y++) {
-                    if (grid[y][x] === -1) {
-                        grid[y][x] = Math.floor(Math.random() * (3 + Math.min(level, 3)));
-                    }
+
+                // Fill empty spots at the top with new candies
+                for (let y of emptySpots) {
+                    const newCandy = new Candy(x, y, Math.floor(Math.random() * (3 + Math.min(level, 3))));
+                    newCandy.targetY = y * TILE_SIZE + TILE_SIZE / 2;
+                    newCandy.y = -TILE_SIZE; // Start above canvas
+                    grid[y][x] = newCandy;
+                    animations.push(newCandy);
                 }
             }
         }
@@ -162,16 +218,33 @@
                    (Math.abs(pos1.y - pos2.y) === 1 && pos1.x === pos2.x);
         }
 
-        // Swap candies
+        // Swap candies with animation
         function swapCandies(pos1, pos2) {
-            const temp = grid[pos1.y][pos1.x];
-            grid[pos1.y][pos1.x] = grid[pos2.y][pos2.x];
-            grid[pos2.y][pos2.x] = temp;
+            const candy1 = grid[pos1.y][pos1.x];
+            const candy2 = grid[pos2.y][pos2.x];
+            if (!(candy1 instanceof Candy) || !(candy2 instanceof Candy)) return false;
+
+            // Swap positions
+            grid[pos1.y][pos1.x] = candy2;
+            grid[pos2.y][pos2.x] = candy1;
+
+            // Animate swap
+            candy1.targetX = pos2.x * TILE_SIZE + TILE_SIZE / 2;
+            candy1.targetY = pos2.y * TILE_SIZE + TILE_SIZE / 2;
+            candy2.targetX = pos1.x * TILE_SIZE + TILE_SIZE / 2;
+            candy2.targetY = pos1.y * TILE_SIZE + TILE_SIZE / 2;
+            animations.push(candy1, candy2);
 
             const hasMatch = findMatches().length > 0;
             if (!hasMatch) {
-                grid[pos2.y][pos2.x] = grid[pos1.y][pos1.x];
-                grid[pos1.y][pos1.x] = temp;
+                // Undo swap if no match
+                grid[pos2.y][pos2.x] = candy2;
+                grid[pos1.y][pos1.x] = candy1;
+                candy1.targetX = pos1.x * TILE_SIZE + TILE_SIZE / 2;
+                candy1.targetY = pos1.y * TILE_SIZE + TILE_SIZE / 2;
+                candy2.targetX = pos2.x * TILE_SIZE + TILE_SIZE / 2;
+                candy2.targetY = pos2.y * TILE_SIZE + TILE_SIZE / 2;
+                animations.push(candy1, candy2);
             }
             return hasMatch;
         }
@@ -180,21 +253,23 @@
         function hasMoves() {
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE; x++) {
-                    if (x < GRID_SIZE - 1) {
-                        [grid[y][x], grid[y][x + 1]] = [grid[y][x + 1], grid[y][x]];
-                        if (findMatches().length > 0) {
+                    if (grid[y][x] instanceof Candy) {
+                        if (x < GRID_SIZE - 1 && grid[y][x + 1] instanceof Candy) {
                             [grid[y][x], grid[y][x + 1]] = [grid[y][x + 1], grid[y][x]];
-                            return true;
+                            if (findMatches().length > 0) {
+                                [grid[y][x], grid[y][x + 1]] = [grid[y][x + 1], grid[y][x]];
+                                return true;
+                            }
+                            [grid[y][x], grid[y][x + 1]] = [grid[y][x + 1], grid[y][x]];
                         }
-                        [grid[y][x], grid[y][x + 1]] = [grid[y][x + 1], grid[y][x]];
-                    }
-                    if (y < GRID_SIZE - 1) {
-                        [grid[y][x], grid[y + 1][x]] = [grid[y + 1][x], grid[y][x]];
-                        if (findMatches().length > 0) {
+                        if (y < GRID_SIZE - 1 && grid[y + 1][x] instanceof Candy) {
                             [grid[y][x], grid[y + 1][x]] = [grid[y + 1][x], grid[y][x]];
-                            return true;
+                            if (findMatches().length > 0) {
+                                [grid[y][x], grid[y + 1][x]] = [grid[y + 1][x], grid[y][x]];
+                                return true;
+                            }
+                            [grid[y][x], grid[y + 1][x]] = [grid[y + 1][x], grid[y][x]];
                         }
-                        [grid[y][x], grid[y + 1][x]] = [grid[y + 1][x], grid[y][x]];
                     }
                 }
             }
@@ -236,9 +311,14 @@
                 selected = { x, y };
             } else if (isAdjacent(selected, { x, y })) {
                 if (swapCandies(selected, { x, y })) {
-                    clearMatches();
-                    dropCandies();
-                    while (clearMatches()) dropCandies(); // Handle cascades
+                    let hasMatches = true;
+                    while (hasMatches) {
+                        hasMatches = clearMatches();
+                        if (hasMatches) {
+                            dropCandies();
+                            drawGrid(); // Update visuals during cascades
+                        }
+                    }
                     if (score >= goal) nextLevel();
                     if (!hasMoves()) {
                         gameOver = true;
@@ -263,7 +343,10 @@
                 alert(`Time's Up! Score: ${score}\nReload to retry.`);
             }
 
+            // Update animations
+            const hasAnimations = updateAnimations(delta);
             drawGrid();
+
             scoreUI.textContent = `Score: ${score}`;
             levelUI.textContent = `Level: ${level}`;
             timeUI.textContent = `Time: ${Math.max(0, Math.floor(timeLeft))}`;
