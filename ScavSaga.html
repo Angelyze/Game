@@ -43,7 +43,7 @@
             '#5555ff', // Rad Rocks
             '#ffff55', // Mutant Mints
             '#ff55ff', // Irradiated Drops
-            '#00ffff'  // Cyan (added for higher levels)
+            '#00ffff'  // Cyan (higher levels)
         ];
 
         // Game state
@@ -51,7 +51,7 @@
         let score = 0;
         let level = 1;
         let timeLeft = 60;
-        let goal = 200; // Starting goal
+        let goal = 200;
         let selected = null;
         let gameOver = false;
         let lastFrame = performance.now();
@@ -127,7 +127,7 @@
             let matches = findMatches();
             if (matches.length === 0) return false;
             let comboSize = matches.length;
-            score += comboSize >= 5 ? 30 : comboSize === 4 ? 20 : 10; // 3=10, 4=20, 5+=30
+            score += comboSize >= 5 ? 30 : comboSize === 4 ? 20 : 10;
             matches.forEach(match => grid[match.y][match.x] = -1);
             dropCandies();
             return true;
@@ -161,8 +161,6 @@
             if (!hasMatch) {
                 grid[pos2.y][pos2.x] = grid[pos1.y][pos1.x];
                 grid[pos1.y][pos1.x] = temp;
-            } else {
-                clearMatches();
             }
             return hasMatch;
         }
@@ -201,8 +199,19 @@
             }
             level++;
             timeLeft = 60;
-            goal = 200 + 100 * level; // Adjusted goal scaling
+            goal = 200 + 100 * level;
+            initGrid(); // Reset grid only on level-up
+        }
+
+        // Reset game
+        function resetGame() {
+            score = 0;
+            level = 1;
+            timeLeft = 60;
+            goal = 200;
+            gameOver = false;
             initGrid();
+            requestAnimationFrame(gameLoop);
         }
 
         // Click handling
@@ -216,11 +225,11 @@
                 selected = { x, y };
             } else if (isAdjacent(selected, { x, y })) {
                 if (swapCandies(selected, { x, y })) {
-                    while (clearMatches()); // Clear all cascading matches
+                    while (clearMatches()); // Handle cascades
                     if (score >= goal) nextLevel();
                     if (!hasMoves()) {
                         gameOver = true;
-                        alert(`Game Over! No moves left. Score: ${score}`);
+                        alert(`Game Over! No moves left. Score: ${score}\nReload to retry.`);
                     }
                 }
                 selected = null;
@@ -238,7 +247,7 @@
             timeLeft -= delta;
             if (timeLeft <= 0) {
                 gameOver = true;
-                alert(`Time's Up! Score: ${score}`);
+                alert(`Time's Up! Score: ${score}\nReload to retry.`);
             }
 
             drawGrid();
