@@ -48,8 +48,8 @@
         }
         #soundToggle {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 10px; /* Same vertical level as HUD */
+            left: calc(50% + 70px); /* Offset to the right of HUD, adjust as needed */
             width: 30px;
             height: 30px;
             cursor: pointer;
@@ -57,14 +57,16 @@
         }
         #gameHUD {
             position: absolute;
-            top: 15px;
-            left: 10px;
+            top: 10px; /* Same vertical level as sound toggle */
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
             color: #ff9000;
             font-family: Arial, sans-serif;
             font-weight: bold;
             font-size: 20px;
             text-shadow: 0 0 10px rgba(255, 144, 0, 0.3);
             z-index: 1000;
+            text-align: center; /* Center the text within the div */
         }
     </style>
 </head>
@@ -212,10 +214,10 @@
         const PLAYER_HEIGHT = 50;
         const BOMB_WIDTH = 20;
         const BOMB_HEIGHT = 40;
-        const BIG_BOMB_WIDTH = 30;  // 150% of 20
-        const BIG_BOMB_HEIGHT = 60; // 150% of 40
+        const BIG_BOMB_WIDTH = 30;
+        const BIG_BOMB_HEIGHT = 60;
         const EXPLOSION_RADIUS = 40;
-        const BIG_EXPLOSION_RADIUS = 80; // Double
+        const BIG_EXPLOSION_RADIUS = 80;
         const LEVEL_DURATION = 60;
 
         let gameStarted = false;
@@ -321,7 +323,7 @@
             bigBombs.push({
                 x: x,
                 y: -BIG_BOMB_HEIGHT,
-                speed: (3 + level) * 1.33 // 133% of regular bomb speed
+                speed: (3 + level) * 1.33
             });
             bigBombSpawnedThisLevel = true;
         }
