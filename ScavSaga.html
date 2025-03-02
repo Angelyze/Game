@@ -21,7 +21,7 @@
         <span id="score">Score: 0</span>
         <span id="level">Level: 1</span>
         <span id="time">Time: 60</span>
-        <span id="goal">Goal: 100</span>
+        <span id="goal">Goal: 200</span>
     </div>
     <div id="gameContainer">
         <canvas id="gameCanvas" width="360" height="360"></canvas>
@@ -51,7 +51,7 @@
         let score = 0;
         let level = 1;
         let timeLeft = 60;
-        let goal = 100;
+        let goal = 200; // Starting goal
         let selected = null;
         let gameOver = false;
         let lastFrame = performance.now();
@@ -59,7 +59,7 @@
         // Initialize grid
         function initGrid() {
             grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0).map(() => Math.floor(Math.random() * (3 + Math.min(level, 3)))));
-            while (findMatches().length > 0) clearMatches(); // Ensure no initial matches
+            while (findMatches().length > 0) clearMatches(); // No initial matches
         }
         initGrid();
 
@@ -71,11 +71,11 @@
             ctx.fill();
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
-            ctx.stroke(); // Add outline for pop
+            ctx.stroke();
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.beginPath();
             ctx.arc(x * TILE_SIZE + TILE_SIZE / 2 - 10, y * TILE_SIZE + TILE_SIZE / 2 - 10, 5, 0, Math.PI * 2);
-            ctx.fill(); // Shine effect
+            ctx.fill();
         }
 
         // Draw grid
@@ -84,7 +84,7 @@
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE; x++) {
                     ctx.fillStyle = '#333';
-                    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE - 2, TILE_SIZE - 2); // Grid cells
+                    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE - 2, TILE_SIZE - 2);
                     if (grid[y][x] !== -1) drawCandy(x, y, grid[y][x]);
                 }
             }
@@ -97,34 +97,38 @@
 
         // Find matches
         function findMatches() {
-            let matches = [];
+            let matches = new Set();
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE - 2; x++) {
                     if (grid[y][x] >= 0 && grid[y][x] === grid[y][x + 1] && grid[y][x] === grid[y][x + 2]) {
-                        matches.push({ x: x, y: y }, { x: x + 1, y: y }, { x: x + 2, y: y });
+                        matches.add(`${x},${y}`);
+                        matches.add(`${x + 1},${y}`);
+                        matches.add(`${x + 2},${y}`);
                     }
                 }
             }
             for (let x = 0; x < GRID_SIZE; x++) {
                 for (let y = 0; y < GRID_SIZE - 2; y++) {
                     if (grid[y][x] >= 0 && grid[y][x] === grid[y + 1][x] && grid[y][x] === grid[y + 2][x]) {
-                        matches.push({ x: x, y: y }, { x: x, y: y + 1 }, { x: x, y: y + 2 });
+                        matches.add(`${x},${y}`);
+                        matches.add(`${x},${y + 1}`);
+                        matches.add(`${x},${y + 2}`);
                     }
                 }
             }
-            return matches;
+            return Array.from(matches).map(pos => {
+                const [x, y] = pos.split(',').map(Number);
+                return { x, y };
+            });
         }
 
-        // Clear matches
+        // Clear matches and score
         function clearMatches() {
             let matches = findMatches();
             if (matches.length === 0) return false;
-            matches.forEach(match => {
-                if (grid[match.y][match.x] !== -1) {
-                    grid[match.y][match.x] = -1;
-                    score += 10 * level; // Scale score with level
-                }
-            });
+            let comboSize = matches.length;
+            score += comboSize >= 5 ? 30 : comboSize === 4 ? 20 : 10; // 3=10, 4=20, 5+=30
+            matches.forEach(match => grid[match.y][match.x] = -1);
             dropCandies();
             return true;
         }
@@ -156,7 +160,7 @@
             const hasMatch = findMatches().length > 0;
             if (!hasMatch) {
                 grid[pos2.y][pos2.x] = grid[pos1.y][pos1.x];
-                grid[pos1.y][pos1.x] = temp; // Undo swap
+                grid[pos1.y][pos1.x] = temp;
             } else {
                 clearMatches();
             }
@@ -197,7 +201,7 @@
             }
             level++;
             timeLeft = 60;
-            goal += 50 * level; // Increase goal each level
+            goal = 200 + 100 * level; // Adjusted goal scaling
             initGrid();
         }
 
@@ -212,6 +216,7 @@
                 selected = { x, y };
             } else if (isAdjacent(selected, { x, y })) {
                 if (swapCandies(selected, { x, y })) {
+                    while (clearMatches()); // Clear all cascading matches
                     if (score >= goal) nextLevel();
                     if (!hasMoves()) {
                         gameOver = true;
