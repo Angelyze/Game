@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Great War</title>
     <style>
-        /* CSS remains unchanged */
         * {
             margin: 0;
             padding: 0;
@@ -77,11 +76,9 @@
     <div id="flashOverlay"></div>
 
     <script>
-        /* Part 2: JavaScript Functionality - Game Setup and Logic */
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
         
-        // Load images
         let bombImage = new Image();
         bombImage.src = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhTgyKep7b9Vp6vmw_CYugteVhXXFGxXb5396Nc8QwkpugB3j4yT96zH0_FK4RCX08DDYfoulW-OGxzlIol9Lo59V8W0AaQVVgquDy6aqgZvapol8gHzp42K3-z-m9hoCCfMNcucESMYD6l4vj7T-4d8T42TSz0sX1GOj2huCxEEtjNls-ZC-i7mugu6TFN/s64/bomb.png';
 
@@ -209,20 +206,18 @@
         const ctx = canvas.getContext('2d');
         const startScreen = document.getElementById('startScreen');
 
-        // Game constants
         const GAME_WIDTH = 500;
         const GAME_HEIGHT = 700;
         const PLAYER_WIDTH = 20;
         const PLAYER_HEIGHT = 50;
         const BOMB_WIDTH = 20;
         const BOMB_HEIGHT = 40;
-        const BIG_BOMB_WIDTH = 40;
-        const BIG_BOMB_HEIGHT = 80;
+        const BIG_BOMB_WIDTH = 30;  // 150% of 20
+        const BIG_BOMB_HEIGHT = 60; // 150% of 40
         const EXPLOSION_RADIUS = 40;
-        const BIG_EXPLOSION_RADIUS = 80;
+        const BIG_EXPLOSION_RADIUS = 80; // Double
         const LEVEL_DURATION = 60;
 
-        // Game state
         let gameStarted = false;
         let player = {
             x: GAME_WIDTH / 2,
@@ -326,7 +321,7 @@
             bigBombs.push({
                 x: x,
                 y: -BIG_BOMB_HEIGHT,
-                speed: 3 + level
+                speed: (3 + level) * 1.33 // 133% of regular bomb speed
             });
             bigBombSpawnedThisLevel = true;
         }
