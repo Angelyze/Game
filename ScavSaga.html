@@ -66,6 +66,7 @@
 
         // Draw candy
         function drawCandy(x, y, type) {
+            if (type < 0 || type >= CANDY_TYPES.length) return; // Prevent invalid types
             ctx.fillStyle = CANDY_TYPES[type];
             ctx.beginPath();
             ctx.arc(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE / 2 - 10, 0, Math.PI * 2);
@@ -86,7 +87,7 @@
                 for (let x = 0; x < GRID_SIZE; x++) {
                     ctx.fillStyle = '#333';
                     ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE - 2, TILE_SIZE - 2);
-                    if (grid[y][x] !== -1) drawCandy(x, y, grid[y][x]);
+                    if (grid[y][x] >= 0) drawCandy(x, y, grid[y][x]);
                 }
             }
             if (selected) {
@@ -133,8 +134,9 @@
             return true;
         }
 
-        // Drop candies
+        // Drop candies (fixed to prevent blank spaces)
         function dropCandies() {
+            let changesMade = false;
             for (let x = 0; x < GRID_SIZE; x++) {
                 let emptySpots = [];
                 let candies = [];
@@ -143,21 +145,27 @@
                     else if (grid[y][x] >= 0) candies.push({ y, type: grid[y][x] });
                 }
 
-                // Shift existing candies down
-                candies.sort((a, b) => a.y - b.y); // Sort by y-position
-                for (let i = 0; i < candies.length; i++) {
-                    let newY = GRID_SIZE - 1 - i;
-                    if (emptySpots.includes(newY)) {
-                        grid[newY][x] = candies[i].type;
-                        grid[candies[i].y][x] = -1;
+                if (emptySpots.length > 0) {
+                    changesMade = true;
+                    // Shift existing candies down
+                    candies.sort((a, b) => a.y - b.y); // Sort by y-position
+                    for (let i = 0; i < candies.length; i++) {
+                        let newY = GRID_SIZE - 1 - i;
+                        if (emptySpots.includes(newY)) {
+                            grid[newY][x] = candies[i].type;
+                            grid[candies[i].y][x] = -1;
+                        }
+                    }
+
+                    // Fill remaining empty spots at the top with new candies
+                    for (let y of emptySpots) {
+                        if (grid[y][x] === -1) {
+                            grid[y][x] = Math.floor(Math.random() * (3 + Math.min(level, 3)));
+                        }
                     }
                 }
-
-                // Fill empty spots at the top with new candies
-                for (let y of emptySpots) {
-                    grid[y][x] = Math.floor(Math.random() * (3 + Math.min(level, 3)));
-                }
             }
+            return changesMade; // Indicate if any changes were made
         }
 
         // Check adjacency
@@ -245,7 +253,9 @@
                     let hasMatches = true;
                     while (hasMatches) {
                         hasMatches = clearMatches();
-                        if (hasMatches) dropCandies();
+                        if (hasMatches) {
+                            while (dropCandies()); // Keep dropping until no changes
+                        }
                     }
                     if (score >= goal) nextLevel();
                     if (!hasMoves()) {
