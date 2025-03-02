@@ -59,14 +59,17 @@
         // Initialize grid
         function initGrid() {
             grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0).map(() => Math.floor(Math.random() * (3 + Math.min(level, 3)))));
-            while (hasMatches()) dropCandies(); // Ensure no initial matches
+            while (hasMatches()) clearAndDrop(); // Ensure no initial matches or blanks
             console.log("Grid initialized:", grid); // Debug
         }
         initGrid();
 
         // Draw candy
         function drawCandy(x, y, type) {
-            if (type < 0 || type >= CANDY_TYPES.length) return; // Prevent invalid types
+            if (type < 0 || type >= CANDY_TYPES.length) {
+                console.error(`Invalid candy type at (${x}, ${y}): ${type}`);
+                return; // Skip invalid types to prevent rendering errors
+            }
             ctx.fillStyle = CANDY_TYPES[type];
             ctx.beginPath();
             ctx.arc(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, TILE_SIZE / 2 - 10, 0, Math.PI * 2);
@@ -130,7 +133,7 @@
         }
 
         // Clear matches and score, then drop
-        function clearMatches() {
+        function clearAndDrop() {
             let matches = findMatches();
             if (matches.length === 0) return false;
             let comboSize = matches.length;
@@ -156,8 +159,8 @@
                     // Shift existing candies down
                     candies.sort((a, b) => a.y - b.y); // Sort by original y-position
                     for (let i = 0; i < candies.length; i++) {
-                        let newY = GRID_SIZE - 1 - i;
-                        if (emptySpots.includes(newY)) {
+                        let newY = GRID_SIZE - 1 - (emptySpots.length - i - 1);
+                        if (newY >= 0 && emptySpots.includes(newY)) {
                             grid[newY][x] = candies[i].type;
                             grid[candies[i].y][x] = -1;
                         }
@@ -182,6 +185,11 @@
 
         // Swap candies
         function swapCandies(pos1, pos2) {
+            if (pos1.x < 0 || pos1.x >= GRID_SIZE || pos1.y < 0 || pos1.y >= GRID_SIZE ||
+                pos2.x < 0 || pos2.x >= GRID_SIZE || pos2.y < 0 || pos2.y >= GRID_SIZE) {
+                return false; // Prevent out-of-bounds swaps
+            }
+
             const temp = grid[pos1.y][pos1.x];
             grid[pos1.y][pos1.x] = grid[pos2.y][pos2.x];
             grid[pos2.y][pos2.x] = temp;
@@ -260,7 +268,7 @@
                 if (swapCandies(selected, { x, y })) {
                     let hasMatches = true;
                     while (hasMatches) {
-                        hasMatches = clearMatches();
+                        hasMatches = clearAndDrop();
                     }
                     if (score >= goal) nextLevel();
                     if (!hasMoves()) {
