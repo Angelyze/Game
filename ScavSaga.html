@@ -61,14 +61,17 @@
             grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0).map(() => Math.floor(Math.random() * (3 + Math.min(level, 3)))));
             while (hasMatches()) clearAndDrop(); // Ensure no initial matches or blanks
             console.log("Grid initialized:", grid); // Debug
+            verifyGrid(); // Verify no blanks
         }
         initGrid();
 
-        // Draw candy
+        // Draw candy or empty space
         function drawCandy(x, y, type) {
             if (type < 0 || type >= CANDY_TYPES.length) {
                 console.error(`Invalid candy type at (${x}, ${y}): ${type}`);
-                return; // Skip invalid types to prevent rendering errors
+                ctx.fillStyle = '#000'; // Draw black for invalid types to highlight
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE - 2, TILE_SIZE - 2);
+                return; // Skip invalid types
             }
             ctx.fillStyle = CANDY_TYPES[type];
             ctx.beginPath();
@@ -91,12 +94,25 @@
                     ctx.fillStyle = '#333';
                     ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE - 2, TILE_SIZE - 2);
                     if (grid[y][x] >= 0) drawCandy(x, y, grid[y][x]);
+                    else console.error(`Blank space at (${x}, ${y})`);
                 }
             }
             if (selected) {
                 ctx.strokeStyle = '#0f0';
                 ctx.lineWidth = 4;
                 ctx.strokeRect(selected.x * TILE_SIZE, selected.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+
+        // Verify grid has no blanks
+        function verifyGrid() {
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    if (grid[y][x] < 0) {
+                        console.error(`Blank space found at (${x}, ${y})`);
+                        grid[y][x] = Math.floor(Math.random() * (3 + Math.min(level, 3))); // Fill with random candy
+                    }
+                }
             }
         }
 
@@ -140,6 +156,7 @@
             score += comboSize >= 5 ? 30 : comboSize === 4 ? 20 : 10;
             matches.forEach(match => grid[match.y][match.x] = -1);
             dropCandies();
+            verifyGrid(); // Ensure no blanks after clearing
             return true;
         }
 
@@ -157,11 +174,11 @@
                 if (emptySpots.length > 0) {
                     changesMade = true;
                     // Shift existing candies down
-                    candies.sort((a, b) => a.y - b.y); // Sort by original y-position
+                    candies.sort((a, b) => b.y - a.y); // Sort descending to fill from bottom
                     for (let i = 0; i < candies.length; i++) {
-                        let newY = GRID_SIZE - 1 - (emptySpots.length - i - 1);
-                        if (newY >= 0 && emptySpots.includes(newY)) {
-                            grid[newY][x] = candies[i].type;
+                        let targetY = GRID_SIZE - 1 - i;
+                        if (emptySpots.includes(targetY)) {
+                            grid[targetY][x] = candies[i].type;
                             grid[candies[i].y][x] = -1;
                         }
                     }
@@ -188,6 +205,11 @@
             if (pos1.x < 0 || pos1.x >= GRID_SIZE || pos1.y < 0 || pos1.y >= GRID_SIZE ||
                 pos2.x < 0 || pos2.x >= GRID_SIZE || pos2.y < 0 || pos2.y >= GRID_SIZE) {
                 return false; // Prevent out-of-bounds swaps
+            }
+
+            if (grid[pos1.y][pos1.x] < 0 || grid[pos2.y][pos2.x] < 0) {
+                console.error(`Attempting to swap invalid cell at (${pos1.x}, ${pos1.y}) or (${pos2.x}, ${pos2.y})`);
+                return false; // Prevent swapping blanks
             }
 
             const temp = grid[pos1.y][pos1.x];
@@ -263,22 +285,24 @@
             if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return; // Prevent out-of-bounds clicks
 
             if (!selected) {
-                selected = { x, y };
+                if (grid[y][x] >= 0) selected = { x, y }; // Only select valid cells
             } else if (isAdjacent(selected, { x, y })) {
-                if (swapCandies(selected, { x, y })) {
-                    let hasMatches = true;
-                    while (hasMatches) {
-                        hasMatches = clearAndDrop();
-                    }
-                    if (score >= goal) nextLevel();
-                    if (!hasMoves()) {
-                        gameOver = true;
-                        alert(`Game Over! No moves left. Score: ${score}\nReload to retry.`);
+                if (grid[selected.y][selected.x] >= 0 && grid[y][x] >= 0) { // Ensure both cells are valid
+                    if (swapCandies(selected, { x, y })) {
+                        let hasMatches = true;
+                        while (hasMatches) {
+                            hasMatches = clearAndDrop();
+                        }
+                        if (score >= goal) nextLevel();
+                        if (!hasMoves()) {
+                            gameOver = true;
+                            alert(`Game Over! No moves left. Score: ${score}\nReload to retry.`);
+                        }
                     }
                 }
                 selected = null;
             } else {
-                selected = { x, y };
+                if (grid[y][x] >= 0) selected = { x, y }; // Only update selection to valid cells
             }
             drawGrid(); // Redraw after each click
         });
