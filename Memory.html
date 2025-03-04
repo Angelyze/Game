@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Match Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #111111;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrolling */
+        }
+        #hud {
+            background-color: #73af00;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            overflow: hidden;
+        }
+        #game-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 5 columns for 30 cards */
+            grid-template-rows: repeat(6, 1fr); /* 6 rows */
+            gap: 10px;
+            padding: 5px;
+            width: 90vw; /* not Full width */
+            height: calc(100vh - 60px); /* Full height minus HUD */
+            overflow: hidden; /* No scrolling if necessary */
+            margin: auto; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            justify-items: center; /* Center items within the grid cells */
+        }
+        .card {
+            width: 100%; /* Full width of the grid cell */
+            height: 0; /* Set height to 0 */
+            padding-bottom: 150%; /* Aspect ratio of 2:3 (350px height / 225px width) */
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj54FZ6vEUWSwMFsh9P8r9q5PWskWHZfzs2mCjAD5pE5xvp9Q8IP3954ZAnpWO731PvjeAlMyNzA8lKO7J_NFEMUbDtn1mWmFtJuF3JOQF9kfAW582vgzwCLmoZvUna3uslhHE8LaGikTp0qJz6g0WdsziDaGQyguTxXC7d9OtOgQQySeoNvo_ktNHccs9c/s350/card%20back.jpg'); /* Card back image */
+            background-size: cover; /* Ensure the image covers the card */
+        }
+        .card img {
+            width: 100%;
+            height: 100%;
+            display: none; /* Hide by default */
+            border-radius: 5px;
+            position: absolute; /* Position images absolutely */
+            top: 0;
+            left: 0;
+        }
+        .card.flipped img.card-back {
+            display: block; /* Show card back when flipped */
+        }
+        .card.flipped img.card-front {
+            display: block; /* Show card front when flipped */
+        }
+        #game-over {
+            display: none;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #73af00;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 10; /* Ensure it appears above other elements */
+        }
+        #game-over h2 {
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="hud">
+        <div id="level">Level: 1</div>
+        <div id="time">Time: 10:00</div>
+        <div id="sound" onclick="toggleSound()">Sound: On</div>
+    </div>
+    <div id="game-container"></div>
+    <div id="game-over" onclick="startGame()">
+        <h2 id="game-over-text"></h2>
+        <p>Tap anywhere to play again!</p>
+    </div>
+
+    <script>
+        const levels = [
+            { time: 600, pairs: 15 }, // Level 1: 10 minutes (15 pairs for 30 cards)
+            { time: 480, pairs: 15 }, // Level 2: 8 minutes
+            { time: 360, pairs: 15 }, // Level 3: 6 minutes
+            { time: 240, pairs: 15 }, // Level 4: 4 minutes
+            { time: 180, pairs: 15 }   // Level 5: 3 minutes
+        ];
+
+        let currentLevel = 0;
+        let timer;
+        let timeLeft;
+        let firstCard, secondCard;
+        let lockBoard = false;
+        let matchedPairs = 0;
+        let isMuted = false; // Global variable to track mute state
+
+        function startGame() {
+            currentLevel = 0; // Reset to level 1
+            matchedPairs = 0; // Reset matched pairs
+            document.getElementById('game-over').style.display = 'none'; // Hide game over screen
+            loadLevel(); // Load the first level
+        }
+
+        function loadLevel() {
+            const level = levels[currentLevel];
+            timeLeft = level.time; // Set time left for the current level
+            matchedPairs = 0; // Reset matched pairs for the new level
+            document.getElementById('level').innerText = `Level: ${currentLevel + 1}`;
+            document.getElementById('time').innerText = `Time: ${formatTime(timeLeft)}`;
+            createCards(); // Create cards for the current level
+            startTimer(); // Start the timer
+        }
+
+        function createCards() {
+            const gameContainer = document.getElementById('game-container');
+            gameContainer.innerHTML = ''; // Clear previous cards
+            const cardImages = getCardImages();
+            const cards = [...cardImages, ...cardImages]; // Duplicate for pairs
+            shuffle(cards); // Shuffle the cards
+
+            cards.forEach(image => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.innerHTML = `
+                    <img src="${image}" alt="Card Image" class="card-front">
+                `;
+                card.addEventListener('click', flipCard); // Add click event to flip the card
+                gameContainer.appendChild(card); // Add card to the game container
+            });
+        }
+
+        function getCardImages() {
+            return [
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg2gbbEr_IX-KCdibLjEch_wmbF6WBky4_Iwdu9tpLF_TWmpg0PkSErhxtCJGq4VRBvzqdtFl3I32MCW4fkewmepMLycrYMqG8ARxo8GkG7cYL-VXiN5KaEiq2LXkrDGXDRasYBcIfMP-2i2vo-riEeB35KL3_4L_89xFL3b1XK0rksQrjXoDrY-HmerIYT/s350/001.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi1NLYRIj8xp44FJCBiSYEO4L23I-7Hqt3-4n1BWmPy4XxCdQsAwUttHKkGIUzstGAavD-jmCllTYowmNNT4jtV7526swqc2UKTThVnn5jioVzYYWT8j9bI4mqZkOH9EWGdsCKbLJjEitBjDIk1kmffAnwb-drT9hXpB5EgYxo0AuOq9hKHPfO2Z3xDBLip/s350/002.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhZXlV7Q3EU-LJQgU2hbwTxWXQTTL6rD2KYvts3w2yWfyT4JDPCKldlo-pYUyWbS_CfQ-0wL4c75rlU4YrfxIsakSdvqKB-PE_fYT9o2A5wqCtdafmyZiy8kh-R_nbbrcE6udocJcOpCfsrn-8FGy2ixDUbuXmZeBvcNhraO3oSfS4x2qVX0d-GNXPRmLIA/s350/003.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg7e14vZgON4GCfTXdPE9nYiJgs0v4tGZaXadvUsIAilNru72l8II7bmCwYG99mte-HPbsJH8hOuuUGQzBN5uSKmUePsn7bu03azU_EjdJ3eoFnEb_G89A5_y6ARiLtKebmLiobsKfsMatSGYZnqbbNYQTCOV-5OPS_12H51QOvlDcUcjRH1d4J7b0HyEpn/s350/004.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhqp328WYFy4Iwri6duLyTwvWzy0tdiKGLyXu8Ik-IWmqfX7wusJBk6_Mc_jGVI0B5gRbiAWc2OYVyzCGS7R34FOEGAHYEPHSsT-epNYWjk1WMTbnIaHhqxz2w_PJSkBMXj26REG58NksuKYflB6DhPzN6Vp_5eUqm3s9T1Kf1ISKB3xQfxdBdK5ym6kVPu/s350/005.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiam7PDXzTLje7RcSUAe4FrTgUVHoDFbdX5b8zqyjhZ6tLL8JmrnOggXNyBffQ1fPKD2RcWpE_Bh-5J_FBLDPGyBaVPK1TgosTci6d6eKppEOv7Rv6l8SZpJ5rUfbgk78yGbx8PfPhrjES9tfbHGZsWfTCaLaKpbLqv9GFwTUraSLV6eIJbZH-ABszWL6ct/s350/006.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgj470FZ9c30jS2-Sn1KwjpRnubRNNPmHxy59PWJ06ZNRp3iGatOZqxbd0Q5qtLVdNHmMIU15rj7L_GhHwTxCIXresbPuAbOaOKRVIDGGb5taBJBa9pguRuDAHppFyLL9QVzb3gkyy35_6FoRfgmevPA4G-jN_VIRk5-5Q9dBO24S0mDXh5rrdULZkc4PZD/s350/007.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh9tASxXzMj6_jxU1BWyFCTHMHeewNOFSBveiAhyphenhyphenpYubtg6IgrEka0_zfa8nFth3P4txQY9BWTyWfVotCWIdY_zLmiHwqMVf8O2zTcmTuioySAv2nTwpILggkylE8ImjKRE7x5VDxrZrCCU4hVCgBuW4xq46ThOxgAo51H8YlsqFl4Zi0dOxGp_eklg37JR/s350/008.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhYnm6Nkln5dc64YPxaFCpTp5Ur9qXy5JcAYPZEpbo77sbNS-UFdr_8P4q91AAHDR0G1_W_mB1SsieYsPjt8hfO50IXCgUQC2UvDuhtnlw4Pfo2SLj3LRGmi3rZ10OEfo8-d7jSvL9bTi9rsYnCSzfjC6C-10EQDjWhxptJig3pB_K2xhP7El9vpJGJwpDM/s350/009.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg6EOnkipwegsgHtkmdD7VXrU5fGYWGDXlRDgUguLpWxenBxG1ryG_Z5vnILoXBsqDjDFpogh0pO5lBBHVjJs3WbSKHJuiqsV2YNgAarU5USfLKH0ip5zsqXXSk2ZEIA7WEbIxT7_aWu4jFK1Dq5bAIzGeHJaYyoXS4ldp_aK18HxtYSqODYhd88AJIka8b/s350/0010.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhI_xg2AWsfqwYQJOLxUBFHl5JxIPw5x1kBySXhkKV7B3PkIgZM0e6sUhGrK-2wS-PnBbh4WvMFZmnaDt2HXht6K5o83QXCWBRW2GU_dRwpOAJciUVO_Jkb-pWWOzRxCuGtKDWytElJRFiYYGkaWMApbSvytWlMaJo4gXFvaRRX5oTv4CLTp0pjp09oAI2t/s350/0011.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg6MJkLpWohgvioKdUERRzpGUxgFboq6T6WslYglFMTD7vVAAQuosw9Uxos2lo-hl8XiyeGCaV3iC5lqM6s2PvJvE1EaBIN1_B9bDqiyJiJbhyHKwnyT0GpxH7-QalJ_JMSztowxMcsD9ztQZ-hTjYlvLwS60QjCs8xgnUCX66_ypovTgabWdkygPbkSKMc/s350/0012.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhewNlSkU8GxS8VA9d4p0UXy9mJH-GSg1fL0j7dgM_87AbleLEupSZ9n-Zuga-4oJLeVXhGrFEg0tvMTJQg6wcRJrQNd3aKEurOLTTZQwGdos1X35_8CGp5NCjyVBq9eq9jV6OxFjHeZk-PfoW7ogYf4_7wruHoNui5NTnC8q8eWvonif5G4KkZMpkA0OoY/s350/0013.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgD3dFL8cWkdNldxBp1Kzk6RG14Xd2H-Ogw0Uv8HW9CsZr2x1gqRqMffUyacH2MmNZgDIcze60v7vABCYorO5uQKeCIHDG22QpQ4ovaJg6H24auI9ZU0sS8S__B9sOfg91OxrE2WJ-5DRalP0602RxuE8B_JEf7uTvsZ2pT6k8Y0kmhj7u6SW32AdKRY2GK/s350/0014.jpg',
+                'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgClcW4C4lt3CyOJEEUE5WuSSe0H_tvy0AbrDNhL4HTyxIJggZepMpmSwj4libMFKWHIrq0pEsOhOGlDXs_XfG5d1PYBsFEbJVzF8xyA19cO_lr-AzbQfWSVH2H68NDKZIC01wUQNii33HSN0wT3gVrD0B0j6jFtF5GDJWCk7SXWJemWc4KHQQ8BpGXFX0R/s350/0015.jpg'
+            ];
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function flipCard() {
+            if (lockBoard || this.classList.contains('flipped')) return; // Prevent flipping if already flipped or locked
+            this.classList.add('flipped'); // Mark card as flipped
+            if (!isMuted) playBipSound(); // Play sound when a card is flipped
+
+            if (!firstCard) {
+                firstCard = this; // Store first card
+            } else {
+                secondCard = this; // Store second card
+                lockBoard = true; // Lock the board until the match check is done
+                checkForMatch(); // Check if the two flipped cards match
+            }
+        }
+
+        function checkForMatch() {
+            const firstImage = firstCard.querySelector('img.card-front').src;
+            const secondImage = secondCard.querySelector('img.card-front').src;
+
+            if (firstImage === secondImage) {
+                matchedPairs++; // Increment matched pairs
+                if (!isMuted) playMatchSound(); // Play match sound
+                resetCards(); // Reset the card variables
+                if (matchedPairs === levels[currentLevel].pairs) {
+                    levelUp(); // Proceed to the next level if all pairs are matched
+                }
+            } else {
+                if (!isMuted) playUnmatchSound(); // Play unmatch sound
+                setTimeout(() => {
+                    firstCard.classList.remove('flipped'); // Flip back the first card
+                    secondCard.classList.remove('flipped'); // Flip back the second card
+                    resetCards(); // Reset the card variables
+                }, 1000);
+            }
+        }
+
+        function resetCards() {
+            [firstCard, secondCard] = [null, null]; // Reset the card variables
+            lockBoard = false; // Unlock the board
+        }
+
+        function levelUp() {
+            if (!isMuted) playLevelUpSound(); // Play level up sound
+            currentLevel++; // Increment the current level
+            if (currentLevel < levels.length) {
+                setTimeout(loadLevel, 1000); // Load the next level after a delay
+            } else {
+                gameOver(true); // End the game if all levels are completed
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timer); // Clear any existing timer
+            timer = setInterval(() => {
+                timeLeft--; // Decrement the time left
+                document.getElementById('time').innerText = `Time: ${formatTime(timeLeft)}`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer); // Stop the timer
+                    gameOver(false); // Trigger game over if time runs out
+                }
+            }, 1000);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`; // Format time as MM:SS
+        }
+
+        function gameOver(win) {
+            clearInterval(timer); // Stop the timer
+            document.getElementById('game-over').style.display = 'flex'; // Show the game over screen
+            document.getElementById('game-over-text').innerText = win ? "Congratulations, you won!" : "Game Over!"; // Set the game over message
+        }
+
+        function toggleSound() {
+            const soundButton = document.getElementById('sound');
+            isMuted = !isMuted; // Toggle mute state
+            soundButton.innerText = isMuted ? "Sound: Off" : "Sound: On"; // Update button text
+        }
+
+        // Sound functions
+        function playBipSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            oscillator.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        function playMatchSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+            oscillator.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        function playUnmatchSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+            oscillator.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        function playLevelUpSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function playGameOverLossSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+            oscillator.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function playGameOverWinSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+            oscillator.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        window.onload = startGame; // Start the game when the window loads
+    </script>
+</body>
+</html>
