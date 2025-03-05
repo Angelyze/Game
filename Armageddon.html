@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Armageddon</title>
     <style>
-        /* Part 1: CSS Styling */
         * {
             margin: 0;
             padding: 0;
@@ -21,7 +20,7 @@
         }
         #gameCanvas {
             border: 2px solid #73af00;
-            box-shadow: 0 0 20px rgba(115, 175, 0, 0.5);
+            box-shadow: 0 0 20px rgba(255, 144, 0, 0.5);
             image-rendering: pixelated;
             border-radius: 10px;
         }
@@ -31,9 +30,9 @@
             text-align: center;
             font-family: Arial, sans-serif;
             font-weight: bold;
-            font-size: 25px;
+            font-size: 24px;
             cursor: pointer;
-            text-shadow: 0 0 10px rgba(115, 175, 0, 0.5);
+            text-shadow: 0 0 10px rgba(255, 144, 0, 0.5);
             z-index: 1000;
         }
         #flashOverlay {
@@ -42,15 +41,15 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(115, 175, 0, 0.3);
+            background: rgba(255, 144, 0, 0.3);
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.1s;
         }
         #soundToggle {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 5px; /* Same vertical level as HUD */
+            left: calc(50% + 200px); /* Offset to the right of HUD, adjust as needed */
             width: 30px;
             height: 30px;
             cursor: pointer;
@@ -58,14 +57,15 @@
         }
         #gameHUD {
             position: absolute;
-            top: 15px;
-            left: 10px;
+            top: 10px; /* Same vertical level as sound toggle */
+            left: calc(50% - 240px);
             color: #73af00;
             font-family: Arial, sans-serif;
             font-weight: bold;
             font-size: 20px;
-            text-shadow: 0 0 10px rgba(115, 175, 0, 0.3);
+            text-shadow: 0 0 10px rgba(255, 144, 0, 0.3);
             z-index: 1000;
+            text-align: center; /* Center the text within the div */
         }
     </style>
 </head>
@@ -77,25 +77,23 @@
     <div id="flashOverlay"></div>
 
     <script>
-        /* Part 2: JavaScript Functionality - Game Setup and Logic */
-        // Create audio context and sounds
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
         
-        // Load images
         let bombImage = new Image();
-        bombImage.src = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhTgyKep7b9Vp6vmw_CYugteVhXXFGxXb5396Nc8QwkpugB3j4yT96zH0_FK4RCX08DDYfoulW-OGxzlIol9Lo59V8W0AaQVVgquDy6aqgZvapol8gHzp42K3-z-m9hoCCfMNcucESMYD6l4vj7T-4d8T42TSz0sX1GOj2huCxEEtjNls-ZC-i7mugu6TFN/s64/bomb.png'; // Replace with the actual path to your bomb image
+        bombImage.src = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhTgyKep7b9Vp6vmw_CYugteVhXXFGxXb5396Nc8QwkpugB3j4yT96zH0_FK4RCX08DDYfoulW-OGxzlIol9Lo59V8W0AaQVVgquDy6aqgZvapol8gHzp42K3-z-m9hoCCfMNcucESMYD6l4vj7T-4d8T42TSz0sX1GOj2huCxEEtjNls-ZC-i7mugu6TFN/s64/bomb.png';
+
+        let bigBombImage = new Image();
+        bigBombImage.src = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh027OgkTOEbkG-_rjXZeNoNlQEfdrICaczVxEBWb2UVkZDRsxYZgfFXReSFJiwRIP27XJShS7LNv0z6dUApy1VXD6h7X_rET94oUWIaik6oQWVFQ-xMrAzWCSLZIRZt6uqnTNQzSiLSJdyCG9i2ZjNnNS0Y-tAec_VCJD5PW_S2HVK-t20sk3MWNdECxko/s127/BigBomb.png';
 
         let manImage = new Image();
-        manImage.src = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjUiD-ndk9ACErws-ssku6mnRkNkxH9yTxI61BTctoopD0vpRNax8XawMMkpG8kGNYtAfyKe2IMJkXdcyesxYIDeDsjnW42z2bXlNVqp39i_WNd6tNumXJK870gZ-RpnOYSbtIaslfIfrnu6BOKU3gFxnwW93mIa5u_pRxMysouOghJSQpOuB7Sgxe5OvKa/s66/man.png'; // Replace with the actual path to your man image
+        manImage.src = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjUiD-ndk9ACErws-ssku6mnRkNkxH9yTxI61BTctoopD0vpRNax8XawMMkpG8kGNYtAfyKe2IMJkXdcyesxYIDeDsjnW42z2bXlNVqp39i_WNd6tNumXJK870gZ-RpnOYSbtIaslfIfrnu6BOKU3gFxnwW93mIa5u_pRxMysouOghJSQpOuB7Sgxe5OvKa/s66/man.png';
 
         let airdropImage = new Image();
-        airdropImage.src = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg0zoVQAsGP8rnDMSsNs_n9MLF1B8ZBLWucwhqSvkU91AP2vlRyF8MoKJXztTGfQ2cTcW_DPr2r5aUNxmw0MLNngsAWpkcgXkI6fiqxLLN8TIULCiD13V9GXqbFIuF1v2FXLMaotxWnii-UM45hMbw0VSyUDGb576-fN6jl0g5W_awDITJ9f9O2y7u8rgEF/s35/airdrop.png'; // Replace with the actual path to your airdrop image
+        airdropImage.src = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg0zoVQAsGP8rnDMSsNs_n9MLF1B8ZBLWucwhqSvkU91AP2vlRyF8MoKJXztTGfQ2cTcW_DPr2r5aUNxmw0MLNngsAWpkcgXkI6fiqxLLN8TIULCiD13V9GXqbFIuF1v2FXLMaotxWnii-UM45hMbw0VSyUDGb576-fN6jl0g5W_awDITJ9f9O2y7u8rgEF/s35/airdrop.png';
 
-        // Sound toggle state
         let soundEnabled = true;
 
-        // Setup sound toggle button
         const soundToggle = document.getElementById('soundToggle');
         const stCtx = soundToggle.getContext('2d');
         soundToggle.width = 30;
@@ -105,8 +103,6 @@
             stCtx.clearRect(0, 0, 30, 30);
             stCtx.strokeStyle = '#73af00';
             stCtx.lineWidth = 2;
-
-            // Speaker body
             stCtx.beginPath();
             stCtx.moveTo(7, 10);
             stCtx.lineTo(13, 10);
@@ -116,9 +112,7 @@
             stCtx.lineTo(7, 20);
             stCtx.closePath();
             stCtx.stroke();
-
             if (!muted) {
-                // Sound waves
                 stCtx.beginPath();
                 stCtx.arc(19, 15, 5, -Math.PI/3, Math.PI/3);
                 stCtx.stroke();
@@ -126,7 +120,6 @@
                 stCtx.arc(19, 15, 8, -Math.PI/3, Math.PI/3);
                 stCtx.stroke();
             } else {
-                // X mark
                 stCtx.beginPath();
                 stCtx.moveTo(22, 10);
                 stCtx.lineTo(27, 20);
@@ -144,19 +137,14 @@
             drawSoundIcon(!soundEnabled);
         });
 
-        // Initialize sound icon
         drawSoundIcon(false);
 
-        // Sound effects generator
         function createRetroSound(type) {
             if (!soundEnabled) return;
-            
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-            
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
-            
             switch(type) {
                 case 'hit':
                     oscillator.type = 'square';
@@ -175,6 +163,15 @@
                     gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
                     oscillator.start();
                     oscillator.stop(audioCtx.currentTime + 0.3);
+                    break;
+                case 'bigExplosion':
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(250, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.5);
+                    gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.5);
                     break;
                 case 'levelUp':
                     oscillator.type = 'square';
@@ -198,7 +195,6 @@
             }
         }
 
-        // Screen flash effect
         function flashScreen() {
             const flash = document.getElementById('flashOverlay');
             flash.style.opacity = '1';
@@ -211,17 +207,18 @@
         const ctx = canvas.getContext('2d');
         const startScreen = document.getElementById('startScreen');
 
-        // Game constants
-        const GAME_WIDTH = 400;
-        const GAME_HEIGHT = 600;
+        const GAME_WIDTH = 500;
+        const GAME_HEIGHT = 700;
         const PLAYER_WIDTH = 20;
         const PLAYER_HEIGHT = 50;
         const BOMB_WIDTH = 20;
         const BOMB_HEIGHT = 40;
+        const BIG_BOMB_WIDTH = 30;
+        const BIG_BOMB_HEIGHT = 60;
         const EXPLOSION_RADIUS = 40;
+        const BIG_EXPLOSION_RADIUS = 80;
         const LEVEL_DURATION = 60;
 
-        // Game state
         let gameStarted = false;
         let player = {
             x: GAME_WIDTH / 2,
@@ -232,6 +229,7 @@
             isMoving: false
         };
         let bombs = [];
+        let bigBombs = [];
         let explosions = [];
         let clouds = [];
         let airdrops = [];
@@ -246,8 +244,9 @@
             duration: 2
         };
         let airdropSpawnedThisLevel = false;
+        let bigBombSpawnedThisLevel = false;
+        let bigBombSpawnTime = 0;
 
-        // Setup canvas
         function setupCanvas() {
             const scale = window.devicePixelRatio;
             canvas.width = GAME_WIDTH * scale;
@@ -257,7 +256,6 @@
             ctx.scale(scale, scale);
         }
 
-        // Start game
         function startGame() {
             gameStarted = true;
             startScreen.style.display = 'none';
@@ -265,42 +263,40 @@
             audioCtx.resume();
         }
 
-// Reset game state
-function resetGame() {
-    player.lives = 3;
-    timeLeft = LEVEL_DURATION;
-    level = 1; // Keep this as we want to reset to level 1 when restarting
-    bombs = [];
-    explosions = [];
-    bombSpawnRate = 1800;
-    player.x = GAME_WIDTH / 2;
-    damageMessage.timeLeft = 0;
-    clouds = []; // Clear existing clouds
-    airdrops = []; // Clear existing airdrops
-    airdropSpawnedThisLevel = false; // Reset the flag
+        function resetGame() {
+            player.lives = 3;
+            timeLeft = LEVEL_DURATION;
+            level = 1;
+            bombs = [];
+            bigBombs = [];
+            explosions = [];
+            bombSpawnRate = 1800;
+            player.x = GAME_WIDTH / 2;
+            damageMessage.timeLeft = 0;
+            clouds = [];
+            airdrops = [];
+            airdropSpawnedThisLevel = false;
+            bigBombSpawnedThisLevel = false;
+            bigBombSpawnTime = Math.random() * LEVEL_DURATION * 1000;
 
-    // Create initial clouds for level 1
-    let cloudCount = 5; // Start with 5 clouds
-    for (let i = 0; i < cloudCount; i++) {
-        createCloud();
-    }
-    
-    createAirdrop(); // Spawn an airdrop at the start of level 1
-}
+            let cloudCount = 5;
+            for (let i = 0; i < cloudCount; i++) {
+                createCloud();
+            }
+            createAirdrop();
+        }
 
-        // Create explosion
-        function createExplosion(x, y) {
+        function createExplosion(x, y, isBig = false) {
             explosions.push({
                 x: x,
                 y: y,
-                radius: EXPLOSION_RADIUS,
+                radius: isBig ? BIG_EXPLOSION_RADIUS : EXPLOSION_RADIUS,
                 duration: 0.5,
                 timeLeft: 0.5
             });
-            createRetroSound('explosion');
+            createRetroSound(isBig ? 'bigExplosion' : 'explosion');
         }
 
-        // Spawn bomb
         function spawnBomb() {
             bombs.push({
                 x: Math.random() * (GAME_WIDTH - BOMB_WIDTH),
@@ -309,7 +305,28 @@ function resetGame() {
             });
         }
 
-        // Check if player is in explosion radius
+        function spawnBigBomb() {
+            let x;
+            let overlap;
+            do {
+                x = Math.random() * (GAME_WIDTH - BIG_BOMB_WIDTH);
+                overlap = false;
+                for (let bomb of bombs) {
+                    if (Math.abs(bomb.x - x) < BIG_BOMB_WIDTH) overlap = true;
+                }
+                for (let airdrop of airdrops) {
+                    if (Math.abs(airdrop.x - x) < BIG_BOMB_WIDTH) overlap = true;
+                }
+            } while (overlap);
+
+            bigBombs.push({
+                x: x,
+                y: -BIG_BOMB_HEIGHT,
+                speed: (3 + level) * 1.33
+            });
+            bigBombSpawnedThisLevel = true;
+        }
+
         function checkExplosionCollision(explosion) {
             const playerCenterX = player.x + PLAYER_WIDTH / 2;
             const playerCenterY = player.y + PLAYER_HEIGHT / 2;
@@ -319,7 +336,6 @@ function resetGame() {
             return distance < explosion.radius + (PLAYER_WIDTH / 2);
         }
 
-        // Handle player hit
         function handlePlayerHit() {
             player.lives--;
             damageMessage.text = `Hit! ${player.lives} lives left!`;
@@ -335,239 +351,267 @@ function resetGame() {
             }
         }
 
-// Create cloud
-function createCloud() {
+        function createCloud() {
             clouds.push({
                 x: Math.random() * GAME_WIDTH,
-                y: Math.random() * GAME_HEIGHT * 0.3, // Clouds appear in the top half of the screen
-                width: 60 + Math.random() * 250, // Random width for variety
-                height: 30 + Math.random() * 50, // Random height for variety
-                speed: 0.1 // Initial speed, will be adjusted based on level
+                y: Math.random() * GAME_HEIGHT * 0.3,
+                width: 60 + Math.random() * 250,
+                height: 20 + Math.random() * 50,
+                speed: 0.1
             });
         }
-// Function to create an airdrop
-function createAirdrop() {
-    airdrops.push({
-        x: Math.random() * (GAME_WIDTH - 30), // Assuming airdrop is 30x30
-        y: -30, // Start above the screen
-        speed: 1 + level // Speed increases with level
-    });
-    airdropSpawnedThisLevel = true; // Set the flag to true once spawned
-}
 
-// Modify `update` function to handle level progression and add clouds
-function update(timestamp) {
-    if (!lastTime) lastTime = timestamp;
-    const delta = timestamp - lastTime;
-    lastTime = timestamp;
+        function createAirdrop() {
+            airdrops.push({
+                x: Math.random() * (GAME_WIDTH - 30),
+                y: -30,
+                speed: 1 + level
+            });
+            airdropSpawnedThisLevel = true;
+        }
 
-    if (!gameStarted) return;
+        function update(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const delta = timestamp - lastTime;
+            lastTime = timestamp;
 
-    // Update time
-    timeLeft -= delta / 1000;
-    if (timeLeft <= 0) {
-        if (level < 5) {
-            level++;
-            timeLeft = LEVEL_DURATION;
-            bombSpawnRate = Math.max(500, bombSpawnRate - 300);
-            airdropSpawnedThisLevel = false; // Reset the flag for the new level
-            createRetroSound('levelUp');
+            if (!gameStarted) return;
 
-            // Add 4 clouds for the new level
-            for (let i = 0; i < 4; i++) {
-                createCloud();
+            timeLeft -= delta / 1000;
+            if (timeLeft <= 0) {
+                if (level < 5) {
+                    level++;
+                    timeLeft = LEVEL_DURATION;
+                    bombSpawnRate = Math.max(500, bombSpawnRate - 300);
+                    airdropSpawnedThisLevel = false;
+                    bigBombSpawnedThisLevel = false;
+                    bigBombSpawnTime = Math.random() * LEVEL_DURATION * 1000;
+                    createRetroSound('levelUp');
+
+                    for (let i = 0; i < 4; i++) {
+                        createCloud();
+                    }
+                } else {
+                    gameStarted = false;
+                    startScreen.textContent = 'Victory! You survived, but now you are a ghoul.. \nTap to Play Again';
+                    startScreen.style.display = 'block';
+                    createRetroSound('levelUp');
+                    return;
+                }
             }
-        } else {
-            gameStarted = false;
-            startScreen.textContent = 'Victory! You survived, but now you are a ghoul.. \nTap to Play Again';
-            startScreen.style.display = 'block';
-            createRetroSound('levelUp');
-            return;
+
+            if (damageMessage.timeLeft > 0) {
+                damageMessage.timeLeft -= delta / 1000;
+            }
+
+            if (timestamp - lastBombSpawn > bombSpawnRate) {
+                spawnBomb();
+                lastBombSpawn = timestamp;
+            }
+
+            if (!bigBombSpawnedThisLevel && (LEVEL_DURATION - timeLeft) * 1000 > bigBombSpawnTime) {
+                spawnBigBomb();
+            }
+
+            if (player.isMoving) {
+                player.x += player.direction * player.speed;
+                player.x = Math.max(0, Math.min(GAME_WIDTH - PLAYER_WIDTH, player.x));
+            }
+
+            explosions = explosions.filter(explosion => {
+                explosion.timeLeft -= delta / 1000;
+                if (checkExplosionCollision(explosion)) {
+                    handlePlayerHit();
+                    return false;
+                }
+                return explosion.timeLeft > 0;
+            });
+
+            bombs = bombs.filter(bomb => {
+                bomb.y += bomb.speed;
+                if (bomb.y + BOMB_HEIGHT > player.y &&
+                    bomb.x < player.x + PLAYER_WIDTH &&
+                    bomb.x + BOMB_WIDTH > player.x &&
+                    bomb.y < player.y + PLAYER_HEIGHT) {
+                    handlePlayerHit();
+                    createExplosion(bomb.x + BOMB_WIDTH/2, bomb.y + BOMB_HEIGHT/2);
+                    return false;
+                }
+                if (bomb.y + BOMB_HEIGHT >= GAME_HEIGHT) {
+                    createExplosion(bomb.x + BOMB_WIDTH/2, GAME_HEIGHT);
+                    return false;
+                }
+                return bomb.y < GAME_HEIGHT;
+            });
+
+            bigBombs = bigBombs.filter(bomb => {
+                bomb.y += bomb.speed;
+                if (bomb.y + BIG_BOMB_HEIGHT > player.y &&
+                    bomb.x < player.x + PLAYER_WIDTH &&
+                    bomb.x + BIG_BOMB_WIDTH > player.x &&
+                    bomb.y < player.y + PLAYER_HEIGHT) {
+                    handlePlayerHit();
+                    createExplosion(bomb.x + BIG_BOMB_WIDTH/2, bomb.y + BIG_BOMB_HEIGHT/2, true);
+                    return false;
+                }
+                if (bomb.y + BIG_BOMB_HEIGHT >= GAME_HEIGHT) {
+                    createExplosion(bomb.x + BIG_BOMB_WIDTH/2, GAME_HEIGHT, true);
+                    return false;
+                }
+                return bomb.y < GAME_HEIGHT;
+            });
+
+            if (!airdropSpawnedThisLevel && Math.random() < 0.001) {
+                createAirdrop();
+            }
+
+            airdrops.forEach((airdrop, index) => {
+                airdrop.y += airdrop.speed;
+                if (airdrop.y + 30 > player.y &&
+                    airdrop.x < player.x + PLAYER_WIDTH &&
+                    airdrop.x + 30 > player.x &&
+                    airdrop.y < player.y + PLAYER_HEIGHT) {
+                    player.lives++;
+                    damageMessage.text = `Airdrop! +1 Life, ${player.lives} lives left!`;
+                    damageMessage.timeLeft = damageMessage.duration;
+                    createRetroSound('levelUp');
+                    airdrops.splice(index, 1);
+                } else if (airdrop.y > GAME_HEIGHT) {
+                    airdrops.splice(index, 1);
+                }
+            });
+
+            clouds.forEach(cloud => {
+                cloud.speed = 0.1 + (level - 1) * 0.3;
+                cloud.x += cloud.speed;
+                if (cloud.x > GAME_WIDTH) {
+                    cloud.x = -cloud.width;
+                    cloud.y = Math.random() * GAME_HEIGHT * 0.3;
+                }
+            });
         }
-    }
 
-    // Update damage message
-    if (damageMessage.timeLeft > 0) {
-        damageMessage.timeLeft -= delta / 1000;
-    }
+        function draw() {
+            let bgColors = ['#999999', '#888888', '#666666', '#444444', '#222222'];
+            ctx.fillStyle = bgColors[level - 1];
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Spawn bombs
-    if (timestamp - lastBombSpawn > bombSpawnRate) {
-        spawnBomb();
-        lastBombSpawn = timestamp;
-    }
+            let cloudColors = ['#ffffff', '#777777', '#555555', '#333333', '#111111'];
+            ctx.fillStyle = cloudColors[level - 1];
+            clouds.forEach(cloud => {
+                ctx.beginPath();
+                ctx.ellipse(cloud.x + cloud.width / 2, cloud.y + cloud.height / 2, cloud.width / 2, cloud.height / 2, 0, 0, 2 * Math.PI);
+                ctx.fill();
+            });
 
-    // Update player
-    if (player.isMoving) {
-        player.x += player.direction * player.speed;
-        player.x = Math.max(0, Math.min(GAME_WIDTH - PLAYER_WIDTH, player.x));
-    }
+            explosions.forEach(explosion => {
+                const gradient = ctx.createRadialGradient(
+                    explosion.x, explosion.y, 0,
+                    explosion.x, explosion.y, explosion.radius
+                );
+                gradient.addColorStop(0, 'rgba(255, 144, 0, 0.8)');
+                gradient.addColorStop(1, 'rgba(255, 144, 0, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
 
-    // Update explosions
-    explosions = explosions.filter(explosion => {
-        explosion.timeLeft -= delta / 1000;
-        if (checkExplosionCollision(explosion)) {
-            handlePlayerHit();
-            return false;
+            ctx.drawImage(manImage, player.x, player.y, PLAYER_WIDTH, PLAYER_HEIGHT);
+
+            bombs.forEach(bomb => {
+                ctx.drawImage(bombImage, bomb.x, bomb.y, BOMB_WIDTH, BOMB_HEIGHT);
+            });
+
+            bigBombs.forEach(bomb => {
+                ctx.drawImage(bigBombImage, bomb.x, bomb.y, BIG_BOMB_WIDTH, BIG_BOMB_HEIGHT);
+            });
+
+            airdrops.forEach(airdrop => {
+                ctx.drawImage(airdropImage, airdrop.x, airdrop.y, 30, 35);
+            });
+
+            const hudElement = document.getElementById('gameHUD');
+            hudElement.textContent = `Level: ${level} | Time: ${Math.ceil(timeLeft)} | Lives: ${player.lives}`;
+
+            if (damageMessage.timeLeft > 0) {
+                ctx.fillStyle = '#73af00';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(damageMessage.text, GAME_WIDTH / 2, GAME_HEIGHT / 3);
+                ctx.textAlign = 'left';
+            }
         }
-        return explosion.timeLeft > 0;
-    });
 
-    // Update bombs
-    bombs = bombs.filter(bomb => {
-        bomb.y += bomb.speed;
-        
-        // Check direct collision
-        if (bomb.y + BOMB_HEIGHT > player.y &&
-            bomb.x < player.x + PLAYER_WIDTH &&
-            bomb.x + BOMB_WIDTH > player.x &&
-            bomb.y < player.y + PLAYER_HEIGHT) {
-            handlePlayerHit();
-            createExplosion(bomb.x + BOMB_WIDTH/2, bomb.y + BOMB_HEIGHT/2);
-            return false;
+        function gameLoop(timestamp) {
+            update(timestamp);
+            draw();
+            requestAnimationFrame(gameLoop);
         }
-        
-        // Create explosion when bomb hits ground
-        if (bomb.y + BOMB_HEIGHT >= GAME_HEIGHT) {
-            createExplosion(bomb.x + BOMB_WIDTH/2, GAME_HEIGHT);
-            return false;
+
+        function handleTouch(e) {
+            e.preventDefault();
+            if (!gameStarted) {
+                startGame();
+                return;
+            }
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            player.isMoving = true;
+            player.direction = x < GAME_WIDTH / 2 ? -1 : 1;
         }
-        
-        return bomb.y < GAME_HEIGHT;
-    });
 
-    // Randomly spawn an airdrop if one hasn't been spawned this level
-    if (!airdropSpawnedThisLevel && Math.random() < 0.001) { // 0.1% chance per frame, adjust for desired frequency
-        createAirdrop();
-    }
-
-    // Update airdrop
-    airdrops.forEach((airdrop, index) => {
-        airdrop.y += airdrop.speed;
-        
-        // Check collision with player
-        if (airdrop.y + 30 > player.y && // Assuming airdrop size is 30x30
-            airdrop.x < player.x + PLAYER_WIDTH &&
-            airdrop.x + 30 > player.x &&
-            airdrop.y < player.y + PLAYER_HEIGHT) {
-            player.lives++; // Increase player life
-            damageMessage.text = `Airdrop! +1 Life, ${player.lives} lives left!`;
-            damageMessage.timeLeft = damageMessage.duration;
-            createRetroSound('levelUp'); // Use levelUp sound or define a new one for airdrop
-            airdrops.splice(index, 1); // Remove the airdrop after collision
-        } else if (airdrop.y > GAME_HEIGHT) {
-            airdrops.splice(index, 1); // Remove airdrop if it goes off screen
+        function handleTouchEnd() {
+            player.isMoving = false;
+            player.direction = 0;
         }
-    });
 
-    // Update clouds
-    clouds.forEach(cloud => {
-        // Adjust speed based on level
-        cloud.speed = 0.1 + (level - 1) * 0.3; // Speed increases with level
-        cloud.x += cloud.speed;
-        // If cloud goes out of bounds, reset it to the left
-        if (cloud.x > GAME_WIDTH) {
-            cloud.x = -cloud.width;
-            cloud.y = Math.random() * GAME_HEIGHT * 0.3;
+        document.addEventListener('keydown', handleKeyboardInput);
+        document.addEventListener('keyup', handleKeyboardRelease);
+
+        function handleKeyboardInput(e) {
+            if (!gameStarted) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    startGame();
+                }
+                return;
+            }
+            e.preventDefault();
+            switch (e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    player.isMoving = true;
+                    player.direction = -1;
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    player.isMoving = true;
+                    player.direction = 1;
+                    break;
+            }
         }
-    });
-}
 
-// Draw game
-function draw() {
-    // Set background color based on level
-    let bgColors = ['#999999', '#888888', '#666666', '#444444', '#222222'];
-    ctx.fillStyle = bgColors[level - 1];
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+        function handleKeyboardRelease(e) {
+            e.preventDefault();
+            if (gameStarted) {
+                if (['ArrowLeft', 'ArrowRight', 'a', 'A', 'd', 'D'].includes(e.key)) {
+                    player.isMoving = false;
+                    player.direction = 0;
+                }
+            }
+        }
 
-    // Draw clouds
-    let cloudColors = ['#ffffff', '#777777', '#555555', '#333333', '#111111'];
-    ctx.fillStyle = cloudColors[level - 1];
-    clouds.forEach(cloud => {
-        ctx.beginPath();
-        ctx.ellipse(cloud.x + cloud.width / 2, cloud.y + cloud.height / 2, cloud.width / 2, cloud.height / 2, 0, 0, 2 * Math.PI);
-        ctx.fill();
-    });
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', handleTouchEnd);
+        startScreen.addEventListener('click', startGame);
 
-    // Draw explosions
-    explosions.forEach(explosion => {
-        const gradient = ctx.createRadialGradient(
-            explosion.x, explosion.y, 0,
-            explosion.x, explosion.y, explosion.radius
-        );
-        gradient.addColorStop(0, 'rgba(255, 144, 0, 0.8)');
-        gradient.addColorStop(1, 'rgba(255, 144, 0, 0)');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
-        ctx.fill();
-    });
-
-    // Draw player (man) using the new image
-    ctx.drawImage(manImage, player.x, player.y, PLAYER_WIDTH, PLAYER_HEIGHT);
-
-    // Draw bombs using the new image
-    bombs.forEach(bomb => {
-        ctx.drawImage(bombImage, bomb.x, bomb.y, BOMB_WIDTH, BOMB_HEIGHT);
-    });
-
-    // Draw airdrops
-    airdrops.forEach(airdrop => {
-        ctx.drawImage(airdropImage, airdrop.x, airdrop.y, 30, 35); // Assuming airdrop size is 30x30
-    });
-
-    // Update HUD
-    const hudElement = document.getElementById('gameHUD');
-    hudElement.textContent = `Level: ${level} | Time: ${Math.ceil(timeLeft)} | Lives: ${player.lives}`;
-
-    // Draw damage message
-    if (damageMessage.timeLeft > 0) {
-        ctx.fillStyle = '#73af00';
-        ctx.font = 'bold 24px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(damageMessage.text, GAME_WIDTH / 2, GAME_HEIGHT / 3);
-        ctx.textAlign = 'left';
-    }
-}
-
-// Game loop
-function gameLoop(timestamp) {
-    update(timestamp);
-    draw();
-    requestAnimationFrame(gameLoop);
-}
-
-// Touch controls
-function handleTouch(e) {
-    e.preventDefault();
-    if (!gameStarted) {
-        startGame();
-        return;
-    }
-
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    
-    player.isMoving = true;
-    player.direction = x < GAME_WIDTH / 2 ? -1 : 1;
-}
-
-function handleTouchEnd() {
-    player.isMoving = false;
-    player.direction = 0;
-}
-
-// Event listeners
-canvas.addEventListener('touchstart', handleTouch);
-canvas.addEventListener('touchmove', handleTouch);
-canvas.addEventListener('touchend', handleTouchEnd);
-startScreen.addEventListener('click', startGame);
-
-// Initialize game
-setupCanvas();
-gameLoop();
-drawSoundIcon(false);
-</script>
+        setupCanvas();
+        gameLoop();
+        drawSoundIcon(false);
+    </script>
 </body>
 </html>
