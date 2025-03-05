@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Post-Apocalyptic Adventure</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            background-color: #222222;
+            color: #73af00;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Align to top */
+            align-items: center;
+            min-height: 100vh;
+        }
+        #game-container {
+            width: 90vw; /* Responsive width, 90% of viewport */
+            max-width: 1024px; /* Optional max width for large screens */
+            margin: 0 auto; /* Center horizontally */
+            padding: 10px 10px 10px 10px; /* 10px top padding (matching card gap), 10px sides and bottom */
+            box-sizing: border-box;
+            position: relative; /* Ensure fixed positioning within body */
+        }
+        #game-image {
+            width: 100%;
+            height: auto;
+            max-height: calc(70vh - 120px); /* 70% of viewport height minus padding and HUD space, adjustable for content */
+            object-fit: contain;
+        }
+        #text {
+            margin: 15px 0;
+            font-size: clamp(1em, 2vw, 1.5em); /* Responsive font size */
+            line-height: 1.4;
+        }
+        #choices {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .choice {
+            background-color: #222222;
+            border: 2px solid #73af00;
+            color: #73af00;
+            padding: 12px 15px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: clamp(1em, 2vw, 1.3em); /* Responsive font size */
+            width: 80%;
+            max-width: 400px;
+            transition: background-color 0.3s;
+            border-radius: 5px; /* Optional for aesthetics */
+        }
+        .choice:hover {
+            background-color: #333333;
+        }
+        #end-screen {
+            display: none;
+        }
+        @media (max-width: 480px) {
+            #game-container {
+                padding: 10px 5px 5px 5px; /* 10px top padding, 5px sides, 5px bottom on mobile */
+            }
+            #game-image {
+                max-height: calc(60vh - 110px); /* Adjusted for smaller mobile screens and top padding */
+            }
+            #text {
+                margin: 10px 0;
+                font-size: clamp(0.9em, 2.5vw, 1.2em); /* Slightly smaller on mobile */
+            }
+            .choice {
+                padding: 10px 12px;
+                font-size: clamp(0.9em, 2.5vw, 1.2em); /* Slightly smaller on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <img id="game-image" src="" alt="Game Scene">
+        <div id="text"></div>
+        <div id="choices"></div>
+    </div>
+
+    <script>
+        const scenes = {
+            1: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgRhM-Aa67YEmUffdaWVGVrdIaNAl2DU7j7FZQAo-mAP-9eu2eitijhHlFa5hVqS7wALcrTgG5_XhY70gAJdD9dv3tszP0H7aCjwpj9aGxy5cBpxHlc0wttQxRl9wVtasoXfY8UedSyyflKLBl5_LeluEi-6nGLUDpSaGJaOV9bSQVYbnaaFbcFdudoNhdF/s1024/1.jpg',
+                text: "In the aftermath of the apocalypse, you're searching for your sister, Mia, in what was once your bustling hometown. You've found a clue leading to an old bunker in the city center. What do you do?",
+                choices: [
+                    { text: "Enter the bunker.", nextScene: 2 },
+                    { text: "Search the area for more clues.", nextScene: 3 },
+                    { text: "Return to your safe house, it's too dangerous.", nextScene: 'badEnding' }
+                ]
+            },
+            2: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiPRG3P9ZV5atCT9B7FNqDiSvxeAPezczZPciCFCjCm-yHXXCECYyJ6Gf61xNg_GkYXEpn8dZR51fQKactkh-6HSGmRgMoogjzQGRjfMMLT5l4pai9n1tzk2ppiGsECNZZzi1vl5UddD5rZKVEizLGU5Z-7_MQA_z2h_Pey7OqNNUUayC76dIChSk0v6wFQ/s1024/2.jpg',
+                text: "The bunker is too dark and silent to proceed, but you hear faint sounds from the end of the tunnel. Do you proceed?",
+                choices: [
+                    { text: "Follow the sounds cautiously.", nextScene: 4 },
+                    { text: "Retreat back outside.", nextScene: 1 },
+                    { text: "Shout for Mia, hoping she hears you.", nextScene: 'badEnding' }
+                ]
+            },
+            3: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEirlexFUjaBmlJ_FlO94mxFG4zyzgwC6PoNiOUFcL57DRxis47UQ0zs4MOF_MdmoEcaQUBv2_1O23_rTwqNmxjYDrTXmBAhLR3in9HKJJJ_YBG-_1411b1gcFgMX1VdewePoNmaDk-eT19EWizT11XcU4pTLPvPfSaMfFutPl8WoTxTbzeDFawwX049oBOj/s1024/3.jpg',
+                text: "While looking around, you find a map with a marked location. It seems to lead to an old radio tower. What's your next move?",
+                choices: [
+                    { text: "Head to the radio tower.", nextScene: 4 },
+                    { text: "Hide and wait for night to move in stealth.", nextScene: 'badEnding' },
+                    { text: "Try to decipher more clues from the map here.", nextScene: 2 }
+                ]
+            },
+            4: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgV7uMtKn_HSweNqfPfeLeSjYqFaeEEsvT93ClrUGJdCfRSXP02gzfCpUanJKbQC9daWKKZkbpQTGTJR7BjMH6DSEI9fPjj7qlxwQCSgXtGvJbsbn75seYog21IJ4ye8Xq0jb9ESD_lQyPsTgNgKgxf48HxKuSDdIcZ7xlDD3Z5PKdbAfCh3NMQKRZbYDaK/s1024/4.jpg',
+                text: "You reach the radio tower, and there's a camp. You see a figure that could be Mia. Do you approach?",
+                choices: [
+                    { text: "Approach cautiously, ready for anything.", nextScene: 5 },
+                    { text: "Signal from a distance, calling her name loudly.", nextScene: 'badEnding' },
+                    { text: "Circle around to spy on the camp first.", nextScene: 6 }
+                ]
+            },
+            5: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjL01AV6yjBusb0c3dCr6feEq34XtMudK6x6PugHUoc6WEz0MNZDLeHjdLSg-y5dWsialC9TojALDQ2TRoIi7_QYddNDrrZlLIYF3Ip5sWaI3OBtoikRiES0KVMaaElis7BnOVFYoTNv8WUaC7FTkewIYl6QPncMZGjYYGlugVWEujzfNU6Ty17oiwg3IgA/s1024/5.jpg',
+                text: "It's not Mia. The figure turns out to be a scavenger who's never heard of her. Defeated, you contemplate your next move in this endless search.",
+                choices: [
+                    { text: "Interrogate the scavenger for any information.", nextScene: 6 },
+                    { text: "Leave the tower, feeling hopeless.", nextScene: 'badEnding' },
+                    { text: "Attack the scavenger in frustration.", nextScene: 'badEnding' }
+                ]
+            },
+            6: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj5YgO_NEHhqmmcM8f2DwyP2OenDGm9AL0wC_qQQxzUWA4YEisLfDV6qYdhlLMLpipfkDSkdw2c2iajVK04uudFjpGtycpQO3xNVXJQJau91ns_W-sW7XiQxPtBnuXegxpuIZmNSEhK1wG8W-j_MdS6dC6eHkquI9d5jXYvpA6TpUVjBN-NkB22dYBNzBEW/s1024/6.jpg',
+                text: "The scavenger mentions hearing about a group that might have taken in survivors, including possibly Mia, near an old mall. You decide to...",
+                choices: [
+                    { text: "Head to the mall immediately.", nextScene: 8 },
+                    { text: "Take a moment to prepare for the journey.", nextScene: 7 },
+                    { text: "Ignore the lead, convinced it's another dead end.", nextScene: 'badEnding' }
+                ]
+            },
+            7: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg2s0EP8h5txprncDXLUrBog-Yfu0jRVbdT5cxbPFnJccDDbPGEekuc32FfgFL3rWrGxPGsUDYzHUXciTSK6XXAFsbbpS3pC_dZ-JNe8iwzeR_qDRKRVmi6YsKlc9WV-yqID0AsQt2RE5egneiiIyBhjEQj95sSwl_LNVkxOhEVb7bI4bfaEccyMnDjz0fb/s1024/7.jpg',
+                text: "You're starting to feel like you'll never find Mia in this vast, changed world. Yet, a small flicker of hope remains. Do you...",
+                choices: [
+                    { text: "Push on, driven by the memory of Mia.", nextScene: 8 },
+                    { text: "Sit down, overwhelmed by despair.", nextScene: 'badEnding' },
+                    { text: "Revisit old clues, one last time.", nextScene: 3 }
+                ]
+            },
+            8: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiusyABGrVEqQfiNnIJXidisv_aksrg64SJiFQ6jjEz8iRu8O4kjnjZJwV2SLEXNuzFrWpPxOA6xRf0zBbHmTgTb5-eGNVNFfF2K1URdWqWKCw-DnlLDYk3T0WKm5rs9NAvFrtZ3Nmv9XxbnFFB4EIadMtho2hg1ssZP-8yeZP4tJbVKrkfrTMuHPZ0uaC3/s1024/8.jpg',
+                text: "At the mall, you find signs of a community. As you approach, someone calls out your name. It's Mia!",
+                choices: [
+                    { text: "Run towards Mia for a reunion.", nextScene: 9 },
+                    { text: "Hesitate, thinking it might be a trap.", nextScene: 'badEnding' },
+                    { text: "Call out, confirming if it's really her.", nextScene: 9 }
+                ]
+            },
+            9: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjMiC0KtZVMmkgWCAMSzKJfz8iog1DESS-DE_G1pVqs6V-Y1NpnDmtrLbMrnODN3vt2qZU2VWlP6WWy7QL3KEzhTSGHSMDEG8K-UlvU38QTLqZvfTfOCNGkB52PgeBXUKYRQgswIZ1RCUjJLKsV3V8EU4Kh_1_KXBHt4uQ0d4g9tAnC1pFqqDfKfXwLPHO7/s1024/ending%20good.jpg',
+                text: "With Mia by your side, you decide where to go next in this new world. Do you...",
+                choices: [
+                    { text: "Travel to the nearby town, hoping for supplies and news.", nextScene: 10 },
+                    { text: "Head back to your old home, to see if anything remains.", nextScene: 11 },
+                    { text: "Venture into the unknown wilderness, seeking a new start.", nextScene: 12 }
+                ]
+            },
+            10: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEivz8IdV_RIaaJVbfDFJPmGBdwMwdoygJufIRmi6SeNjTRmsIGsEj-d9_FnitflXTdI357WEzPqYYJU3giWNIQUA-oXNDmbvrTDS9MExPADNyyX649vB7jUQE-Tx2b6OEzBVFUY5IfxznCFiJSL5LthuJxYpBRwt8WWdbP6ciTbfFP2LPm1ezyA8HylSi-z/s1184/preuzmi%20(1).jpg',
+                text: "The town is guarded, but they let you in after a tense moment. They're organizing a raid on a nearby raider camp. Do you...",
+                choices: [
+                    { text: "Join the raid to secure the town's future.", nextScene: 'goodEnding' },
+                    { text: "Refuse, focusing on gathering supplies and leaving.", nextScene: 13 },
+                    { text: "Sabotage the raid, hoping for peace.", nextScene: 'badEnding' }
+                ]
+            },
+            11: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEii8eZd_gia1svX5BLIqwHEIOcqZAfAmUTqVWlVh4RrWXf3PB7Lcwws2H2uqBPbrrcHEFviCoupSXO0JnzGN5IBlzL9bAnYiXX8jOPpwuzBuQRGgp7AtijSw5Q2FaIpRU51PsePjFHw30ikrm5I277xv1sm5iF1K-XDLUHxuSU9H3t2QGvs6CTlyXjNkdJ4/s1184/preuzmi%20(4).jpg',
+                text: "You find your old home in shambles, but there's a group living nearby. They offer you to stay but warn of dangers in the area. Do you...",
+                choices: [
+                    { text: "Stay and rebuild with the group.", nextScene: 'goodEnding' },
+                    { text: "Explore the dangers, hoping to find something valuable.", nextScene: 13 },
+                    { text: "Leave, feeling there's nothing left here.", nextScene: 'badEnding' }
+                ]
+            },
+            12: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhaj6yiNzS6x-zAw12WZTCcYA3Xl2fGvmoCaTmmNkuEcA2HZDADswuXA2VF4QKviUyn7z6eHSeKvbsnQ05I_22B3JFKV8_VrXbCKjj0Q33fVd8RfPei8u01XEUw9LKxPmS0VifqMoPK2lFME2zI0FRvdex_ANepEaLJoODXlNO85lwqfrWiJlfou9YuBS-9/s1024/AlbedoBase_XL_Postapocalyptic_setting_Brother_and_sister_movin_1.jpg',
+                text: "The wilderness is unforgiving but beautiful. You stumble upon an abandoned settlement with a working water source. Do you...",
+                choices: [
+                    { text: "Settle there, making it a new home.", nextScene: 'goodEnding' },
+                    { text: "Investigate further, driven by curiosity.", nextScene: 13 },
+                    { text: "Keep moving, believing there's more out there.", nextScene: 'badEnding' }
+                ]
+            },
+            13: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj8SswM2o3qSdm1OUBwk-BUB_Ec7LdnBUsOm13-_Bo35HAqyn7zAbrS3jOb2kgN7Pw7FPDVrBM37zV5Cngd216xbsh5gS1HSvhL5ysEihz5LcrLTIB_LurwvidAWrP4SgFUG6-eEQb1zuG9fMJbuc51MmGZc8PoLtRoePkkGIvXALDb-dZjlD7scCxFNaA6/s1184/preuzmi%20(2).jpg',
+                text: "Your decision leads to a perilous situation. Do you...",
+                choices: [
+                    { text: "Fight for survival, using your wits and strength.", nextScene: 'goodEnding' },
+                    { text: "Try to negotiate or escape.", nextScene: 'badEnding' },
+                    { text: "Give in to despair, accepting your fate.", nextScene: 'badEnding' }
+                ]
+            },
+            goodEnding: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEidlfKQHsW2x-O51mEa_JnLZ3w8om908C3-wrunPSjKTIjlHCWhPN2itB9geYNpU1CVYNUaoGQhAPmY9mNDwiYF3tbhDDbORU478j5mSw9MmoL0Wulmnz9NjGWCEBkk_vce54YykSfQV-lw1XKSvLrNUzYHFr20BtPl5fcyB6KRO_aRqWVZCU8W3Tw58bX9/s1184/preuzmi%20(8).jpg',
+                text: "Against all odds, you found Mia. Your decisions have led to both of you thriving in this harsh world!",
+                choices: [
+                    { text: "Restart the adventure.", nextScene: 1 }
+                ]
+            },
+            badEnding: {
+                image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh9Px9meQ94qaenb4vh5KFrO1Q43msgzBfpRxpqqcLTIfS5BP0zqjsH4WSyQ2oklYHKN8HZsQyZhk5N4h8m3pmgzEaYOqviH74Y9oL9a_h73wR_frgW9s7JMivzKz6K2iwi95efkqOVoMWCBuUprdWSbfJLlfuB-MPbn0bHaXEPKu6sgOCvk-9goRHcY2Zm/s1024/ending%20bad.jpg',
+                text: "Your choices led to more loss or despair. The search for Mia might be over, or it continues with new hardships.",
+                choices: [
+                    { text: "Restart the adventure.", nextScene: 1 }
+                ]
+            }
+        };
+
+        let currentScene = 1;
+
+        function startGame() {
+            currentScene = 1;
+            showScene(currentScene);
+        }
+
+        function showScene(sceneId) {
+            const scene = scenes[sceneId];
+            if (!scene) {
+                console.error(`Scene ${sceneId} not found`);
+                return;
+            }
+            document.getElementById('game-image').src = scene.image;
+            document.getElementById('text').innerText = scene.text;
+            const choicesDiv = document.getElementById('choices');
+            choicesDiv.innerHTML = '';
+
+            scene.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.className = 'choice';
+                button.innerText = choice.text;
+                button.onclick = () => handleChoice(choice);
+                choicesDiv.appendChild(button);
+            });
+        }
+
+        function handleChoice(choice) {
+            if (choice.nextScene) {
+                showScene(choice.nextScene);
+            }
+        }
+
+        window.onload = startGame;
+    </script>
+</body>
+</html>
