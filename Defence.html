@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Medieval Defense Remake</title>
+    <style>
+        canvas { border: 1px solid black; }
+        body { display: flex; flex-direction: column; align-items: center; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div>Gold: <span id="gold">100</span></div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const goldDisplay = document.getElementById('gold');
+
+        // Game state
+        let gold = 100;
+        let enemies = [];
+        let towers = [];
+
+        // Enemy class
+        class Enemy {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.speed = 1;
+                this.health = 50;
+            }
+            update() {
+                this.x += this.speed; // Move right
+                if (this.x > canvas.width) this.health = 0; // Off-screen
+            }
+            draw() {
+                ctx.fillStyle = 'red';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Tower class
+        class Tower {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.range = 100;
+                this.cooldown = 0;
+            }
+            update() {
+                if (this.cooldown > 0) this.cooldown--;
+                for (let enemy of enemies) {
+                    if (this.inRange(enemy) && this.cooldown === 0) {
+                        enemy.health -= 10;
+                        this.cooldown = 30; // Attack every 0.5s (at 60 FPS)
+                    }
+                }
+            }
+            inRange(enemy) {
+                const dx = enemy.x - this.x;
+                const dy = enemy.y - this.y;
+                return Math.sqrt(dx * dx + dy * dy) < this.range;
+            }
+            draw() {
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(this.x - 15, this.y - 15, 30, 30);
+                ctx.strokeStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        // Spawn enemies
+        function spawnEnemy() {
+            enemies.push(new Enemy(0, canvas.height / 2));
+        }
+
+        // Place tower on click
+        canvas.addEventListener('click', (e) => {
+            if (gold >= 50) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                towers.push(new Tower(x, y));
+                gold -= 50;
+                goldDisplay.textContent = gold;
+            }
+        });
+
+        // Game loop
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw enemies
+            enemies = enemies.filter(e => e.health > 0);
+            enemies.forEach(enemy => {
+                enemy.update();
+                enemy.draw();
+            });
+
+            // Update and draw towers
+            towers.forEach(tower => {
+                tower.update();
+                tower.draw();
+            });
+
+            // Spawn enemies periodically
+            if (Math.random() < 0.02) spawnEnemy();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        gameLoop();
+    </script>
+</body>
+</html>
