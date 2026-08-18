@@ -7,6 +7,41 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Wasteland Words</title>
+  <script>
+    /* Same 500x700 game window as Caps Poker / Great War / Crazy Eights.
+       Blogger links should also use window.open (see README). This relaunches
+       a full desktop tab as that popup so a plain href still matches. */
+    (function () {
+      var W = 500, H = 700;
+      var ua = navigator.userAgent || "";
+      var mobile = /Mobi|Android|iPhone|iPad|iPod|webOS|IEMobile|Opera Mini/i.test(ua)
+        || /; wv\)|WebView/i.test(ua);
+      var standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+      var framed = false;
+      try { framed = window.self !== window.top; } catch (e) { framed = true; }
+      var q = location.search || "";
+      var flagged = /(?:\?|&)popup=1(?:&|$)/.test(q);
+      var small = !!(window.outerWidth && window.outerWidth <= W + 48 && window.outerHeight <= H + 100);
+      var opened = !!window.opener;
+
+      if (flagged || opened || small) {
+        document.documentElement.className += (document.documentElement.className ? " " : "") + "popup-mode";
+        return;
+      }
+      if (mobile || framed || standalone) return;
+
+      var left = Math.max(0, Math.round(((screen.availWidth || screen.width) - W) / 2));
+      var top = Math.max(0, Math.round(((screen.availHeight || screen.height) - H) / 2));
+      var features = "width=" + W + ",height=" + H + ",left=" + left + ",top=" + top
+        + ",scrollbars=no,resizable=yes,menubar=no,toolbar=no,location=no,status=no";
+      var url = location.href + (q ? "&" : "?") + "popup=1";
+      var win = window.open(url, "WastelandWords", features);
+      if (win) {
+        try { win.focus(); } catch (e) {}
+        try { window.open("", "_self"); window.close(); } catch (e) {}
+      }
+    })();
+  </script>
   <style>
     :root {
       --bg: #222222;
@@ -52,7 +87,7 @@
     }
 
     @media (min-width: 520px) and (min-aspect-ratio: 3/4) {
-      body {
+      html:not(.popup-mode) body {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -60,13 +95,26 @@
         background:
           radial-gradient(ellipse at 50% 0%, #2a2a2a 0%, #1a1a1a 55%);
       }
-      .app {
+      html:not(.popup-mode) .app {
         height: min(100dvh - 24px, 860px);
         width: min(430px, calc((100dvh - 24px) * 9 / 16));
         border: 1px solid #333;
         border-radius: 16px;
         box-shadow: 0 24px 64px rgba(0,0,0,.55);
       }
+    }
+
+    html.popup-mode, html.popup-mode body {
+      background: #222;
+    }
+    html.popup-mode .app {
+      max-width: none;
+      width: 100%;
+      height: 100dvh;
+      height: 100svh;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
     }
 
     .screen {

@@ -29,19 +29,14 @@ It will then live at:
 
 ### Blogger (fallouthub.blog)
 
-HTML gadget or post:
+The other Hub games (Caps Poker, Great War, Crazy Eights) are **500×700** and open in a sized popup, not a full tab. Use this as the game link on the Mini-Games page (HTML view):
 
 ```html
-<iframe
-  src="https://angelyze.github.io/Game/WastelandWords.html"
-  title="Wasteland Words"
-  style="width:100%;max-width:420px;aspect-ratio:9/16;border:0;display:block;margin:1rem auto;background:#222"
-  allow="clipboard-write"
-  loading="lazy">
-</iframe>
+<a href="https://angelyze.github.io/Game/Wasteland%20Words.html"
+   onclick="window.open(this.href,'WastelandWords','width=500,height=700,scrollbars=no,resizable=yes,menubar=no,toolbar=no,location=no,status=no');return false;">WASTELAND WORDS (Fallout Wordle)</a>
 ```
 
-You can also just link the URL, same as Caps Poker.
+`return false` keeps Blogger from navigating the current page. The game file also relaunches itself as that same 500×700 window if someone hits the plain URL on desktop. Phones and the FH Companion WebView stay full-screen.
 
 ### FH Companion
 
