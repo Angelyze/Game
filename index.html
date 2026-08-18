@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#222222">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Wasteland Words</title>
+  <style>
+    :root {
+      --bg: #222222;
+      --bg-2: #2c2c2c;
+      --line: #555555;
+      --text: #f2f2f2;
+      --muted: #9a9a9a;
+      --accent: #ff9000;
+      --present: #c47a20;
+      --absent: #3a3a3a;
+      --key: #3d3d3d;
+      --danger: #c44;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --header-h: 52px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #1a1a1a;
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      overflow: hidden;
+      touch-action: manipulation;
+      user-select: none;
+      color-scheme: dark;
+      overscroll-behavior: none;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      height: 100dvh;
+      height: 100svh;
+      margin: 0 auto;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (min-width: 520px) and (min-aspect-ratio: 3/4) {
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100dvh;
+        background:
+          radial-gradient(ellipse at 50% 0%, #2a2a2a 0%, #1a1a1a 55%);
+      }
+      .app {
+        height: min(100dvh - 24px, 860px);
+        width: min(430px, calc((100dvh - 24px) * 9 / 16));
+        border: 1px solid #333;
+        border-radius: 16px;
+        box-shadow: 0 24px 64px rgba(0,0,0,.55);
+      }
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity .22s ease, transform .22s ease;
+    }
+    .screen.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+    }
+
+    /* ——— Title ——— */
+    #screen-title {
+      padding: calc(18px + var(--safe-t)) 20px calc(16px + var(--safe-b));
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+    .vault-mark {
+      width: 68px;
+      height: 68px;
+      margin: 4px auto 14px;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      box-shadow:
+        0 0 0 3px var(--bg),
+        0 0 0 5px #a35e00,
+        inset 0 0 0 7px #2a2a2a;
+      position: relative;
+      background: radial-gradient(circle at 50% 50%, #ffb347 0 10px, #ff9000 11px 16px, #222 17px 24px, #ff9000 25px);
+    }
+    .vault-mark::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 4px;
+      height: 46%;
+      background: #222;
+      transform-origin: top center;
+      transform: translate(-50%, 0) rotate(0deg);
+      box-shadow:
+        0 0 0 0 #222,
+        18px 10px 0 -1px #222,
+        -18px 10px 0 -1px #222;
+    }
+    .wordmark {
+      text-align: center;
+      letter-spacing: .22em;
+      font-weight: 800;
+      line-height: 1.05;
+      margin: 0;
+    }
+    .wordmark span {
+      display: block;
+      color: var(--accent);
+      font-size: clamp(26px, 8vw, 34px);
+    }
+    .wordmark em {
+      display: block;
+      font-style: normal;
+      font-size: clamp(22px, 6.6vw, 28px);
+      letter-spacing: .34em;
+      padding-left: .34em;
+    }
+    .tagline {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin: 10px 0 22px;
+      letter-spacing: .04em;
+    }
+    .modes { display: flex; flex-direction: column; gap: 10px; }
+    .mode-btn {
+      appearance: none;
+      border: 1px solid #3a3a3a;
+      background: #2a2a2a;
+      color: var(--text);
+      text-align: left;
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 72px;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2px 12px;
+      transition: border-color .15s, transform .12s;
+    }
+    .mode-btn:active { transform: scale(.985); }
+    .mode-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .mode-btn .name {
+      font-weight: 800;
+      letter-spacing: .14em;
+      font-size: 15px;
+      color: var(--accent);
+    }
+    .mode-btn .blurb {
+      grid-column: 1;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .mode-btn .today {
+      grid-row: 1 / span 2;
+      align-self: center;
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid #444;
+      border-radius: 999px;
+      padding: 6px 8px;
+      min-width: 72px;
+      text-align: center;
+    }
+    .mode-btn .today.done { color: var(--accent); border-color: var(--accent); }
+    .mode-btn .today.mid { color: #f2f2f2; }
+
+    .toggles {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin: 18px 0 10px;
+    }
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .04em;
+      cursor: pointer;
+    }
+    .toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
+    .title-links {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 4px;
+    }
+    .text-btn {
+      appearance: none;
+      background: none;
+      border: 0;
+      color: var(--accent);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 8px;
+    }
+    .disclaimer {
+      margin-top: auto;
+      padding-top: 16px;
+      text-align: center;
+      color: #6e6e6e;
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    /* ——— Play ——— */
+    .play-header {
+      height: calc(var(--header-h) + var(--safe-t));
+      padding: var(--safe-t) 8px 0;
+      display: grid;
+      grid-template-columns: 40px 40px 1fr 40px 40px;
+      align-items: center;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      background: none;
+      color: var(--text);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      font-size: 20px;
+    }
+    .icon-btn:focus-visible { outline: 2px solid var(--accent); }
+    .play-title {
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: .16em;
+      font-size: 13px;
+      color: var(--accent);
+    }
+    .play-title small {
+      display: block;
+      letter-spacing: .08em;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 10px;
+      margin-top: 1px;
+    }
+
+    .board-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px 6px;
+      min-height: 0;
+      position: relative;
+    }
+    .board {
+      width: min(100%, 350px);
+      aspect-ratio: 5 / 6.15;
+      max-height: 100%;
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 5px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+    }
+    .tile {
+      border: 2px solid var(--line);
+      background: var(--bg-2);
+      display: grid;
+      place-items: center;
+      font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "Courier New", monospace;
+      font-weight: 800;
+      font-size: clamp(18px, 6.2vw, 28px);
+      text-transform: uppercase;
+      color: var(--text);
+      border-radius: 4px;
+    }
+    .tile.filled { border-color: #888; animation: pop .1s ease-out; }
+    .tile.correct { background: var(--accent); border-color: var(--accent); color: #222; }
+    .tile.present { background: var(--present); border-color: var(--present); color: #fff; }
+    .tile.absent { background: var(--absent); border-color: var(--absent); color: #9a9a9a; }
+    .tile.flip { animation: flip .45s ease forwards; }
+    .row.shake { animation: shake .45s ease; }
+    .tile.win { animation: bounce .55s ease; }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+    @keyframes flip {
+      0% { transform: rotateX(0); }
+      45% { transform: rotateX(90deg); }
+      100% { transform: rotateX(0); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      70% { transform: translateY(3px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tile.filled, .tile.flip, .row.shake, .tile.win, .screen { animation: none; transition: none; }
+    }
+
+    .toast {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: #f2f2f2;
+      color: #222;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 6px;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      transition: opacity .18s, transform .18s;
+      z-index: 5;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .keyboard {
+      padding: 6px 6px calc(10px + var(--safe-b));
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+    }
+    .key {
+      flex: 1;
+      max-width: 36px;
+      height: 52px;
+      border: 0;
+      border-radius: 5px;
+      background: var(--key);
+      color: var(--text);
+      font: 700 13px system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .key.wide { max-width: 56px; flex: 1.55; font-size: 11px; letter-spacing: .04em; }
+    .key.correct { background: var(--accent); color: #222; }
+    .key.present { background: var(--present); color: #fff; }
+    .key.absent { background: #2a2a2a; color: #666; }
+    .key:active { filter: brightness(1.15); }
+
+    /* ——— Overlay ——— */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+      z-index: 10;
+    }
+    .overlay.open { opacity: 1; pointer-events: auto; }
+    .modal {
+      width: min(100%, 360px);
+      max-height: min(86dvh, 640px);
+      overflow: auto;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 14px;
+      padding: 20px 18px 16px;
+      overscroll-behavior: contain;
+    }
+    .modal h2 {
+      margin: 0 0 10px;
+      text-align: center;
+      letter-spacing: .16em;
+      font-size: 16px;
+      color: var(--accent);
+    }
+    .modal p, .modal li { color: #ddd; font-size: 14px; line-height: 1.45; }
+    .modal .close-x {
+      float: right;
+      margin: -8px -4px 0 0;
+      background: none;
+      border: 0;
+      color: var(--muted);
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .how-ex {
+      display: flex;
+      gap: 5px;
+      margin: 8px 0 4px;
+    }
+    .how-ex i {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 4px;
+      font-family: ui-monospace, monospace;
+      font-weight: 800;
+      font-style: normal;
+      border: 2px solid var(--line);
+    }
+    .how-ex i.correct { background: var(--accent); border-color: var(--accent); color: #222; }
+    .how-ex i.present { background: var(--present); border-color: var(--present); }
+    .how-ex i.absent { background: var(--absent); border-color: var(--absent); color: #9a9a9a; }
+    .tiny { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+
+    .result-word {
+      text-align: center;
+      font-family: ui-monospace, "Cascadia Mono", monospace;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: .2em;
+      color: var(--accent);
+      margin: 8px 0 6px;
+    }
+    .result-hint { text-align: center; color: #ddd; margin: 0 0 4px; font-size: 14px; }
+    .result-src { text-align: center; color: var(--muted); font-size: 12px; margin: 0 0 16px; }
+    .actions { display: flex; flex-direction: column; gap: 8px; }
+    .primary, .secondary {
+      appearance: none;
+      border-radius: 10px;
+      padding: 12px;
+      font: 700 14px system-ui, sans-serif;
+      letter-spacing: .06em;
+      cursor: pointer;
+    }
+    .primary { border: 0; background: var(--accent); color: #222; }
+    .secondary { border: 1px solid #555; background: transparent; color: var(--text); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 12px 0 16px;
+      text-align: center;
+    }
+    .stats-grid b { display: block; font-size: 22px; color: var(--accent); }
+    .stats-grid span { font-size: 10px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+    .dist { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+    .dist-row { display: grid; grid-template-columns: 14px 1fr; gap: 8px; align-items: center; font-size: 12px; }
+    .bar {
+      height: 18px;
+      background: #3a3a3a;
+      color: #fff;
+      min-width: 18px;
+      padding: 0 6px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      font-weight: 700;
+      border-radius: 3px;
+    }
+    .bar.hl { background: var(--accent); color: #222; }
+    .mode-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .mode-tabs button {
+      flex: 1;
+      border: 1px solid #444;
+      background: #222;
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 7px;
+      font: 700 11px system-ui, sans-serif;
+      letter-spacing: .08em;
+      cursor: pointer;
+    }
+    .mode-tabs button.on { color: #222; background: var(--accent); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <section class="screen active" id="screen-title">
+      <div class="vault-mark" aria-hidden="true"></div>
+      <h1 class="wordmark"><span>WASTELAND</span><em>WORDS</em></h1>
+      <p class="tagline">Guess the wasteland word</p>
+      <div class="modes">
+        <button class="mode-btn" data-mode="easy">
+          <span class="name">EASY</span>
+          <span class="today" id="st-easy">Today</span>
+          <span class="blurb">Household names from the games and the show.</span>
+        </button>
+        <button class="mode-btn" data-mode="normal">
+          <span class="name">NORMAL</span>
+          <span class="today" id="st-normal">Today</span>
+          <span class="blurb">Towns, companions, and mid-tier lore.</span>
+        </button>
+        <button class="mode-btn" data-mode="extreme">
+          <span class="name">EXTREME</span>
+          <span class="today" id="st-extreme">Today</span>
+          <span class="blurb">Deep cuts. Wiki dwellers only.</span>
+        </button>
+      </div>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="hard-toggle"> Hard mode</label>
+        <label class="toggle"><input type="checkbox" id="sound-toggle" checked> Sound</label>
+      </div>
+      <div class="title-links">
+        <button class="text-btn" id="btn-help">How to play</button>
+        <button class="text-btn" id="btn-stats">Stats</button>
+      </div>
+      <p class="disclaimer">Fan-made and unofficial. Not affiliated with Bethesda, Microsoft, Amazon, or The New York Times.</p>
+    </section>
+
+    <section class="screen" id="screen-play">
+      <header class="play-header">
+        <button class="icon-btn" id="btn-back" aria-label="Back">‹</button>
+        <button class="icon-btn" id="btn-help2" aria-label="How to play">?</button>
+        <div class="play-title" id="play-title">NORMAL<small>Daily</small></div>
+        <button class="icon-btn" id="btn-stats2" aria-label="Stats">
+          <svg width="18" height="16" viewBox="0 0 18 16" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="4" height="8"/><rect x="7" y="3" width="4" height="13"/><rect x="14" y="0" width="4" height="16"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-sound" aria-label="Toggle sound">🔊</button>
+      </header>
+      <div class="board-wrap">
+        <div class="toast" id="toast"></div>
+        <div class="board" id="board" aria-label="Guess grid"></div>
+      </div>
+      <div class="keyboard" id="keyboard"></div>
+    </section>
+
+    <div class="overlay" id="overlay-help">
+      <div class="modal" role="dialog" aria-labelledby="help-h">
+        <button class="close-x" data-close aria-label="Close">×</button>
+        <h2 id="help-h">HOW TO PLAY</h2>
+        <p>Guess the 5-letter wasteland word in 6 tries. Each guess must be a real word.</p>
+        <div class="how-ex"><i class="correct">V</i><i>A</i><i>U</i><i>L</i><i>T</i></div>
+        <p class="tiny">Orange — right letter, right place.</p>
+        <div class="how-ex"><i>G</i><i class="present">H</i><i>O</i><i>U</i><i>L</i></div>
+        <p class="tiny">Amber — right letter, wrong place.</p>
+        <div class="how-ex"><i>R</i><i>O</i><i>B</i><i class="absent">O</i><i>T</i></div>
+        <p class="tiny">Gray — not in the word. Duplicate letters are scored like the original.</p>
+        <p>Easy, Normal, and Extreme change which wasteland word is the answer, not the rules. Guesses can be common English words. Hard mode makes you reuse revealed hints.</p>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-stats">
+      <div class="modal" role="dialog" aria-labelledby="stats-h">
+        <button class="close-x" data-close aria-label="Close">×</button>
+        <h2 id="stats-h">STATS</h2>
+        <div class="mode-tabs" id="stats-tabs"></div>
+        <div id="stats-body"></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-result">
+      <div class="modal" role="dialog" aria-labelledby="result-h">
+        <button class="close-x" data-close aria-label="Close">×</button>
+        <h2 id="result-h">ACCESS GRANTED</h2>
+        <div class="result-word" id="result-word">VAULT</div>
+        <p class="result-hint" id="result-hint"></p>
+        <p class="result-src" id="result-src"></p>
+        <div class="actions">
+          <button class="primary" id="btn-share">SHARE</button>
+          <button class="secondary" id="btn-practice">PRACTICE ANOTHER</button>
+          <button class="secondary" id="btn-modes">CHANGE MODE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  /* ========== Word data ========== */
+  const WORDS = {
+    easy: [
+      {w:"VAULT",h:"underground shelter",s:"all games + show"},
+      {w:"GHOUL",h:"irradiated human",s:"all games + show"},
+      {w:"ROBOT",h:"automaton",s:"all games"},
+      {w:"ARMOR",h:"protective plating",s:"all games + show"},
+      {w:"LASER",h:"energy weapon",s:"all games"},
+      {w:"RIFLE",h:"common firearm",s:"all games + show"},
+      {w:"SNEAK",h:"stealth skill",s:"all games"},
+      {w:"PERKS",h:"extra character bonuses",s:"all games"},
+      {w:"KARMA",h:"classic morality meter",s:"FO1–FO3, New Vegas"},
+      {w:"WATER",h:"the chip, the thirst, the war",s:"FO1 + all games"},
+      {w:"STEEL",h:"Brotherhood of Steel",s:"all games + show"},
+      {w:"POWER",h:"power armor",s:"all games + show"},
+      {w:"QUEST",h:"a job in the wastes",s:"all games"},
+      {w:"MEDIC",h:"healing skill and perk",s:"all games"},
+      {w:"ATOMS",h:"the bomb, or its children",s:"all games + show"},
+      {w:"CHEMS",h:"wasteland drugs",s:"all games"},
+      {w:"NUKES",h:"what fell in 2077",s:"all games + show"},
+      {w:"SYNTH",h:"Institute android",s:"Fallout 4"},
+      {w:"BLADE",h:"combat knife, or the Blades",s:"all games / FO1"},
+      {w:"RECON",h:"NCR Ranger recon",s:"FO2, New Vegas, show"},
+      {w:"RADIO",h:"Galaxy News, Diamond City, Appalachia",s:"all games"},
+      {w:"VEGAS",h:"New Vegas",s:"New Vegas + show"},
+      {w:"STRIP",h:"the gated heart of New Vegas",s:"New Vegas + show"},
+      {w:"ALIEN",h:"Zetans and crashed ships",s:"FO3, NV, 4, 76"},
+      {w:"SUPER",h:"Super Mutant",s:"all games + show"},
+      {w:"CLAWS",h:"Deathclaw",s:"all games + show"},
+      {w:"WASTE",h:"the Wasteland",s:"all games + show"},
+      {w:"FLASH",h:"The Glow, or a flashbang",s:"Fallout 1"},
+      {w:"CHIPS",h:"the Water Chip, or casino chips",s:"FO1 / New Vegas"},
+      {w:"BEANS",h:"Pork n' Beans",s:"all games"},
+      {w:"CAMPS",h:"C.A.M.P. workshops",s:"Fallout 76"},
+      {w:"BOMBS",h:"the Great War",s:"all games + show"},
+      {w:"MAXIM",h:"Maximus of the Brotherhood",s:"TV show"},
+      {w:"PIPER",h:"Piper Wright",s:"Fallout 4"},
+      {w:"SHAUN",h:"Shaun / Father",s:"Fallout 4"},
+      {w:"HOUSE",h:"Mr. House",s:"New Vegas + show"},
+      {w:"ROBCO",h:"RobCo Industries",s:"all games + show"},
+      {w:"GECKO",h:"wasteland lizard",s:"FO2, New Vegas"},
+      {w:"AMATA",h:"Amata Almodovar",s:"Fallout 3"},
+      {w:"BUTCH",h:"Tunnel Snakes rule",s:"Fallout 3"},
+      {w:"BENNY",h:"the checkered-suit chairman",s:"New Vegas"},
+      {w:"BOONE",h:"Craig Boone",s:"New Vegas"},
+      {w:"CURIE",h:"Miss Nanny turned scientist",s:"Fallout 4"},
+      {w:"DANSE",h:"Paladin Danse",s:"Fallout 4"},
+      {w:"GLORY",h:"Railroad heavy",s:"Fallout 4"},
+      {w:"BRUTE",h:"Super Mutant muscle",s:"all games + show"},
+      {w:"FILLY",h:"surface town on the show",s:"TV show"},
+      {w:"NOVAC",h:"the dinosaur motel town",s:"New Vegas + show"},
+      {w:"PRIMM",h:"home of the Vikki and Vance",s:"New Vegas"},
+      {w:"OASIS",h:"a hidden grove",s:"Fallout 3"},
+      {w:"KHANS",h:"Great Khans",s:"FO1, FO2, New Vegas"},
+      {w:"TALON",h:"Talon Company mercs",s:"Fallout 3"},
+      {w:"JAMES",h:"the Lone Wanderer's father",s:"Fallout 3"},
+      {w:"UNITY",h:"the Master's grim dream",s:"Fallout 1"},
+      {w:"ELDER",h:"Brotherhood leader rank",s:"all games + show"},
+      {w:"TOMES",h:"Brotherhood scribes' books",s:"all games + show"},
+      {w:"PUPIL",h:"a Brotherhood squire",s:"games + show"},
+      {w:"GAUSS",h:"electromagnetic rifle",s:"3D games"},
+      {w:"TESLA",h:"crackling energy gun",s:"FO3, 76"},
+      {w:"MELEE",h:"close-quarters combat",s:"all games"},
+      {w:"VOICE",h:"President Eden's voice",s:"Fallout 3"},
+      {w:"SUGAR",h:"Sugar Bombs cereal",s:"all games"},
+      {w:"VIRUS",h:"Forced Evolutionary Virus",s:"all games"},
+      {w:"KINGS",h:"the Elvis gang of Freeside",s:"New Vegas"},
+      {w:"WILDS",h:"Zion's wild canyons",s:"Honest Hearts"},
+      {w:"LUCKY",h:"the Lucky 38",s:"New Vegas"},
+      {w:"TOMMY",h:"Tinker Tom",s:"Fallout 4"},
+      {w:"NINJA",h:"sneak-melee perk",s:"Fallout 4"},
+      {w:"BLOOD",h:"Bloody Mess perk",s:"all games"},
+      {w:"FISTS",h:"Iron Fist perk",s:"Fallout 4"},
+      {w:"TOUGH",h:"Toughness perk",s:"all games"},
+      {w:"SKILL",h:"tagged skills",s:"classic games"},
+      {w:"STATS",h:"SPECIAL and derived stats",s:"all games"},
+      {w:"TRAIT",h:"classic character traits",s:"FO1, FO2, New Vegas"},
+      {w:"SCOPE",h:"a sniper's scope",s:"all games"},
+      {w:"VIPER",h:"Vipers raider gang",s:"FO1, New Vegas"},
+      {w:"BEAST",h:"scorchbeast or deathclaw",s:"76 / all"},
+      {w:"QUEEN",h:"Mirelurk Queen",s:"FO4, 76"},
+      {w:"SCOUT",h:"recon perk or role",s:"all games"},
+      {w:"GUARD",h:"vault or city guard",s:"all games"},
+      {w:"THIEF",h:"thief perk",s:"classic games"},
+      {w:"GHOST",h:"Ghost perk",s:"classic games"},
+      {w:"SLAYS",h:"Slayer perk",s:"classic games"},
+      {w:"BRAIN",h:"Intelligence, or The Brain",s:"all / New Vegas"},
+      {w:"BLAST",h:"explosions and blasters",s:"all games"},
+      {w:"FLAME",h:"flamers",s:"all games"},
+      {w:"DAISY",h:"Daisy of Goodneighbor",s:"Fallout 4"},
+      {w:"SIMMS",h:"Sheriff Lucas Simms",s:"Fallout 3"},
+      {w:"STIMP",h:"a stimpak",s:"all games + show"}
+    ],
+    normal: [
+      {w:"TYCHO",h:"desert ranger companion",s:"Fallout 1"},
+      {w:"KATJA",h:"Boneyard thief companion",s:"Fallout 1"},
+      {w:"SULIK",h:"tribal companion with a spirit",s:"Fallout 2"},
+      {w:"MYRON",h:"teenage chem genius",s:"Fallout 2"},
+      {w:"LENNY",h:"ghoul doctor companion",s:"Fallout 2"},
+      {w:"GORIS",h:"intelligent deathclaw",s:"Fallout 2"},
+      {w:"LYONS",h:"Owyn or Sarah Lyons",s:"Fallout 3"},
+      {w:"KELLS",h:"Lancer-Captain Kells",s:"Fallout 4"},
+      {w:"MARCY",h:"Marcy Long of Sanctuary",s:"Fallout 4"},
+      {w:"TRUDY",h:"Trudy of the Concord diner",s:"Fallout 4"},
+      {w:"CLAIR",h:"Clair of the Colonial Taphouse",s:"Fallout 4"},
+      {w:"AVERY",h:"Captain Avery of Far Harbor",s:"Fallout 4"},
+      {w:"KENJI",h:"Kenji Nakano",s:"Fallout 4"},
+      {w:"VADIM",h:"Vadim Bobrov",s:"Fallout 4"},
+      {w:"FISTO",h:"entertainment protectron",s:"New Vegas"},
+      {w:"MOIRA",h:"Moira Brown, Wasteland Survival Guide",s:"Fallout 3"},
+      {w:"STEPH",h:"Steph Harper of Vault 33",s:"TV show"},
+      {w:"TITUS",h:"Knight Titus",s:"TV show"},
+      {w:"BLOAT",h:"bloatfly",s:"FO3 onward"},
+      {w:"RIVET",h:"Rivet City",s:"Fallout 3"},
+      {w:"MODOC",h:"the slaughterhouse town",s:"Fallout 2"},
+      {w:"LUCAS",h:"Lucas Simms",s:"Fallout 3"},
+      {w:"CROSS",h:"Star Paladin Cross",s:"Fallout 3"},
+      {w:"BETTY",h:"Betty Pearson of Vault 31",s:"TV show"},
+      {w:"WOODY",h:"Woody Thomas",s:"TV show"},
+      {w:"FELIX",h:"Cleric Felix",s:"TV show"},
+      {w:"TANDI",h:"Tandi of Shady Sands",s:"FO1, FO2"},
+      {w:"SHADY",h:"Shady Sands",s:"FO1, FO2, show"},
+      {w:"THREE",h:"Three Dog",s:"Fallout 3"},
+      {w:"ASHUR",h:"Lord Ashur of The Pitt",s:"Fallout 3"},
+      {w:"SWANK",h:"Swank of The Tops",s:"New Vegas"},
+      {w:"RINGO",h:"Ringo of Goodsprings",s:"New Vegas"},
+      {w:"SALON",h:"the Prospector Saloon",s:"New Vegas"},
+      {w:"ELLIE",h:"Ellie Perkins",s:"Fallout 4"},
+      {w:"YEFIM",h:"Yefim Bobrov",s:"Fallout 4"},
+      {w:"ROACH",h:"radroach",s:"all games + show"},
+      {w:"FERAL",h:"feral ghoul",s:"3D games"},
+      {w:"LURKS",h:"mirelurk hunters",s:"FO4, 76"},
+      {w:"PAIGE",h:"Paige of Foundation",s:"Fallout 76"},
+      {w:"MASON",h:"Mason of The Pack",s:"Fallout 4"},
+      {w:"DIXIE",h:"Dixie of the Disciples",s:"Fallout 4"},
+      {w:"COLIN",h:"Colin Moriarty",s:"Fallout 3"},
+      {w:"SARAH",h:"Sarah Lyons",s:"Fallout 3"},
+      {w:"CAROL",h:"Carol of Underworld",s:"Fallout 3"},
+      {w:"MARIE",h:"Marie of The Pitt",s:"Fallout 3"},
+      {w:"HALEY",h:"Haley of Point Lookout",s:"Fallout 3"},
+      {w:"RHYSS",h:"Knight Rhys",s:"Fallout 4"},
+      {w:"BRIAN",h:"Brian Virgil",s:"Fallout 4"},
+      {w:"CARLA",h:"Trashcan Carla",s:"Fallout 4"},
+      {w:"PENNY",h:"Penny Fitzgerald or Hornwright",s:"FO4 / 76"},
+      {w:"MITCH",h:"Mitch of Far Harbor",s:"Fallout 4"},
+      {w:"TEDDY",h:"Teddy Wright",s:"Fallout 4"},
+      {w:"ALLEN",h:"Allen Lee of Far Harbor",s:"Fallout 4"},
+      {w:"JANEY",h:"Janey, Cooper Howard's daughter",s:"TV show"},
+      {w:"GIZMO",h:"Gizmo of Junktown",s:"Fallout 1"},
+      {w:"MIRIA",h:"Miria of The Den",s:"Fallout 2"},
+      {w:"DAVIN",h:"Davin of The Den",s:"Fallout 2"},
+      {w:"JENNY",h:"Jenny of Arroyo",s:"Fallout 2"},
+      {w:"HOLOS",h:"holotapes",s:"3D games"},
+      {w:"ULTRA",h:"Ultra-Luxe",s:"New Vegas"},
+      {w:"MADRE",h:"Sierra Madre",s:"Dead Money"},
+      {w:"EMPTY",h:"the Big Empty",s:"Old World Blues"},
+      {w:"FREES",h:"Freeside",s:"New Vegas"},
+      {w:"DWELL",h:"Vault Dweller",s:"Fallout 1"},
+      {w:"AGILE",h:"Agility",s:"all games"},
+      {w:"CHARM",h:"Charisma",s:"all games"},
+      {w:"MIGHT",h:"Strength",s:"all games"},
+      {w:"FIXIT",h:"Mr. Fixit perk",s:"classic games"},
+      {w:"LONER",h:"Lone Wanderer perk",s:"Fallout 4"},
+      {w:"AWARE",h:"Awareness perk",s:"all games"},
+      {w:"QUICK",h:"Quick Pockets or Quick Draw",s:"classic / FO4"},
+      {w:"TALKS",h:"Smooth Talker perk",s:"classic games"},
+      {w:"LIGHT",h:"Light Step perk",s:"classic games"},
+      {w:"SHARP",h:"Sharpshooter perk",s:"classic games"},
+      {w:"HATCH",h:"mirelurk hatchling",s:"FO3 onward"},
+      {w:"WORLD",h:"Nuka-World",s:"Fallout 4"},
+      {w:"PARKS",h:"Nuka-World parks",s:"Fallout 4"},
+      {w:"MOTHS",h:"Mothman",s:"Fallout 76"},
+      {w:"EAGLE",h:"Blood Eagles",s:"Fallout 76"},
+      {w:"TOXIC",h:"Toxic Valley",s:"Fallout 76"},
+      {w:"WOODS",h:"Flatwoods",s:"Fallout 76"},
+      {w:"POINT",h:"Point Lookout or Point Pleasant",s:"FO3 / 76"},
+      {w:"BOBBY",h:"bobby pin",s:"3D games"},
+      {w:"DANDY",h:"Dandy Boy Apples",s:"all games"},
+      {w:"FANCY",h:"Fancy Lads Snack Cakes",s:"all games"},
+      {w:"CAKES",h:"Fancy Lads Snack Cakes",s:"all games"},
+      {w:"RAIDS",h:"vault raids",s:"Shelter / 76"},
+      {w:"LUNCH",h:"lunchboxes",s:"Fallout Shelter"},
+      {w:"ANGEL",h:"Angel's Boneyard",s:"FO1, show"},
+      {w:"HILLS",h:"Lost Hills or Broken Hills",s:"FO1, FO2"},
+      {w:"SCRAP",h:"Junktown scrap",s:"Fallout 1"},
+      {w:"GRETA",h:"Greta of Underworld",s:"Fallout 3"},
+      {w:"LUCIA",h:"Knight Lucia",s:"Fallout 4"},
+      {w:"GAVIL",h:"Knight-Sergeant Gavil",s:"Fallout 4"},
+      {w:"SANDS",h:"Shady Sands",s:"FO1, FO2, show"},
+      {w:"DAVEY",h:"Davey of Vault 32",s:"TV show"},
+      {w:"SNIPS",h:"Snip Snip the Mr. Handy",s:"TV show"},
+      {w:"CORES",h:"fusion cores",s:"FO4, 76, show"},
+      {w:"CELLS",h:"microfusion cells",s:"3D games"},
+      {w:"TAPES",h:"holotapes",s:"3D games"}
+    ],
+    extreme: [
+      {w:"TALUS",h:"Lost Hills paladin",s:"Fallout 1"},
+      {w:"MYNOC",h:"Arroyo villager",s:"Fallout 2"},
+      {w:"NAGOR",h:"Arroyo hunter",s:"Fallout 2"},
+      {w:"KLINT",h:"temple guard of Arroyo",s:"Fallout 2"},
+      {w:"MARSH",h:"Point Lookout marshes",s:"Point Lookout"},
+      {w:"KEELY",h:"Vault 22 scientist",s:"New Vegas"},
+      {w:"ANTON",h:"Vault 22 researcher",s:"New Vegas"},
+      {w:"QUINN",h:"Underworld resident",s:"Fallout 3"},
+      {w:"STICK",h:"Sticky of Little Lamplight",s:"Fallout 3"},
+      {w:"PATCH",h:"Patchwork of Underworld",s:"Fallout 3"},
+      {w:"NELIS",h:"Nellis Air Force Base",s:"New Vegas"},
+      {w:"CABOT",h:"the Cabot family",s:"Fallout 4"},
+      {w:"COVEN",h:"Covenant",s:"Fallout 4"},
+      {w:"WHITE",h:"White Glove Society",s:"New Vegas"},
+      {w:"GLOVE",h:"White Glove Society",s:"New Vegas"},
+      {w:"FUSED",h:"Mass Fusion",s:"Fallout 4"},
+      {w:"TRADE",h:"Bunker Hill market",s:"Fallout 4"},
+      {w:"SLOTS",h:"casino slots",s:"New Vegas"},
+      {w:"WESTS",h:"Westside",s:"New Vegas"},
+      {w:"GANGS",h:"Powder Gangers",s:"New Vegas"},
+      {w:"TRIGG",h:"Triggermen",s:"Fallout 4"},
+      {w:"FLOAT",h:"floater",s:"FO1, FO2"},
+      {w:"SPORE",h:"spore carrier",s:"FO3, New Vegas"},
+      {w:"TOADS",h:"radtoads",s:"Fallout 76"},
+      {w:"WORMS",h:"bloodworms",s:"FO4, 76"},
+      {w:"CRICK",h:"cave cricket",s:"Fallout 76"},
+      {w:"FROGS",h:"mutant frogs",s:"Fallout 76"},
+      {w:"SHEEP",h:"Sheepsquatch",s:"Fallout 76"},
+      {w:"GRAFT",h:"Grafton Monster",s:"Fallout 76"},
+      {w:"ASHES",h:"Ash Heap",s:"Fallout 76"},
+      {w:"FLATS",h:"Flatwoods monster",s:"Fallout 76"},
+      {w:"HEAVE",h:"Heave Ho! perk",s:"classic games"},
+      {w:"SNAKE",h:"Snakeater perk",s:"classic games"},
+      {w:"SWIFT",h:"Swift Learner perk",s:"classic games"},
+      {w:"DODGE",h:"Dodger perk",s:"classic games"},
+      {w:"PATHS",h:"Pathfinder perk",s:"classic games"},
+      {w:"PACKS",h:"Pack Rat perk, or The Pack",s:"classic / FO4"},
+      {w:"SPEAK",h:"Speaker perk",s:"classic games"},
+      {w:"BLOCK",h:"Mental Block perk",s:"classic games"},
+      {w:"CRITS",h:"more or better criticals",s:"classic games"},
+      {w:"MOVES",h:"Bonus Move perk",s:"classic games"},
+      {w:"BRUSH",h:"Brush Gun",s:"New Vegas"},
+      {w:"TRAIL",h:"Trail Carbine",s:"New Vegas"},
+      {w:"HUNTS",h:"hunting rifle",s:"3D games"},
+      {w:"PUNCH",h:"Power Fist",s:"all games"},
+      {w:"GECKS",h:"G.E.C.K. devices",s:"FO2 onward"},
+      {w:"GOURD",h:"settlement crop",s:"Fallout 4"},
+      {w:"GRAIN",h:"razorgrain",s:"FO4, 76"},
+      {w:"MELON",h:"melon crop",s:"Fallout 4"},
+      {w:"JERKY",h:"iguana or radstag jerky",s:"all games"},
+      {w:"PELTS",h:"gecko pelts",s:"FO2, New Vegas"},
+      {w:"FANGS",h:"deathclaw or cazador",s:"all games"},
+      {w:"HORNS",h:"brahmin horns",s:"all games"},
+      {w:"STONE",h:"Stonewall perk",s:"classic games"},
+      {w:"DEATH",h:"Silent Death perk",s:"classic games"},
+      {w:"CULTS",h:"cultists of the Mothman",s:"Fallout 76"},
+      {w:"FOUND",h:"Foundation",s:"Fallout 76"},
+      {w:"CADET",h:"Nuka-Cade or Brotherhood cadet",s:"FO4 / show"},
+      {w:"GULCH",h:"Dry Rock Gulch",s:"Fallout 4"},
+      {w:"BONEY",h:"the Boneyard",s:"FO1, show"},
+      {w:"ALTAR",h:"Cathedral altar of Jain",s:"Fallout 1"},
+      {w:"LORRI",h:"Scribe Lorri",s:"Fallout 1"},
+      {w:"CYRUS",h:"Cyrus",s:"Brotherhood of Steel"},
+      {w:"NADIA",h:"Nadia",s:"Brotherhood of Steel"},
+      {w:"CAINE",h:"Cain of the Brotherhood",s:"Brotherhood of Steel"},
+      {w:"SMILE",h:"Smiley the gecko trapper",s:"Fallout 2"},
+      {w:"SKEET",h:"Skeeter of Broken Hills",s:"Fallout 2"},
+      {w:"SLAGS",h:"slags of Broken Hills",s:"Fallout 2"},
+      {w:"BIRDY",h:"Birdie of Vault 4",s:"TV show"},
+      {w:"BENJI",h:"Overseer Benjamin of Vault 4",s:"TV show"},
+      {w:"IRVIN",h:"Irv of Vault 32",s:"TV show"},
+      {w:"BUDDY",h:"Bud Askins and Bud's Buds",s:"TV show"},
+      {w:"FLORA",h:"Flora of Diamond City market",s:"Fallout 4"},
+      {w:"BRAND",h:"Paladin Brandis",s:"Fallout 4"},
+      {w:"BETSY",h:"Betsy the deathclaw",s:"Fallout Tactics"},
+      {w:"MINES",h:"Hornwright and Garrahan mines",s:"Fallout 76"},
+      {w:"MINER",h:"Ash Heap miners",s:"Fallout 76"},
+      {w:"FIRES",h:"Firebreathers",s:"Fallout 76"},
+      {w:"FREED",h:"Free States",s:"Fallout 76"},
+      {w:"STATE",h:"Free States",s:"Fallout 76"},
+      {w:"CHIEF",h:"a vault overseer",s:"all vaults"},
+      {w:"WATCH",h:"overseer's watch",s:"all vaults"},
+      {w:"HASTE",h:"room rush or Adrenaline Rush",s:"Shelter / classic"},
+      {w:"DOGGY",h:"vault pets",s:"Fallout Shelter"},
+      {w:"BOXES",h:"lunchboxes",s:"Fallout Shelter"},
+      {w:"LIFTS",h:"vault elevators",s:"Fallout Shelter"},
+      {w:"STIMS",h:"stimpaks",s:"all games"},
+      {w:"TECHS",h:"science lab techs",s:"Fallout Shelter"},
+      {w:"CLAIM",h:"workshop claim",s:"Fallout 76"},
+      {w:"NIGHT",h:"nightkin",s:"FO1, FO2, New Vegas"},
+      {w:"REAVE",h:"ghoul reaver",s:"Fallout 3"},
+      {w:"STALK",h:"night stalker",s:"New Vegas"},
+      {w:"BRAHM",h:"brahmin",s:"all games"},
+      {w:"MOLES",h:"mole rats",s:"all games"},
+      {w:"QUINT",h:"Elder Cleric Quintus",s:"TV show"}
+    ]
+  };
+
+  const EN_RAW = "ABACK ABASE ABATE ABBEY ABBOT ABHOR ABIDE ABLED ABODE ABORT ABOUT ABOVE ABUSE ABYSS ACORN ACRID ACTOR ACUTE ADAGE ADAPT ADEPT ADMIN ADMIT ADOBE ADOPT ADORE ADORN ADULT AFFIX AFIRE AFOOT AFOUL AFTER AGAIN AGAPE AGATE AGENT AGILE AGING AGLOW AGONY AGREE AHEAD AIDER AISLE ALARM ALBUM ALERT ALGAE ALIBI ALIEN ALIGN ALIKE ALIVE ALLAY ALLEY ALLOT ALLOW ALLOY ALOFT ALONE ALONG ALOOF ALOUD ALPHA ALTAR ALTER AMASS AMAZE AMBER AMBLE AMEND AMISS AMITY AMONG AMPLE AMPLY AMUSE ANGEL ANGER ANGLE ANGRY ANGST ANIME ANKLE ANNEX ANNOY ANNUL ANODE ANTIC ANVIL AORTA APART APHID APING APNEA APPLE APPLY APRON APTLY ARBOR ARDOR ARENA ARGUE ARISE ARMOR AROMA AROSE ARRAY ARROW ARSON ARTSY ASCOT ASHEN ASIDE ASKEW ASSAY ASSET ATOLL ATONE ATTIC AUDIO AUDIT AUGUR AUNTY AVAIL AVERT AVIAN AVOID AWAIT AWAKE AWARD AWARE AWASH AWFUL AWOKE AXIAL AXIOM AXION AZURE BACON BADGE BADLY BAGEL BAGGY BAKER BALER BALMY BANAL BANJO BARGE BARON BASAL BASIC BASIL BASIN BASIS BASTE BATCH BATHE BATON BATTY BAWDY BAYOU BEACH BEADY BEARD BEAST BEECH BEEFY BEFIT BEGAN BEGAT BEGET BEGIN BEGUN BELCH BELIE BELLE BELLY BELOW BENCH BERET BERRY BERTH BESET BETEL BEVEL BEZEL BIBLE BICEP BIDDY BIGOT BILGE BILLY BINGE BINGO BIOME BIRCH BIRTH BISON BITTY BLACK BLADE BLAME BLAND BLANK BLARE BLAST BLAZE BLEAK BLEAT BLEED BLEEP BLEND BLESS BLIMP BLIND BLINK BLISS BLITZ BLOAT BLOCK BLOKE BLOND BLOOD BLOOM BLOWN BLUER BLUFF BLUNT BLURB BLURT BLUSH BOARD BOAST BOBBY BONEY BONGO BONUS BOOBY BOOST BOOTH BOOTY BOOZE BOOZY BORAX BORNE BOSOM BOSSY BOTCH BOUGH BOULE BOUND BOWEL BOXER BRACE BRAID BRAIN BRAKE BRAND BRASH BRASS BRAVE BRAVO BRAWL BRAWN BREAD BREAK BREED BRIAR BRIBE BRICK BRIDE BRIEF BRINE BRING BRINK BRINY BRISK BROAD BROIL BROKE BROOD BROOK BROOM BROTH BROWN BRUNT BRUSH BRUTE BUDDY BUDGE BUGGY BUGLE BUILD BUILT BULGE BULKY BULLY BUNCH BUNNY BURLY BURNT BURST BUSED BUSHY BUTCH BUTTE BUXOM BUYER BYLAW CABAL CABBY CABIN CABLE CACAO CACHE CACTI CADDY CADET CAGEY CAIRN CAMEL CAMEO CANAL CANDY CANNY CANOE CANON CAPER CAPUT CARAT CARGO CAROL CARRY CARVE CASTE CATCH CATER CATTY CAULK CAUSE CAVIL CEASE CEDAR CELLO CHAFE CHAFF CHAIN CHAIR CHALK CHAMP CHANT CHAOS CHARD CHARM CHART CHASE CHASM CHEAP CHEAT CHECK CHEEK CHEER CHESS CHEST CHICK CHIDE CHIEF CHILD CHILI CHILL CHIME CHINA CHIRP CHOCK CHOIR CHOKE CHORD CHORE CHOSE CHUCK CHUMP CHUNK CHURN CHUTE CIDER CIGAR CINCH CIRCA CIVIC CIVIL CLACK CLAIM CLAMP CLANG CLANK CLASH CLASP CLASS CLEAN CLEAR CLEAT CLEFT CLERK CLICK CLIFF CLIMB CLING CLINK CLOAK CLOCK CLONE CLOSE CLOTH CLOUD CLOUT CLOVE CLOWN CLUCK CLUED CLUMP CLUNG COACH COAST COBRA COCOA COLON COLOR COMET COMFY COMIC COMMA CONCH CONDO CONIC COPSE CORAL CORER CORNY COUCH COUGH COULD COUNT COUPE COURT COVEN COVER COVET COVEY COWER COYLY CRACK CRAFT CRAMP CRANE CRANK CRASH CRASS CRATE CRAVE CRAWL CRAZE CRAZY CREAK CREAM CREDO CREED CREEK CREEP CREME CREPE CREPT CRESS CREST CRICK CRIED CRIER CRIME CRIMP CRISP CROAK CROCK CRONE CRONY CROOK CROSS CROUP CROWD CROWN CRUDE CRUEL CRUMB CRUMP CRUSH CRUST CRYPT CUBIC CUMIN CURIO CURLY CURRY CURSE CURVE CURVY CUTIE CYBER CYCLE CYNIC DADDY DAILY DAIRY DAISY DALLY DANCE DANDY DATUM DAUNT DEALT DEATH DEBAR DEBIT DEBUG DEBUT DECAL DECAY DECOR DECOY DECRY DEFER DEIGN DEITY DELAY DELTA DELVE DEMON DEMUR DENIM DENSE DEPOT DEPTH DERBY DETER DETOX DEUCE DEVIL DIARY DICEY DIGIT DILLY DIMLY DINER DINGO DINGY DIODE DIRGE DIRTY DISCO DITCH DITTO DITTY DIVER DIZZY DODGE DODGY DOGMA DOING DOLLY DONOR DONUT DOPEY DOUBT DOUGH DOWDY DOWEL DOWNY DOWRY DOZEN DRAFT DRAIN DRAKE DRAMA DRANK DRAPE DRAWL DRAWN DREAD DREAM DRESS DRIED DRIER DRIFT DRILL DRINK DRIVE DROIT DROLL DRONE DROOL DROOP DROSS DROVE DROWN DRUID DRUNK DRYER DRYLY DUCHY DULLY DUMMY DUMPY DUNCE DUSKY DUSTY DUTCH DUVET DWARF DWELL DWELT DYING EAGER EAGLE EARLY EARTH EASEL EATEN EATER EBONY ECLAT EDICT EDIFY EERIE EGRET EIGHT EJECT EKING ELATE ELBOW ELDER ELECT ELEGY ELFIN ELIDE ELITE ELOPE ELUDE EMAIL EMBED EMBER EMCEE EMPTY ENACT ENDOW ENEMA ENEMY ENJOY ENNUI ENSUE ENTER ENTRY ENVOY EPOCH EPOXY EQUAL EQUIP ERASE ERECT ERODE ERROR ERUPT ESSAY ESTER ETHER ETHIC ETHOS ETUDE EVADE EVENT EVERY EVICT EVOKE EXACT EXALT EXCEL EXERT EXILE EXIST EXPEL EXTOL EXTRA EXULT EYING FABLE FACET FAINT FAIRY FAITH FALSE FANCY FANNY FARCE FATAL FATTY FAULT FAUNA FAVOR FEAST FECAL FEIGN FELLA FELON FEMME FEMUR FENCE FERAL FERRY FETAL FETCH FETID FETUS FEVER FEWER FIBER FICUS FIELD FIEND FIERY FIFTH FIFTY FIGHT FILER FILET FILLY FILMY FILTH FINAL FINCH FINER FIRST FISHY FIXER FIZZY FJORD FLACK FLAIL FLAIR FLAKE FLAKY FLAME FLANK FLARE FLASH FLASK FLECK FLEET FLESH FLICK FLIER FLING FLINT FLIRT FLOAT FLOCK FLOOD FLOOR FLORA FLOSS FLOUR FLOUT FLOWN FLUFF FLUID FLUKE FLUME FLUNG FLUNK FLUSH FLUTE FLYER FOAMY FOCAL FOCUS FOGGY FOIST FOLIO FOLLY FORAY FORCE FORGE FORGO FORTE FORTH FORTY FORUM FOUND FOYER FRAIL FRAME FRANK FRAUD FREAK FREED FREER FRESH FRIAR FRIED FRILL FRISK FRITZ FROCK FROND FRONT FROST FROTH FROWN FROZE FRUIT FUDGE FUGUE FULLY FUNGI FUNKY FUNNY FUROR FURRY FUSSY FUZZY GAFFE GAILY GAMER GAMMA GAMUT GASSY GAUDY GAUGE GAUNT GAUZE GAVEL GAWKY GAYER GAYLY GAZER GECKO GEEKY GEESE GENIE GENRE GHOST GHOUL GIANT GIDDY GIPSY GIRLY GIRTH GIVEN GIVER GLADE GLAND GLARE GLASS GLAZE GLEAM GLEAN GLIDE GLINT GLOAT GLOBE GLOOM GLORY GLOSS GLOVE GLYPH GNASH GNOME GODLY GOING GOLEM GOLLY GONAD GONER GOODY GOOEY GOOFY GOOSE GORGE GOUGE GOURD GRACE GRADE GRAFT GRAIL GRAIN GRAND GRANT GRAPE GRAPH GRASP GRASS GRATE GRAVE GRAVY GRAZE GREAT GREED GREEN GREET GRIEF GRILL GRIME GRIMY GRIND GRIPE GROAN GROIN GROOM GROPE GROSS GROUP GROUT GROVE GROWL GROWN GRUEL GRUFF GRUNT GUARD GUAVA GUESS GUEST GUIDE GUILD GUILE GUILT GUISE GULCH GULLY GUMBO GUMMY GUPPY GUSTO GUSTY GYPSY HABIT HAIRY HALVE HANDY HAPPY HARDY HAREM HARPY HARRY HARSH HASTE HASTY HATCH HATER HAUNT HAUTE HAVEN HAVOC HAZEL HEADY HEARD HEART HEATH HEAVE HEAVY HEDGE HEFTY HEIST HELIX HELLO HENCE HERON HILLY HINGE HIPPO HIPPY HITCH HOARD HOBBY HOIST HOLLY HOMER HONEY HONOR HORDE HORNY HORSE HOTEL HOTLY HOUND HOUSE HOVEL HOVER HOWDY HUMAN HUMID HUMOR HUMPH HUMUS HUNCH HUNKY HURRY HUSKY HUSSY HUTCH HYDRO HYENA HYMEN HYPER ICILY ICING IDEAL IDIOM IDIOT IDLER IDYLL IGLOO ILIAC IMAGE IMBUE IMPEL IMPLY INANE INBOX INCUR INDEX INEPT INERT INFER INGOT INLAY INLET INNER INPUT INTER INTRO IONIC IRATE IRONY ISLET ISSUE ITCHY IVORY JAUNT JAZZY JELLY JERKY JETTY JEWEL JIFFY JOINT JOIST JOKER JOLLY JOUST JUDGE JUICE JUICY JUMBO JUMPY JUNTA JUNTO JUROR KAPPA KARMA KAYAK KEBAB KHAKI KINKY KIOSK KITTY KNACK KNAVE KNEAD KNEED KNEEL KNELT KNIFE KNOCK KNOLL KNOWN KOALA KRILL LABEL LABOR LADEN LADLE LAGER LANCE LANKY LAPEL LAPSE LARGE LARVA LASSO LATCH LATER LATHE LATTE LAUGH LAYER LEACH LEAFY LEAKY LEANT LEAPT LEARN LEASE LEASH LEAST LEAVE LEDGE LEECH LEERY LEFTY LEGAL LEGGY LEMON LEMUR LEPER LEVEL LEVER LIBEL LIEGE LIGHT LIKEN LILAC LIMBO LIMIT LINEN LINER LINGO LIPID LITHE LIVER LIVID LLAMA LOAMY LOATH LOBBY LOCAL LOCUS LODGE LOFTY LOGIC LOGIN LOOPY LOOSE LORRY LOSER LOUSE LOUSY LOVER LOWER LOWLY LOYAL LUCID LUCKY LUMEN LUMPY LUNAR LUNCH LUNGE LUPUS LURCH LURID LUSTY LYING LYMPH LYRIC MACAW MACHO MACRO MADAM MADLY MAFIA MAGIC MAGMA MAIZE MAJOR MAKER MAMBO MAMMA MAMMY MANGA MANGE MANGO MANGY MANIA MANIC MANLY MANOR MAPLE MARCH MARRY MARSH MASON MASSE MATCH MATEY MAUVE MAXIM MAYBE MAYOR MEALY MEANT MEATY MECCA MEDAL MEDIA MEDIC MELEE MELON MERCY MERGE MERIT MERRY METAL METER METRO MICRO MIDGE MIDST MIGHT MILKY MIMIC MINCE MINER MINIM MINOR MINTY MINUS MIRTH MISER MISSY MOCHA MODAL MODEL MODEM MOGUL MOIST MOLAR MOLDY MONEY MONTH MOODY MOOSE MORAL MORON MORPH MOSSY MOTEL MOTIF MOTOR MOTTO MOULT MOUND MOUNT MOURN MOUSE MOUTH MOVER MOVIE MOWER MUCKY MUCUS MUDDY MULCH MUMMY MUNCH MURAL MURKY MUSHY MUSIC MUSKY MUSTY MYRRH NADIR NAIVE NANNY NASAL NASTY NATAL NAVAL NAVEL NEEDY NEIGH NERDY NERVE NEVER NEWER NEWLY NICER NICHE NIECE NIGHT NINJA NINNY NINTH NOBLE NOBLY NOISE NOISY NOMAD NOOSE NORTH NOSEY NOTCH NOVEL NUDGE NURSE NUTTY NYLON NYMPH OAKEN OBESE OCCUR OCEAN OCTAL OCTET ODDER ODDLY OFFAL OFFER OFTEN OLDEN OLDER OLIVE OMBRE OMEGA ONION ONSET OPERA OPINE OPIUM OPTIC ORBIT ORDER ORGAN OTHER OTTER OUGHT OUNCE OUTDO OUTER OUTGO OVARY OVATE OVERT OVINE OVOID OWING OWNER OXIDE OZONE PADDY PAGAN PAINT PALER PALSY PANEL PANIC PANSY PAPAL PAPER PARER PARKA PARRY PARSE PARTY PASTA PASTE PASTY PATCH PATIO PATSY PATTY PAUSE PAYEE PAYER PEACE PEACH PEARL PECAN PEDAL PENAL PENCE PENNE PENNY PERCH PERIL PERKY PESKY PESTO PETAL PETTY PHASE PHONE PHONY PHOTO PIANO PICKY PIECE PIETY PIGGY PILOT PINCH PINEY PINKY PINTO PIPER PIQUE PITCH PITHY PIVOT PIXEL PIXIE PIZZA PLACE PLAID PLAIN PLAIT PLANE PLANK PLANT PLATE PLAZA PLEAD PLEAT PLIED PLIER PLUCK PLUMB PLUME PLUMP PLUNK PLUSH POESY POINT POISE POKER POLAR POLKA POLYP POOCH POPPY PORCH POSER POSIT POSSE POUCH POUND POUTY POWER PRANK PRAWN PREEN PRESS PRICE PRICK PRIDE PRIED PRIME PRIMO PRINT PRIOR PRISM PRIVY PRIZE PROBE PRONE PRONG PROOF PROSE PROUD PROVE PROWL PROXY PRUDE PRUNE PSALM PUBIC PUDGY PUFFY PULPY PULSE PUNCH PUPIL PUPPY PUREE PURER PURGE PURSE PUSHY PUTTY PYGMY QUACK QUAIL QUAKE QUALM QUARK QUART QUASH QUASI QUEEN QUEER QUELL QUERY QUEST QUEUE QUICK QUIET QUILL QUILT QUIRK QUITE QUOTA QUOTE QUOTH RABBI RABID RACER RADAR RADII RADIO RAINY RAISE RAJAH RALLY RALPH RAMEN RANCH RANDY RANGE RAPID RARER RASPY RATIO RATTY RAVEN RAYON RAZOR REACH REACT READY REALM REARM REBAR REBEL REBUS REBUT RECAP RECUR RECUT REEDY REFER REFIT REGAL REHAB REIGN RELAX RELAY RELIC REMIT RENAL RENEW REPAY REPEL REPLY RERUN RESET RESIN RETCH RETRO RETRY REUSE REVEL REVUE RHINO RHYME RIDER RIDGE RIFLE RIGHT RIGID RIGOR RINSE RIPEN RIPER RISEN RISER RISKY RIVAL RIVER RIVET ROACH ROAST ROBIN ROBOT ROCKY RODEO ROGER ROGUE ROOMY ROOST ROTOR ROUGE ROUGH ROUND ROUSE ROUTE ROVER ROWDY ROWER ROYAL RUDDY RUDER RUGBY RULER RUMBA RUMOR RUPEE RURAL RUSTY SADLY SAFER SAINT SALAD SALLY SALON SALSA SALTY SALVE SALVO SANDY SANER SAPPY SASSY SATIN SATYR SAUCE SAUCY SAUNA SAUTE SAVOR SAVOY SAVVY SCALD SCALE SCALP SCALY SCAMP SCANT SCARE SCARF SCARY SCENE SCENT SCION SCOFF SCOLD SCONE SCOOP SCOPE SCORE SCORN SCOUR SCOUT SCOWL SCRAM SCRAP SCREE SCREW SCRUB SCRUM SCUBA SEDAN SEEDY SEGUE SEIZE SEMEN SENSE SEPIA SERIF SERUM SERVE SETUP SEVEN SEVER SEWER SHACK SHADE SHADY SHAFT SHAKE SHAKY SHALE SHALL SHALT SHAME SHANK SHAPE SHARD SHARE SHARK SHARP SHAVE SHAWL SHEAR SHEEN SHEEP SHEER SHEET SHEIK SHELF SHELL SHIED SHIFT SHINE SHINY SHIRE SHIRK SHIRT SHOAL SHOCK SHONE SHOOK SHOOT SHORE SHORN SHORT SHOUT SHOVE SHOWN SHOWY SHREW SHRUB SHRUG SHUCK SHUNT SHUSH SHYLY SIEGE SIEVE SIGHT SIGMA SILKY SILLY SINCE SINEW SINGE SIREN SISSY SIXTH SIXTY SKATE SKIER SKIFF SKILL SKIMP SKIRT SKULK SKULL SKUNK SLACK SLAIN SLANG SLANT SLASH SLATE SLEEK SLEEP SLEET SLEPT SLICE SLICK SLIDE SLIME SLIMY SLING SLINK SLOOP SLOPE SLOSH SLOTH SLUMP SLUNG SLUNK SLURP SLUSH SLYLY SMACK SMALL SMART SMASH SMEAR SMELL SMELT SMILE SMIRK SMITE SMITH SMOCK SMOKE SMOKY SMOTE SNACK SNAIL SNAKE SNAKY SNARE SNARL SNEAK SNEER SNIDE SNIFF SNIPE SNOOP SNORE SNORT SNOUT SNOWY SNUCK SNUFF SOAPY SOBER SOGGY SOLAR SOLID SOLVE SONAR SONIC SOOTH SOOTY SORRY SOUND SOUTH SOWER SPACE SPADE SPANK SPARE SPARK SPASM SPAWN SPEAK SPEAR SPECK SPEED SPELL SPELT SPEND SPENT SPERM SPICE SPICY SPIED SPIEL SPIKE SPIKY SPILL SPILT SPINE SPINY SPIRE SPITE SPLAT SPLIT SPOIL SPOKE SPOOF SPOOK SPOOL SPOON SPORE SPORT SPOUT SPRAY SPREE SPRIG SPUNK SPURN SPURT SQUAD SQUAT SQUIB STACK STAFF STAGE STAID STAIN STAIR STAKE STALE STALK STALL STAMP STAND STANK STARE STARK START STASH STATE STAVE STEAD STEAK STEAL STEAM STEED STEEL STEEP STEER STEIN STERN STICK STIFF STILL STILT STING STINK STINT STOCK STOIC STOKE STOLE STOMP STONE STONY STOOD STOOL STOOP STORE STORK STORM STORY STOUT STOVE STRAP STRAW STRAY STRIP STRUT STUCK STUDY STUFF STUMP STUNG STUNK STUNT STYLE SUAVE SUGAR SUING SUITE SULKY SULLY SUMAC SUNNY SUPER SURER SURGE SURLY SUSHI SWAMI SWAMP SWARM SWASH SWATH SWEAR SWEAT SWEEP SWEET SWELL SWEPT SWIFT SWILL SWINE SWING SWIRL SWISH SWOON SWOOP SWORD SWORE SWORN SWUNG SYNOD SYRUP TABBY TABLE TABOO TACIT TACKY TAFFY TAINT TAKEN TAKER TALLY TALON TAMER TANGO TANGY TAPER TAPIR TARDY TAROT TASTE TASTY TATTY TAUNT TAWNY TEACH TEARY TEASE TEDDY TEETH TEMPO TENET TENOR TENSE TENTH TEPEE TEPID TERRA TERSE TESTY THANK THEFT THEIR THEME THERE THESE THETA THICK THIEF THIGH THING THINK THIRD THONG THORN THOSE THREE THREW THROB THROW THRUM THUMB THUMP THYME TIARA TIBIA TIDAL TIGER TIGHT TILDE TIMER TIMID TIPSY TITAN TITHE TITLE TOAST TODAY TODDY TOKEN TONAL TONGA TONIC TOOTH TOPAZ TOPIC TORCH TORSO TORUS TOTAL TOTEM TOUCH TOUGH TOWEL TOWER TOXIC TOXIN TRACE TRACK TRACT TRADE TRAIL TRAIN TRAIT TRAMP TRASH TRAWL TREAD TREAT TREND TRIAD TRIAL TRIBE TRICE TRICK TRIED TRIPE TRITE TROLL TROOP TROPE TROUT TROVE TRUCE TRUCK TRUER TRULY TRUMP TRUNK TRUSS TRUST TRUTH TRYST TUBAL TUBER TULIP TULLE TUMOR TUNIC TURBO TUTOR TWANG TWEAK TWEED TWEET TWICE TWINE TWIRL TWIST TWIXT TYING UDDER ULCER ULTRA UMBRA UNCLE UNCUT UNDER UNDID UNDUE UNFED UNFIT UNIFY UNION UNITE UNITY UNLIT UNMET UNSET UNTIE UNTIL UNWED UNZIP UPPER UPSET URBAN URINE USAGE USHER USING USUAL USURP UTILE UTTER VAGUE VALET VALID VALOR VALUE VALVE VAPID VAPOR VAULT VAUNT VEGAN VENOM VENUE VERGE VERSE VERSO VERVE VICAR VIDEO VIGIL VIGOR VILLA VINYL VIOLA VIPER VIRAL VIRUS VISIT VISOR VISTA VITAL VIVID VIXEN VOCAL VODKA VOGUE VOICE VOILA VOMIT VOTER VOUCH VOWEL VYING WACKY WAFER WAGER WAGON WAIST WAIVE WALTZ WARTY WASTE WATCH WATER WAVER WAXEN WEARY WEAVE WEDGE WEEDY WEIGH WEIRD WELCH WELSH WHACK WHALE WHARF WHEAT WHEEL WHELP WHERE WHICH WHIFF WHILE WHINE WHINY WHIRL WHISK WHITE WHOLE WHOOP WHOSE WIDEN WIDER WIDOW WIDTH WIELD WIGHT WILLY WIMPY WINCE WINCH WINDY WISER WISPY WITCH WITTY WOKEN WOMAN WOMEN WOODY WOOER WOOLY WOOZY WORDY WORLD WORRY WORSE WORST WORTH WOULD WOUND WOVEN WRACK WRATH WREAK WRECK WREST WRING WRIST WRITE WRONG WROTE WRUNG WRYLY YACHT YEARN YEAST YIELD YOUNG YOUTH ZEBRA ZESTY ZONAL ADIEU SOARE ROATE SALET OUIJA AEROS AUREI RAILE TARES NARES LARES SAINE STANE";
+  </script>
+  <script>
+  /* ========== Engine ========== */
+  const MODES = ["easy", "normal", "extreme"];
+  const MODE_LABEL = { easy: "EASY", normal: "NORMAL", extreme: "EXTREME" };
+  const KEYS = [
+    ["Q","W","E","R","T","Y","U","I","O","P"],
+    ["A","S","D","F","G","H","J","K","L"],
+    ["ENTER","Z","X","C","V","B","N","M","DEL"]
+  ];
+
+  const store = {
+    get(k, fallback) {
+      try {
+        const v = localStorage.getItem(k);
+        return v ? JSON.parse(v) : fallback;
+      } catch { return fallback; }
+    },
+    set(k, v) {
+      try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private / iframe */ }
+    }
+  };
+
+  function emptyStats() {
+    return { played: 0, wins: 0, streak: 0, maxStreak: 0, lastDate: "", dist: [0,0,0,0,0,0] };
+  }
+  function loadStats() {
+    const s = store.get("ww-stats", {});
+    MODES.forEach(m => { if (!s[m]) s[m] = emptyStats(); });
+    return s;
+  }
+  function loadSettings() {
+    return store.get("ww-settings", { hard: false, sound: true });
+  }
+  function loadDaily() {
+    return store.get("ww-daily", {});
+  }
+
+  let stats = loadStats();
+  let settings = loadSettings();
+  let dailySave = loadDaily();
+
+  const allowed = new Set();
+  function buildAllowed() {
+    allowed.clear();
+    MODES.forEach(m => WORDS[m].forEach(x => allowed.add(x.w)));
+    const extra = (typeof EN_RAW === "string" ? EN_RAW : "") + (typeof EN_WORDS === "string" ? EN_WORDS : "");
+    extra.toUpperCase().split(/[^A-Z]+/).forEach(w => { if (w.length === 5) allowed.add(w); });
+  }
+
+  function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+  function hashStr(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+  function pickDaily(mode, dateStr) {
+    const list = WORDS[mode];
+    return list[hashStr(dateStr + ":" + mode) % list.length];
+  }
+  function pickPractice(mode) {
+    const list = WORDS[mode];
+    const skip = pickDaily(mode, todayKey()).w;
+    let pick = list[Math.floor(Math.random() * list.length)];
+    if (list.length > 1 && pick.w === skip) pick = list[(list.indexOf(pick) + 1) % list.length];
+    return pick;
+  }
+
+  function evaluate(guess, answer) {
+    const res = Array(5).fill("absent");
+    const counts = {};
+    for (const ch of answer) counts[ch] = (counts[ch] || 0) + 1;
+    for (let i = 0; i < 5; i++) {
+      if (guess[i] === answer[i]) { res[i] = "correct"; counts[guess[i]]--; }
+    }
+    for (let i = 0; i < 5; i++) {
+      if (res[i] === "correct") continue;
+      if (counts[guess[i]] > 0) { res[i] = "present"; counts[guess[i]]--; }
+    }
+    return res;
+  }
+
+  function hardModeError(guess, prevGuesses, prevResults) {
+    for (let r = 0; r < prevGuesses.length; r++) {
+      const prev = prevGuesses[r], res = prevResults[r];
+      const need = {};
+      for (let i = 0; i < 5; i++) {
+        if (res[i] === "correct" && guess[i] !== prev[i]) {
+          return "Must use " + prev[i] + " in that spot";
+        }
+        if (res[i] === "present") need[prev[i]] = (need[prev[i]] || 0) + 1;
+      }
+      for (const ch in need) {
+        if ((guess.split(ch).length - 1) < need[ch]) return "Guess must contain " + ch;
+      }
+    }
+    return null;
+  }
+
+  /* ========== Audio ========== */
+  let audioCtx = null;
+  function ctx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+  function beep(freq, dur, type, gain) {
+    if (!settings.sound) return;
+    try {
+      const c = ctx();
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = type || "sine";
+      o.frequency.setValueAtTime(freq, c.currentTime);
+      g.gain.setValueAtTime(gain || 0.05, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+      o.connect(g); g.connect(c.destination);
+      o.start(); o.stop(c.currentTime + dur);
+    } catch { /* autoplay / old webview */ }
+  }
+  const sfx = {
+    tap: () => beep(440, 0.06, "sine", 0.04),
+    flip: () => beep(520, 0.08, "triangle", 0.045),
+    bad: () => beep(180, 0.18, "square", 0.04),
+    win: () => { beep(660, 0.12, "sine", 0.05); setTimeout(() => beep(880, 0.18, "sine", 0.05), 90); },
+    lose: () => beep(160, 0.35, "sine", 0.05)
+  };
+
+  /* ========== UI refs ========== */
+  const $ = (id) => document.getElementById(id);
+  const boardEl = $("board");
+  const keyboardEl = $("keyboard");
+  const toastEl = $("toast");
+  let toastTimer = 0;
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1500);
+  }
+
+  function buildBoard() {
+    boardEl.innerHTML = "";
+    for (let r = 0; r < 6; r++) {
+      const row = document.createElement("div");
+      row.className = "row";
+      for (let c = 0; c < 5; c++) {
+        const t = document.createElement("div");
+        t.className = "tile";
+        t.dataset.r = r; t.dataset.c = c;
+        row.appendChild(t);
+      }
+      boardEl.appendChild(row);
+    }
+  }
+  function buildKeyboard() {
+    keyboardEl.innerHTML = "";
+    KEYS.forEach(row => {
+      const el = document.createElement("div");
+      el.className = "kb-row";
+      row.forEach(k => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "key" + (k === "ENTER" || k === "DEL" ? " wide" : "");
+        b.dataset.key = k;
+        b.textContent = k === "DEL" ? "⌫" : k;
+        b.addEventListener("click", () => onKey(k));
+        el.appendChild(b);
+      });
+      keyboardEl.appendChild(el);
+    });
+  }
+
+  /* ========== Game state ========== */
+  const game = {
+    mode: "normal",
+    practice: false,
+    answer: null,
+    guesses: [],
+    results: [],
+    row: 0,
+    col: 0,
+    current: ["","","","",""],
+    status: "playing",
+    busy: false,
+    keyColors: {}
+  };
+
+  function tile(r, c) { return boardEl.children[r].children[c]; }
+
+  function paintBoard() {
+    for (let r = 0; r < 6; r++) {
+      for (let c = 0; c < 5; c++) {
+        const t = tile(r, c);
+        t.className = "tile";
+        t.textContent = "";
+        if (r < game.guesses.length) {
+          t.textContent = game.guesses[r][c];
+          t.classList.add(game.results[r][c]);
+        } else if (r === game.row && game.current[c]) {
+          t.textContent = game.current[c];
+          t.classList.add("filled");
+        }
+      }
+    }
+    paintKeys();
+  }
+
+  function rank(a, b) {
+    const o = { unused: 0, absent: 1, present: 2, correct: 3 };
+    return (o[a] || 0) >= (o[b] || 0) ? a : b;
+  }
+  function paintKeys() {
+    game.keyColors = {};
+    game.guesses.forEach((g, i) => {
+      for (let c = 0; c < 5; c++) {
+        game.keyColors[g[c]] = rank(game.results[i][c], game.keyColors[g[c]] || "unused");
+      }
+    });
+    keyboardEl.querySelectorAll(".key").forEach(k => {
+      const ch = k.dataset.key;
+      k.classList.remove("correct","present","absent");
+      if (game.keyColors[ch]) k.classList.add(game.keyColors[ch]);
+    });
+  }
+
+  function persistDaily() {
+    if (game.practice) return;
+    dailySave[game.mode] = {
+      date: todayKey(),
+      guesses: game.guesses.slice(),
+      results: game.results.slice(),
+      status: game.status,
+      word: game.answer.w
+    };
+    store.set("ww-daily", dailySave);
+  }
+
+  function recordStats(won) {
+    if (game.practice) return;
+    const s = stats[game.mode];
+    const day = todayKey();
+    if (s.lastDate === day) return;
+    s.played++;
+    if (won) {
+      s.wins++;
+      s.dist[game.guesses.length - 1]++;
+      s.streak = (s.lastDate && isYesterday(s.lastDate, day)) ? s.streak + 1 : 1;
+      s.maxStreak = Math.max(s.maxStreak, s.streak);
+    } else {
+      s.streak = 0;
+    }
+    s.lastDate = day;
+    store.set("ww-stats", stats);
+  }
+
+  function isYesterday(prev, today) {
+    const [y,m,d] = prev.split("-").map(Number);
+    const p = new Date(y, m - 1, d);
+    p.setDate(p.getDate() + 1);
+    const t = today.split("-").map(Number);
+    return p.getFullYear() === t[0] && (p.getMonth()+1) === t[1] && p.getDate() === t[2];
+  }
+
+  function startGame(mode, practice) {
+    game.mode = mode;
+    game.practice = !!practice;
+    game.guesses = [];
+    game.results = [];
+    game.row = 0;
+    game.col = 0;
+    game.current = ["","","","",""];
+    game.status = "playing";
+    game.busy = false;
+    game.keyColors = {};
+
+    const day = todayKey();
+    const saved = dailySave[mode];
+    if (!practice && saved && saved.date === day) {
+      game.answer = WORDS[mode].find(x => x.w === saved.word) || pickDaily(mode, day);
+      game.guesses = saved.guesses.slice();
+      game.results = saved.results.slice();
+      game.row = game.guesses.length;
+      game.status = saved.status;
+    } else {
+      game.answer = practice ? pickPractice(mode) : pickDaily(mode, day);
+    }
+
+    $("play-title").innerHTML = MODE_LABEL[mode] + "<small>" + (game.practice ? "Practice" : "Daily") + "</small>";
+    showScreen("play");
+    paintBoard();
+    if (game.status !== "playing") {
+      setTimeout(() => openResult(game.status === "won"), 280);
+    }
+  }
+
+  function showScreen(name) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    $("screen-" + name).classList.add("active");
+    refreshTitleStatus();
+  }
+
+  function refreshTitleStatus() {
+    const day = todayKey();
+    MODES.forEach(m => {
+      const el = $("st-" + m);
+      const s = dailySave[m];
+      el.classList.remove("done","mid");
+      if (!s || s.date !== day) { el.textContent = "Play"; return; }
+      if (s.status === "won") { el.textContent = s.guesses.length + "/6"; el.classList.add("done"); }
+      else if (s.status === "lost") { el.textContent = "X/6"; el.classList.add("done"); }
+      else { el.textContent = s.guesses.length + "/6"; el.classList.add("mid"); }
+    });
+    $("hard-toggle").checked = !!settings.hard;
+    $("sound-toggle").checked = settings.sound !== false;
+    $("btn-sound").textContent = settings.sound !== false ? "🔊" : "🔇";
+  }
+
+  function onKey(k) {
+    if (game.busy || game.status !== "playing") return;
+    if (k === "ENTER") return submit();
+    if (k === "DEL" || k === "BACKSPACE") return del();
+    if (k.length === 1 && k >= "A" && k <= "Z") type(k);
+  }
+  function type(ch) {
+    if (game.col >= 5) return;
+    game.current[game.col] = ch;
+    const t = tile(game.row, game.col);
+    t.textContent = ch;
+    t.classList.add("filled");
+    game.col++;
+    sfx.tap();
+  }
+  function del() {
+    if (game.col <= 0) return;
+    game.col--;
+    game.current[game.col] = "";
+    const t = tile(game.row, game.col);
+    t.textContent = "";
+    t.classList.remove("filled");
+  }
+
+  function submit() {
+    if (game.col < 5) { shake(); toast("Not enough letters"); return; }
+    const guess = game.current.join("");
+    if (!allowed.has(guess)) { shake(); toast("Not in word list"); sfx.bad(); return; }
+    if (settings.hard) {
+      const err = hardModeError(guess, game.guesses, game.results);
+      if (err) { shake(); toast(err); sfx.bad(); return; }
+    }
+    const res = evaluate(guess, game.answer.w);
+    game.busy = true;
+    flipRow(guess, res, () => {
+      game.guesses.push(guess);
+      game.results.push(res);
+      game.row++;
+      game.col = 0;
+      game.current = ["","","","",""];
+      paintKeys();
+      const won = res.every(x => x === "correct");
+      if (won) {
+        game.status = "won";
+        persistDaily();
+        recordStats(true);
+        bounceWin(() => { sfx.win(); openResult(true); game.busy = false; });
+      } else if (game.row >= 6) {
+        game.status = "lost";
+        persistDaily();
+        recordStats(false);
+        sfx.lose();
+        openResult(false);
+        game.busy = false;
+      } else {
+        persistDaily();
+        game.busy = false;
+      }
+      refreshTitleStatus();
+    });
+  }
+
+  function shake() {
+    const row = boardEl.children[game.row];
+    row.classList.remove("shake");
+    void row.offsetWidth;
+    row.classList.add("shake");
+  }
+
+  function flipRow(guess, res, done) {
+    let left = 5;
+    for (let c = 0; c < 5; c++) {
+      const t = tile(game.row, c);
+      setTimeout(() => {
+        t.classList.add("flip");
+        setTimeout(() => {
+          t.classList.remove("filled");
+          t.classList.add(res[c]);
+          sfx.flip();
+        }, 200);
+        setTimeout(() => {
+          t.classList.remove("flip");
+          if (--left === 0) done();
+        }, 460);
+      }, c * 280);
+    }
+  }
+
+  function bounceWin(done) {
+    const r = game.row - 1;
+    for (let c = 0; c < 5; c++) {
+      setTimeout(() => tile(r, c).classList.add("win"), c * 80);
+    }
+    setTimeout(done, 700);
+  }
+
+  function openResult(won) {
+    $("result-h").textContent = won ? "ACCESS GRANTED" : "ACCESS DENIED";
+    $("result-word").textContent = game.answer.w;
+    $("result-hint").textContent = game.answer.h;
+    $("result-src").textContent = game.answer.s;
+    $("overlay-result").classList.add("open");
+  }
+
+  function shareText() {
+    const n = game.status === "won" ? String(game.guesses.length) : "X";
+    const head = "Wasteland Words · " + (game.practice ? "Practice" : todayKey());
+    const lines = game.results.map(r => r.map(x => x === "correct" ? "🟧" : x === "present" ? "🟨" : "⬛").join(""));
+    return head + "\n" + MODE_LABEL[game.mode] + " · " + n + "/6\n\n" + lines.join("\n");
+  }
+
+  async function share() {
+    const text = shareText();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        toast("Copied to clipboard");
+        return;
+      }
+    } catch { /* fall through */ }
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); toast("Copied to clipboard"); }
+    catch { toast("Copy failed"); }
+    document.body.removeChild(ta);
+  }
+
+  function renderStats(mode) {
+    const s = stats[mode] || emptyStats();
+    const pct = s.played ? Math.round(100 * s.wins / s.played) : 0;
+    const max = Math.max(1, ...s.dist);
+    $("stats-tabs").innerHTML = MODES.map(m =>
+      `<button type="button" data-m="${m}" class="${m===mode?"on":""}">${MODE_LABEL[m]}</button>`
+    ).join("");
+    $("stats-tabs").onclick = (e) => {
+      const b = e.target.closest("button");
+      if (b) renderStats(b.dataset.m);
+    };
+    $("stats-body").innerHTML =
+      `<div class="stats-grid">
+        <div><b>${s.played}</b><span>Played</span></div>
+        <div><b>${pct}</b><span>Win %</span></div>
+        <div><b>${s.streak}</b><span>Streak</span></div>
+        <div><b>${s.maxStreak}</b><span>Max</span></div>
+      </div>
+      <div class="dist">${s.dist.map((n,i) =>
+        `<div class="dist-row"><span>${i+1}</span><div class="bar${n&&n===Math.max(...s.dist)?" hl":""}" style="width:${Math.max(8, n/max*100)}%">${n}</div></div>`
+      ).join("")}</div>`;
+  }
+
+  function openOverlay(id) { $(id).classList.add("open"); }
+  function closeOverlays() {
+    document.querySelectorAll(".overlay").forEach(o => o.classList.remove("open"));
+  }
+
+  /* ========== Wire up ========== */
+  function init() {
+    buildAllowed();
+    buildBoard();
+    buildKeyboard();
+    boardEl.addEventListener("click", () => {
+      if (game.status !== "playing") openResult(game.status === "won");
+    });
+    refreshTitleStatus();
+
+    document.querySelectorAll(".mode-btn").forEach(b => {
+      b.addEventListener("click", () => startGame(b.dataset.mode, false));
+    });
+    $("btn-back").addEventListener("click", () => { closeOverlays(); showScreen("title"); });
+    $("btn-help").addEventListener("click", () => openOverlay("overlay-help"));
+    $("btn-help2").addEventListener("click", () => openOverlay("overlay-help"));
+    $("btn-stats").addEventListener("click", () => { renderStats(game.mode || "easy"); openOverlay("overlay-stats"); });
+    $("btn-stats2").addEventListener("click", () => { renderStats(game.mode); openOverlay("overlay-stats"); });
+    $("btn-sound").addEventListener("click", () => {
+      settings.sound = !settings.sound;
+      store.set("ww-settings", settings);
+      refreshTitleStatus();
+    });
+    $("hard-toggle").addEventListener("change", (e) => {
+      settings.hard = e.target.checked;
+      store.set("ww-settings", settings);
+    });
+    $("sound-toggle").addEventListener("change", (e) => {
+      settings.sound = e.target.checked;
+      store.set("ww-settings", settings);
+      refreshTitleStatus();
+    });
+    $("btn-share").addEventListener("click", share);
+    $("btn-practice").addEventListener("click", () => { closeOverlays(); startGame(game.mode, true); });
+    $("btn-modes").addEventListener("click", () => { closeOverlays(); showScreen("title"); });
+    document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeOverlays));
+    document.querySelectorAll(".overlay").forEach(o => {
+      o.addEventListener("click", (e) => { if (e.target === o) o.classList.remove("open"); });
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const open = document.querySelector(".overlay.open");
+      if (open) {
+        if (e.key === "Escape") closeOverlays();
+        return;
+      }
+      if (!$("screen-play").classList.contains("active")) return;
+      if (e.key === "Enter") { e.preventDefault(); onKey("ENTER"); }
+      else if (e.key === "Backspace") { e.preventDefault(); onKey("DEL"); }
+      else if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) { e.preventDefault(); onKey(e.key.toUpperCase()); }
+    });
+
+    const q = new URLSearchParams(location.search).get("mode");
+    if (q && MODES.includes(q.toLowerCase())) startGame(q.toLowerCase(), false);
+  }
+
+  init();
+  </script>
+</body>
+</html>
