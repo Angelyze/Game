@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1208">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Nuka Field</title>
+  <style>
+    :root {
+      --bg: #1a1208;
+      --panel: #24180c;
+      --accent: #ff9000;
+      --accent-dim: #c46e00;
+      --text: #f4e4c8;
+      --muted: #9a7a52;
+      --cell: #3a2c1c;
+      --cell-hi: #4a3a26;
+      --open: #2a2014;
+      --mine: #3a1010;
+      --flag: #ff9000;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --n1: #6cb6ff;
+      --n2: #5dca6a;
+      --n3: #ff5a4a;
+      --n4: #b08cff;
+      --n5: #ff9000;
+      --n6: #3ecfcf;
+      --n7: #f2f2f2;
+      --n8: #8a8a8a;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0e0a06;
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      overflow: hidden;
+      touch-action: manipulation;
+      user-select: none;
+      color-scheme: dark;
+      overscroll-behavior: none;
+    }
+    .app {
+      width: 100%;
+      max-width: 430px;
+      height: 100dvh;
+      height: 100svh;
+      margin: 0 auto;
+      background:
+        radial-gradient(ellipse at 50% 0%, #2a1c0c 0%, var(--bg) 58%);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 520px) and (min-aspect-ratio: 3/4) {
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100dvh;
+        background: radial-gradient(ellipse at 50% 0%, #1c140c 0%, #080604 60%);
+      }
+      .app {
+        height: min(100dvh - 24px, 860px);
+        width: min(430px, calc((100dvh - 24px) * 9 / 16));
+        border: 1px solid #3a2a14;
+        border-radius: 16px;
+        box-shadow: 0 0 48px rgba(255,144,0,.12), 0 24px 64px rgba(0,0,0,.65);
+      }
+    }
+    .screen {
+      position: absolute;
+      inset: 0;
+      top: 0; right: 0; bottom: 0; left: 0;
+      display: none;
+      flex-direction: column;
+      z-index: 1;
+    }
+    .screen.active { display: flex; z-index: 2; }
+
+    #screen-title {
+      padding: calc(18px + var(--safe-t)) 20px calc(16px + var(--safe-b));
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+    .cap {
+      width: 72px;
+      height: 72px;
+      margin: 6px auto 14px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 35% 30%, #ffc46a, #ff9000 42%, #b85e00 70%, #6a3400);
+      box-shadow:
+        0 0 0 4px #2a1a0a,
+        0 0 0 6px #ff9000,
+        0 8px 20px rgba(0,0,0,.45),
+        inset 0 2px 0 rgba(255,255,255,.25);
+      position: relative;
+    }
+    .cap::after {
+      content: "N";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 28px;
+      color: #2a1200;
+      letter-spacing: -.04em;
+    }
+    .wordmark { text-align: center; margin: 0; }
+    .wordmark span {
+      display: block;
+      letter-spacing: .22em;
+      font-size: clamp(26px, 8vw, 34px);
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .wordmark em {
+      display: block;
+      font-style: normal;
+      letter-spacing: .36em;
+      font-size: 13px;
+      color: var(--muted);
+      padding-left: .36em;
+      margin-top: 2px;
+    }
+    .tagline {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin: 10px 0 20px;
+    }
+    .modes { display: flex; flex-direction: column; gap: 10px; }
+    .mode-btn {
+      appearance: none;
+      border: 1px solid #4a3218;
+      background: #22180e;
+      color: var(--text);
+      text-align: left;
+      border-radius: 12px;
+      padding: 13px 14px;
+      min-height: 72px;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2px 12px;
+    }
+    .mode-btn:active { transform: scale(.985); }
+    .mode-btn .name {
+      font-weight: 800;
+      letter-spacing: .14em;
+      font-size: 15px;
+      color: var(--accent);
+    }
+    .mode-btn .blurb {
+      grid-column: 1;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .mode-btn .best {
+      grid-row: 1 / span 2;
+      align-self: center;
+      font-size: 11px;
+      letter-spacing: .06em;
+      color: var(--muted);
+      border: 1px solid #4a3218;
+      border-radius: 999px;
+      padding: 6px 8px;
+      min-width: 64px;
+      text-align: center;
+    }
+    .title-links {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .text-btn {
+      appearance: none;
+      background: none;
+      border: 0;
+      color: var(--accent);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 8px;
+    }
+    .disclaimer {
+      margin-top: auto;
+      padding-top: 16px;
+      text-align: center;
+      color: #5a4630;
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .play-header {
+      height: calc(48px + var(--safe-t));
+      padding: var(--safe-t) 6px 0;
+      display: grid;
+      grid-template-columns: 40px 1fr 40px 40px;
+      align-items: center;
+      border-bottom: 1px solid #3a2814;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      background: none;
+      color: var(--accent);
+      cursor: pointer;
+      font: 700 20px inherit;
+    }
+    .play-title {
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: .16em;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .play-title small {
+      display: block;
+      color: var(--muted);
+      letter-spacing: .08em;
+      font-size: 10px;
+      margin-top: 1px;
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: 1fr 52px 1fr;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px 6px;
+      flex-shrink: 0;
+    }
+    .counter {
+      background: #100c08;
+      border: 1px solid #3a2814;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-family: ui-monospace, "Cascadia Mono", "Courier New", monospace;
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: .08em;
+      color: var(--accent);
+      text-align: center;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,.4);
+    }
+    .face {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 2px solid #5a3a14;
+      background: radial-gradient(circle at 35% 30%, #ffc46a, #ff9000 55%, #b85e00);
+      color: #2a1200;
+      font-size: 26px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #6a3a00;
+    }
+    .face:active { transform: translateY(2px); box-shadow: 0 1px 0 #6a3a00; }
+
+    #screen-play { overflow: hidden; }
+    .board-wrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 10px 6px;
+    }
+    .board {
+      --cols: 8;
+      --rows: 10;
+      --tile: 28px;
+      display: grid;
+      grid-template-columns: repeat(var(--cols), var(--tile));
+      grid-template-rows: repeat(var(--rows), var(--tile));
+      gap: 2px;
+      flex: none;
+      width: max-content;
+      height: max-content;
+      background: #120c08;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid #3a2814;
+      box-shadow: inset 0 0 0 1px #000;
+    }
+    .cell {
+      appearance: none;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      border-radius: 3px;
+      background:
+        linear-gradient(160deg, var(--cell-hi) 0%, var(--cell) 62%);
+      box-shadow:
+        inset 1px 1px 0 rgba(255,200,120,.18),
+        inset -1px -1px 0 rgba(0,0,0,.35);
+      color: var(--text);
+      font: 800 16px ui-monospace, "Cascadia Mono", monospace;
+      display: grid;
+      place-items: center;
+      position: relative;
+      cursor: pointer;
+      width: var(--tile);
+      height: var(--tile);
+      min-width: var(--tile);
+      min-height: var(--tile);
+      max-width: var(--tile);
+      max-height: var(--tile);
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .cell.open {
+      background: var(--open);
+      box-shadow: inset 0 0 0 1px #1a120c;
+      cursor: default;
+    }
+    .cell.open.n1 { color: var(--n1); }
+    .cell.open.n2 { color: var(--n2); }
+    .cell.open.n3 { color: var(--n3); }
+    .cell.open.n4 { color: var(--n4); }
+    .cell.open.n5 { color: var(--n5); }
+    .cell.open.n6 { color: var(--n6); }
+    .cell.open.n7 { color: var(--n7); }
+    .cell.open.n8 { color: var(--n8); }
+    .cell.pressed { filter: brightness(.72); }
+    .cell.hi { outline: 2px solid rgba(255,144,0,.45); outline-offset: -2px; }
+    .cell.boom {
+      background: #6a1808;
+      box-shadow: inset 0 0 12px #ff4000;
+    }
+    .cell.wrong { background: #3a1810; }
+    .cell.flag::after, .cell.mine::after, .cell.wrong::after, .cell.winflag::after {
+      font-size: inherit;
+      line-height: 1;
+    }
+    .cell.flag::after { content: "⚑"; color: var(--accent); filter: drop-shadow(0 1px 0 #000); }
+    .cell.mine::after { content: "☢"; color: #ffb347; }
+    .cell.wrong::after { content: "✕"; color: #ff5a4a; font-weight: 900; }
+    .cell.winflag::after { content: "⚑"; color: #5dca6a; }
+
+    .dock {
+      display: flex;
+      gap: 8px;
+      padding: 6px 12px calc(10px + var(--safe-b));
+      flex-shrink: 0;
+    }
+    .dock-btn {
+      flex: 1;
+      appearance: none;
+      border: 1px solid #4a3218;
+      background: #22180e;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 11px 8px;
+      font: 700 13px inherit;
+      letter-spacing: .08em;
+      cursor: pointer;
+    }
+    .dock-btn.on {
+      background: var(--accent);
+      color: #2a1200;
+      border-color: var(--accent);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      top: 0; right: 0; bottom: 0; left: 0;
+      background: rgba(0,0,0,.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .overlay.open { display: flex; pointer-events: auto; }
+    .modal {
+      width: min(100%, 360px);
+      max-height: min(86dvh, 640px);
+      overflow: auto;
+      background: #22180e;
+      border: 1px solid #5a3a14;
+      border-radius: 14px;
+      padding: 18px 16px 14px;
+      overscroll-behavior: contain;
+    }
+    .modal h2 {
+      margin: 0 0 10px;
+      text-align: center;
+      letter-spacing: .16em;
+      font-size: 16px;
+      color: var(--accent);
+    }
+    .modal p { color: #e8d2aa; font-size: 14px; line-height: 1.45; }
+    .modal .close-x {
+      float: right;
+      margin: -6px -2px 0 0;
+      background: none;
+      border: 0;
+      color: var(--muted);
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .tiny { color: var(--muted); font-size: 12px; }
+    .result-stat {
+      text-align: center;
+      font-family: ui-monospace, monospace;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent);
+      margin: 8px 0 4px;
+    }
+    .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .primary, .secondary {
+      appearance: none;
+      border-radius: 10px;
+      padding: 12px;
+      font: 700 14px inherit;
+      letter-spacing: .06em;
+      cursor: pointer;
+    }
+    .primary { border: 0; background: var(--accent); color: #2a1200; }
+    .secondary { border: 1px solid #5a3a14; background: transparent; color: var(--text); }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 12px 0;
+      text-align: center;
+    }
+    .stats-grid b { display: block; font-size: 18px; color: var(--accent); }
+    .stats-grid span { font-size: 10px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+    .mode-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .mode-tabs button {
+      flex: 1;
+      border: 1px solid #4a3218;
+      background: #160e08;
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 7px;
+      font: 700 11px inherit;
+      letter-spacing: .06em;
+      cursor: pointer;
+    }
+    .mode-tabs button.on { color: #2a1200; background: var(--accent); border-color: var(--accent); }
+    @media (prefers-reduced-motion: reduce) {
+      .cell, .face, .mode-btn { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="screen active" id="screen-title">
+      <div class="cap" aria-hidden="true"></div>
+      <h1 class="wordmark"><span>NUKA</span><em>FIELD</em></h1>
+      <p class="tagline">Clear the unexploded Nuka.</p>
+      <div class="modes">
+        <button type="button" class="mode-btn" data-mode="easy" onclick="nukaStart('easy')">
+          <span class="name">EASY</span>
+          <span class="best" id="best-easy">—</span>
+          <span class="blurb">8×10 field · 10 nukes · first tap is safe.</span>
+        </button>
+        <button type="button" class="mode-btn" data-mode="normal" onclick="nukaStart('normal')">
+          <span class="name">NORMAL</span>
+          <span class="best" id="best-normal">—</span>
+          <span class="blurb">9×13 field · 22 nukes · no-guess boards.</span>
+        </button>
+        <button type="button" class="mode-btn" data-mode="extreme" onclick="nukaStart('extreme')">
+          <span class="name">EXTREME</span>
+          <span class="best" id="best-extreme">—</span>
+          <span class="blurb">9×16 field · 36 nukes · logic only.</span>
+        </button>
+      </div>
+      <div class="title-links">
+        <button type="button" class="text-btn" id="btn-help" onclick="nukaHelp()">HOW TO SWEEP</button>
+        <button type="button" class="text-btn" id="btn-stats" onclick="nukaStats()">STATS</button>
+      </div>
+      <p class="disclaimer">Fan-made and unofficial. Not affiliated with Bethesda, Microsoft, or Amazon.</p>
+    </section>
+
+    <section class="screen" id="screen-play">
+      <header class="play-header">
+        <button class="icon-btn" id="btn-back" aria-label="Back">‹</button>
+        <div class="play-title" id="play-title">NORMAL<small>Clear the field</small></div>
+        <button class="icon-btn" id="btn-help2" aria-label="How to sweep">?</button>
+        <button class="icon-btn" id="btn-sound" aria-label="Toggle sound">🔊</button>
+      </header>
+      <div class="hud">
+        <div class="counter" id="mine-count">022</div>
+        <button class="face" id="face" aria-label="New field">☺</button>
+        <div class="counter" id="timer">000</div>
+      </div>
+      <div class="board-wrap" id="board-wrap">
+        <div class="board" id="board" role="grid"></div>
+      </div>
+      <div class="dock">
+        <button class="dock-btn" id="flag-mode">⚑ FLAG</button>
+        <button class="dock-btn" id="btn-new">NEW FIELD</button>
+      </div>
+    </section>
+
+    <div class="overlay" id="overlay-help">
+      <div class="modal" role="dialog" aria-labelledby="help-h">
+        <button class="close-x" data-close aria-label="Close">×</button>
+        <h2 id="help-h">HOW TO SWEEP</h2>
+        <p>Tap a tile to open it. Numbers say how many nukes sit in the eight tiles around it. Open every safe tile to clear the field.</p>
+        <p><b>Flag</b> a tile with a long-press, or turn on Flag mode and tap. Flag every neighbor of a number and tap that number to open the rest (a chord).</p>
+        <p>Your first tap is always safe and usually opens a wide patch. Boards are built to be solvable with logic — no forced 50/50s.</p>
+        <p class="tiny">Classic rules. Nuka paint. Same orange as the rest of the Hub.</p>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-stats">
+      <div class="modal" role="dialog" aria-labelledby="stats-h">
+        <button class="close-x" data-close aria-label="Close">×</button>
+        <h2 id="stats-h">STATS</h2>
+        <div class="mode-tabs" id="stats-tabs"></div>
+        <div id="stats-body"></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-result">
+      <div class="modal" role="dialog" aria-labelledby="result-h">
+        <button class="close-x" data-close aria-label="Close">×</button>
+        <h2 id="result-h">FIELD CLEARED</h2>
+        <div class="result-stat" id="result-time">000</div>
+        <p class="tiny" id="result-note" style="text-align:center"></p>
+        <div class="actions">
+          <button class="primary" id="btn-again">ANOTHER FIELD</button>
+          <button class="secondary" id="btn-modes">CHANGE MODE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const MODES = {
+    easy:    { label: "EASY",    cols: 8, rows: 10, mines: 10 },
+    normal:  { label: "NORMAL",  cols: 9, rows: 13, mines: 22 },
+    extreme: { label: "EXTREME", cols: 9, rows: 16, mines: 36 }
+  };
+  const KEYS = ["easy", "normal", "extreme"];
+
+  const store = {
+    get(k, fb) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  function emptyStats() {
+    return { played: 0, wins: 0, best: null, last: null };
+  }
+  let stats = store.get("nf-stats", {});
+  if (!stats || typeof stats !== "object") stats = {};
+  KEYS.forEach(function (m) { if (!stats[m]) stats[m] = emptyStats(); });
+  let settings = store.get("nf-settings", { sound: true });
+  if (!settings || typeof settings !== "object") settings = { sound: true };
+
+  const $ = (id) => document.getElementById(id);
+
+  let audioCtx = null;
+  function beep(freq, dur, type, gain) {
+    if (!settings.sound) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type || "sine";
+      o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      g.gain.setValueAtTime(gain || 0.04, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime + dur);
+    } catch {}
+  }
+  const sfx = {
+    open: () => beep(520, 0.04, "sine", 0.03),
+    flag: () => beep(340, 0.06, "triangle", 0.035),
+    chord: () => beep(640, 0.05, "sine", 0.03),
+    boom: () => beep(80, 0.45, "sawtooth", 0.06),
+    win: () => { beep(523, 0.1, "sine", 0.045); setTimeout(() => beep(784, 0.16, "sine", 0.045), 90); }
+  };
+
+  const game = {
+    mode: "normal",
+    cols: 9,
+    rows: 13,
+    mines: 22,
+    mineAt: null,
+    adj: null,
+    open: null,
+    flag: null,
+    started: false,
+    over: false,
+    won: false,
+    flagMode: false,
+    time: 0,
+    timerId: 0,
+    pressTimer: 0,
+    pressIdx: -1,
+    moved: false
+  };
+
+  function idx(c, r) { return r * game.cols + c; }
+  function cr(i) { return [i % game.cols, Math.floor(i / game.cols)]; }
+  function neighbors(i) {
+    const [c, r] = cr(i);
+    const out = [];
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dc && !dr) continue;
+        const nc = c + dc, nr = r + dr;
+        if (nc >= 0 && nr >= 0 && nc < game.cols && nr < game.rows) out.push(idx(nc, nr));
+      }
+    }
+    return out;
+  }
+
+  function computeAdj(mineAt, cols, rows) {
+    const n = cols * rows;
+    const adj = new Int8Array(n);
+    for (let i = 0; i < n; i++) {
+      if (mineAt[i]) continue;
+      let t = 0;
+      const c = i % cols, r = (i / cols) | 0;
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        if (!dc && !dr) continue;
+        const nc = c + dc, nr = r + dr;
+        if (nc >= 0 && nr >= 0 && nc < cols && nr < rows && mineAt[nr * cols + nc]) t++;
+      }
+      adj[i] = t;
+    }
+    return adj;
+  }
+
+  function placeMines(n, mines, banned) {
+    const mineAt = new Uint8Array(n);
+    const pool = [];
+    for (let i = 0; i < n; i++) if (!banned.has(i)) pool.push(i);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const count = Math.min(mines, pool.length);
+    for (let i = 0; i < count; i++) mineAt[pool[i]] = 1;
+    return mineAt;
+  }
+
+  function floodOpen(start, mineAt, adj, cols, rows) {
+    const n = cols * rows;
+    const opened = new Uint8Array(n);
+    const q = [start];
+    opened[start] = 1;
+    for (let qi = 0; qi < q.length; qi++) {
+      const i = q[qi];
+      if (adj[i] !== 0 || mineAt[i]) continue;
+      const c = i % cols, r = (i / cols) | 0;
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        if (!dc && !dr) continue;
+        const nc = c + dc, nr = r + dr;
+        if (nc < 0 || nr < 0 || nc >= cols || nr >= rows) continue;
+        const j = nr * cols + nc;
+        if (!opened[j] && !mineAt[j]) { opened[j] = 1; q.push(j); }
+      }
+    }
+    return opened;
+  }
+
+  function isSolvable(mineAt, adj, start, cols, rows) {
+    const n = cols * rows;
+    const opened = floodOpen(start, mineAt, adj, cols, rows);
+    const flagged = new Uint8Array(n);
+    const neighCache = [];
+    for (let i = 0; i < n; i++) {
+      const list = [];
+      const c = i % cols, r = (i / cols) | 0;
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        if (!dc && !dr) continue;
+        const nc = c + dc, nr = r + dr;
+        if (nc >= 0 && nr >= 0 && nc < cols && nr < rows) list.push(nr * cols + nc);
+      }
+      neighCache[i] = list;
+    }
+
+    let progress = true;
+    while (progress) {
+      progress = false;
+      for (let i = 0; i < n; i++) {
+        if (!opened[i] || mineAt[i] || adj[i] === 0) continue;
+        const nb = neighCache[i];
+        let hidden = [], flags = 0;
+        for (const j of nb) {
+          if (flagged[j]) flags++;
+          else if (!opened[j]) hidden.push(j);
+        }
+        if (!hidden.length) continue;
+        if (flags + hidden.length === adj[i]) {
+          for (const j of hidden) if (!flagged[j]) { flagged[j] = 1; progress = true; }
+        } else if (flags === adj[i]) {
+          for (const j of hidden) {
+            if (mineAt[j]) return false;
+            if (!opened[j]) {
+              opened[j] = 1;
+              progress = true;
+              if (adj[j] === 0) {
+                const extra = floodOpen(j, mineAt, adj, cols, rows);
+                for (let k = 0; k < n; k++) if (extra[k] && !opened[k]) { opened[k] = 1; progress = true; }
+              }
+            }
+          }
+        }
+      }
+    }
+    for (let i = 0; i < n; i++) if (!mineAt[i] && !opened[i]) return false;
+    return true;
+  }
+
+  function generateBoard(start) {
+    const n = game.cols * game.rows;
+    const banned = new Set([start, ...neighbors(start)]);
+    let best = null;
+    for (let t = 0; t < 90; t++) {
+      const mineAt = placeMines(n, game.mines, banned);
+      const adj = computeAdj(mineAt, game.cols, game.rows);
+      if (mineAt[start]) continue;
+      if (adj[start] !== 0 && t < 70) continue;
+      if (isSolvable(mineAt, adj, start, game.cols, game.rows)) return { mineAt, adj };
+      best = { mineAt, adj };
+    }
+    if (best) return best;
+    const mineAt = placeMines(n, game.mines, banned);
+    return { mineAt, adj: computeAdj(mineAt, game.cols, game.rows) };
+  }
+
+  function pad3(n) {
+    n = Math.max(0, Math.min(999, n | 0));
+    return String(n).padStart(3, "0");
+  }
+  function fmtBest(s) {
+    if (s == null) return "—";
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m + ":" + String(r).padStart(2, "0");
+  }
+
+  function flagsLeft() {
+    let f = 0;
+    for (let i = 0; i < game.flag.length; i++) if (game.flag[i]) f++;
+    return game.mines - f;
+  }
+
+  function renderHUD() {
+    $("mine-count").textContent = pad3(flagsLeft());
+    $("timer").textContent = pad3(game.time);
+    $("face").textContent = game.over ? (game.won ? "☻" : "☠") : "☺";
+    $("flag-mode").classList.toggle("on", game.flagMode);
+    $("btn-sound").textContent = settings.sound !== false ? "🔊" : "🔇";
+  }
+
+  function applyGrid(cell) {
+    const board = $("board");
+    if (!board || !game.cols) return;
+    const px = Math.max(14, cell | 0);
+    const tile = px + "px";
+    board.style.setProperty("--cols", String(game.cols));
+    board.style.setProperty("--rows", String(game.rows));
+    board.style.setProperty("--tile", tile);
+    board.style.gridTemplateColumns = "repeat(" + game.cols + ", " + tile + ")";
+    board.style.gridTemplateRows = "repeat(" + game.rows + ", " + tile + ")";
+    board.style.fontSize = Math.max(10, Math.floor(px * 0.52)) + "px";
+    for (let i = 0; i < board.children.length; i++) {
+      const el = board.children[i];
+      el.style.width = tile;
+      el.style.height = tile;
+      el.style.minWidth = tile;
+      el.style.minHeight = tile;
+      el.style.maxWidth = tile;
+      el.style.maxHeight = tile;
+    }
+  }
+
+  function sizeBoard() {
+    const wrap = $("board-wrap") || document.querySelector(".board-wrap");
+    const board = $("board");
+    if (!wrap || !board || !game.cols) return;
+    applyGrid(28);
+    const cs = window.getComputedStyle(wrap);
+    const availW = wrap.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+    const availH = wrap.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+    if (availW < 40 || availH < 40) return;
+    const gap = 2;
+    const chrome = 10;
+    const cell = Math.max(16, Math.floor(Math.min(
+      (availW - chrome - gap * (game.cols - 1)) / game.cols,
+      (availH - chrome - gap * (game.rows - 1)) / game.rows
+    )));
+    applyGrid(cell);
+  }
+
+  function renderBoard() {
+    const n = game.cols * game.rows;
+    const board = $("board");
+    if (board.childElementCount !== n) {
+      board.innerHTML = "";
+      for (let i = 0; i < n; i++) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "cell";
+        b.dataset.i = i;
+        bindCell(b, i);
+        board.appendChild(b);
+      }
+      sizeBoard();
+    }
+    for (let i = 0; i < n; i++) {
+      const el = board.children[i];
+      el.className = "cell";
+      el.textContent = "";
+      if (game.over && game.won && game.mineAt && game.mineAt[i]) {
+        el.classList.add("open", "winflag");
+      } else if (game.open[i]) {
+        el.classList.add("open");
+        if (game.mineAt && game.mineAt[i]) {
+          el.classList.add("mine");
+          if (game.boom === i) el.classList.add("boom");
+        } else if (game.adj && game.adj[i] > 0) {
+          el.classList.add("n" + game.adj[i]);
+          el.textContent = game.adj[i];
+        }
+      } else if (game.flag[i]) {
+        el.classList.add("flag");
+        if (game.over && game.mineAt && !game.mineAt[i]) {
+          el.classList.remove("flag");
+          el.classList.add("open", "wrong");
+        }
+      } else if (game.over && game.mineAt && game.mineAt[i]) {
+        el.classList.add("open", "mine");
+      }
+    }
+  }
+
+  function bindCell(el, i) {
+    el.addEventListener("pointerdown", (e) => {
+      if (game.over) return;
+      el.setPointerCapture(e.pointerId);
+      game.pressIdx = i;
+      game.moved = false;
+      el.classList.add("pressed");
+      highlight(i, true);
+      clearTimeout(game.pressTimer);
+      game.pressTimer = setTimeout(() => {
+        if (game.pressIdx === i && !game.moved && !game.open[i]) {
+          toggleFlag(i);
+          game.pressIdx = -1;
+          el.classList.remove("pressed");
+          highlight(i, false);
+        }
+      }, 380);
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (game.pressIdx !== i) return;
+      if (Math.abs(e.movementX) + Math.abs(e.movementY) > 8) {
+        game.moved = true;
+        clearTimeout(game.pressTimer);
+      }
+    });
+    const end = (e) => {
+      clearTimeout(game.pressTimer);
+      el.classList.remove("pressed");
+      highlight(i, false);
+      if (game.pressIdx !== i) return;
+      game.pressIdx = -1;
+      if (game.moved || game.over) return;
+      if (e.button === 2) { toggleFlag(i); return; }
+      act(i);
+    };
+    el.addEventListener("pointerup", end);
+    el.addEventListener("pointercancel", () => {
+      clearTimeout(game.pressTimer);
+      el.classList.remove("pressed");
+      highlight(i, false);
+      game.pressIdx = -1;
+    });
+    el.addEventListener("contextmenu", (e) => { e.preventDefault(); });
+  }
+
+  function highlight(i, on) {
+    const board = $("board");
+    board.querySelectorAll(".hi").forEach(n => n.classList.remove("hi"));
+    if (!on || !game.open[i] || !game.adj || !game.adj[i]) return;
+    neighbors(i).forEach(j => {
+      if (!game.open[j]) board.children[j].classList.add("hi");
+    });
+  }
+
+  function startTimer() {
+    clearInterval(game.timerId);
+    game.timerId = setInterval(() => {
+      if (game.over) return;
+      game.time = Math.min(999, game.time + 1);
+      $("timer").textContent = pad3(game.time);
+    }, 1000);
+  }
+
+  function resetBoard(mode) {
+    const cfg = MODES[mode];
+    game.mode = mode;
+    game.cols = cfg.cols;
+    game.rows = cfg.rows;
+    game.mines = cfg.mines;
+    const n = cfg.cols * cfg.rows;
+    game.mineAt = null;
+    game.adj = null;
+    game.open = new Uint8Array(n);
+    game.flag = new Uint8Array(n);
+    game.started = false;
+    game.over = false;
+    game.won = false;
+    game.flagMode = false;
+    game.boom = -1;
+    game.time = 0;
+    clearInterval(game.timerId);
+    $("play-title").innerHTML = cfg.label + "<small>" + cfg.cols + "×" + cfg.rows + " · " + cfg.mines + " nukes</small>";
+    $("board").innerHTML = "";
+    applyGrid(28);
+    renderBoard();
+    renderHUD();
+  }
+
+  function ensureMines(start) {
+    if (game.started) return;
+    const built = generateBoard(start);
+    game.mineAt = built.mineAt;
+    game.adj = built.adj || computeAdj(game.mineAt, game.cols, game.rows);
+    game.started = true;
+    startTimer();
+  }
+
+  function reveal(i) {
+    if (game.open[i] || game.flag[i] || game.over) return;
+    ensureMines(i);
+    if (game.mineAt[i]) {
+      lose(i);
+      return;
+    }
+    const extra = floodOpen(i, game.mineAt, game.adj, game.cols, game.rows);
+    let any = false;
+    for (let k = 0; k < extra.length; k++) if (extra[k] && !game.open[k]) { game.open[k] = 1; any = true; }
+    if (any) sfx.open();
+    checkWin();
+    renderBoard();
+    renderHUD();
+  }
+
+  function toggleFlag(i) {
+    if (game.over || game.open[i]) return;
+    game.flag[i] = game.flag[i] ? 0 : 1;
+    sfx.flag();
+    renderBoard();
+    renderHUD();
+  }
+
+  function chord(i) {
+    if (!game.open[i] || !game.adj || !game.adj[i] || game.over) return;
+    const nb = neighbors(i);
+    let flags = 0;
+    nb.forEach(j => { if (game.flag[j]) flags++; });
+    if (flags !== game.adj[i]) return;
+    sfx.chord();
+    let hit = -1;
+    nb.forEach(j => {
+      if (!game.flag[j] && !game.open[j]) {
+        if (game.mineAt && game.mineAt[j]) hit = j;
+        else reveal(j);
+      }
+    });
+    if (hit >= 0) lose(hit);
+  }
+
+  function act(i) {
+    if (game.over) return;
+    if (game.open[i]) { chord(i); return; }
+    if (game.flagMode) { toggleFlag(i); return; }
+    if (game.flag[i]) return;
+    reveal(i);
+  }
+
+  function lose(i) {
+    game.over = true;
+    game.won = false;
+    game.boom = i;
+    game.open[i] = 1;
+    clearInterval(game.timerId);
+    sfx.boom();
+    record(false);
+    renderBoard();
+    renderHUD();
+    $("result-h").textContent = "DETONATION";
+    $("result-time").textContent = pad3(game.time);
+    $("result-note").textContent = "A nuke cooked off. The rest of the field is marked.";
+    setTimeout(() => $("overlay-result").classList.add("open"), 420);
+  }
+
+  function checkWin() {
+    const n = game.cols * game.rows;
+    for (let i = 0; i < n; i++) {
+      if (!game.mineAt[i] && !game.open[i]) return;
+    }
+    win();
+  }
+
+  function win() {
+    if (game.over) return;
+    game.over = true;
+    game.won = true;
+    clearInterval(game.timerId);
+    sfx.win();
+    record(true);
+    renderBoard();
+    renderHUD();
+    const best = stats[game.mode].best;
+    $("result-h").textContent = "FIELD CLEARED";
+    $("result-time").textContent = pad3(game.time);
+    $("result-note").textContent = best === game.time
+      ? "New best time."
+      : "Best " + fmtBest(best) + " · " + MODES[game.mode].label;
+    setTimeout(() => $("overlay-result").classList.add("open"), 280);
+  }
+
+  function record(won) {
+    const s = stats[game.mode];
+    s.played++;
+    s.last = game.time;
+    if (won) {
+      s.wins++;
+      if (s.best == null || game.time < s.best) s.best = game.time;
+    }
+    store.set("nf-stats", stats);
+    refreshTitle();
+  }
+
+  function refreshTitle() {
+    KEYS.forEach(m => {
+      $("best-" + m).textContent = fmtBest(stats[m].best);
+    });
+    $("btn-sound").textContent = settings.sound !== false ? "🔊" : "🔇";
+  }
+
+  function renderStats(mode) {
+    const s = stats[mode] || emptyStats();
+    const pct = s.played ? Math.round(100 * s.wins / s.played) : 0;
+    $("stats-tabs").innerHTML = KEYS.map(m =>
+      `<button type="button" data-m="${m}" class="${m===mode?"on":""}">${MODES[m].label}</button>`
+    ).join("");
+    $("stats-tabs").onclick = (e) => {
+      const b = e.target.closest("button");
+      if (b) renderStats(b.dataset.m);
+    };
+    $("stats-body").innerHTML =
+      `<div class="stats-grid">
+        <div><b>${s.played}</b><span>Fields</span></div>
+        <div><b>${pct}</b><span>Clear %</span></div>
+        <div><b>${fmtBest(s.best)}</b><span>Best</span></div>
+      </div>
+      <p class="tiny" style="text-align:center">${MODES[mode].cols}×${MODES[mode].rows} · ${MODES[mode].mines} nukes</p>`;
+  }
+
+  function showScreen(name) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    $("screen-" + name).classList.add("active");
+    refreshTitle();
+    if (name === "play") requestAnimationFrame(sizeBoard);
+  }
+  function closeOverlays() {
+    document.querySelectorAll(".overlay").forEach(o => o.classList.remove("open"));
+  }
+
+  function startMode(mode) {
+    closeOverlays();
+    resetBoard(mode);
+    showScreen("play");
+    sizeBoard();
+    requestAnimationFrame(function () {
+      sizeBoard();
+      requestAnimationFrame(sizeBoard);
+    });
+  }
+  function nukaStart(mode) { startMode(mode); }
+  function nukaHelp() { $("overlay-help").classList.add("open"); }
+  function nukaStats() { renderStats(game.mode || "easy"); $("overlay-stats").classList.add("open"); }
+  window.nukaStart = nukaStart;
+  window.nukaHelp = nukaHelp;
+  window.nukaStats = nukaStats;
+
+  function init() {
+    refreshTitle();
+    document.querySelectorAll(".mode-btn").forEach(function (b) {
+      b.addEventListener("click", function () { startMode(b.getAttribute("data-mode")); });
+    });
+    $("btn-back").addEventListener("click", function () { closeOverlays(); clearInterval(game.timerId); showScreen("title"); });
+    $("btn-help").addEventListener("click", nukaHelp);
+    $("btn-help2").addEventListener("click", nukaHelp);
+    $("btn-stats").addEventListener("click", nukaStats);
+    var wrapEl = $("board-wrap") || document.querySelector(".board-wrap");
+    if (window.ResizeObserver && wrapEl) {
+      try { new ResizeObserver(sizeBoard).observe(wrapEl); } catch (e) {}
+    }
+    window.addEventListener("resize", sizeBoard);
+    $("btn-sound").addEventListener("click", () => {
+      settings.sound = !settings.sound;
+      store.set("nf-settings", settings);
+      refreshTitle();
+    });
+    $("face").addEventListener("click", () => startMode(game.mode));
+    $("btn-new").addEventListener("click", () => startMode(game.mode));
+    $("flag-mode").addEventListener("click", () => {
+      game.flagMode = !game.flagMode;
+      renderHUD();
+    });
+    $("btn-again").addEventListener("click", () => startMode(game.mode));
+    $("btn-modes").addEventListener("click", () => { closeOverlays(); showScreen("title"); });
+    document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeOverlays));
+    document.querySelectorAll(".overlay").forEach(o => {
+      o.addEventListener("click", (e) => { if (e.target === o) o.classList.remove("open"); });
+    });
+    const q = new URLSearchParams(location.search).get("mode");
+    if (q && MODES[q.toLowerCase()]) startMode(q.toLowerCase());
+  }
+  init();
+  </script>
+</body>
+</html>

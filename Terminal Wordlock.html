@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#141414">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Terminal Wordlock</title>
+  <style>
+    :root {
+      --bg: #141414;
+      --panel: #1b1b1b;
+      --accent: #ff9000;
+      --accent-dim: #c46e00;
+      --glow: rgba(255, 144, 0, .35);
+      --text: #ffb347;
+      --muted: #8a5a20;
+      --junk: #6a4214;
+      --fail: #ff5a3c;
+      --ok: #ffd080;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0c0c0c;
+      color: var(--text);
+      font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, "Courier New", monospace;
+      overflow: hidden;
+      touch-action: manipulation;
+      user-select: none;
+      color-scheme: dark;
+      overscroll-behavior: none;
+    }
+    .app {
+      width: 100%;
+      max-width: 430px;
+      height: 100dvh;
+      height: 100svh;
+      margin: 0 auto;
+      background:
+        radial-gradient(ellipse at 50% 0%, #242018 0%, var(--bg) 55%);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    .app::before {
+      content: "";
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0 2px,
+        rgba(0,0,0,.18) 2px 3px
+      );
+      opacity: .45;
+      z-index: 8;
+    }
+    .app::after {
+      content: "";
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.45) 100%);
+      z-index: 9;
+    }
+    @media (min-width: 520px) and (min-aspect-ratio: 3/4) {
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100dvh;
+        background: radial-gradient(ellipse at 50% 0%, #1c1c1c 0%, #0a0a0a 55%);
+      }
+      .app {
+        height: min(100dvh - 24px, 860px);
+        width: min(430px, calc((100dvh - 24px) * 9 / 16));
+        border: 1px solid #3a2a12;
+        border-radius: 16px;
+        box-shadow: 0 0 40px var(--glow), 0 24px 64px rgba(0,0,0,.6);
+      }
+    }
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .screen.active { opacity: 1; pointer-events: auto; }
+
+    #screen-title {
+      padding: calc(18px + var(--safe-t)) 20px calc(16px + var(--safe-b));
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+    .crt-mark {
+      width: 72px;
+      height: 56px;
+      margin: 8px auto 16px;
+      border: 2px solid var(--accent);
+      border-radius: 6px;
+      box-shadow: 0 0 12px var(--glow), inset 0 0 10px var(--glow);
+      position: relative;
+      background: #0e0e0e;
+    }
+    .crt-mark::before, .crt-mark::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      height: 2px;
+      background: var(--accent);
+      opacity: .7;
+    }
+    .crt-mark::before { top: 16px; }
+    .crt-mark::after { top: 28px; width: 40%; box-shadow: 22px 10px 0 var(--accent); }
+    .wordmark {
+      text-align: center;
+      margin: 0;
+      text-shadow: 0 0 12px var(--glow);
+    }
+    .wordmark span {
+      display: block;
+      letter-spacing: .28em;
+      font-size: clamp(22px, 7vw, 30px);
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .wordmark em {
+      display: block;
+      font-style: normal;
+      letter-spacing: .42em;
+      font-size: 13px;
+      color: var(--muted);
+      padding-left: .42em;
+      margin-top: 4px;
+    }
+    .tagline {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin: 10px 0 20px;
+    }
+    .modes { display: flex; flex-direction: column; gap: 10px; }
+    .mode-btn {
+      appearance: none;
+      border: 1px solid #5a3a10;
+      background: #1a140c;
+      color: var(--text);
+      text-align: left;
+      border-radius: 10px;
+      padding: 13px 14px;
+      min-height: 70px;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2px 12px;
+    }
+    .mode-btn:active { filter: brightness(1.15); }
+    .mode-btn .name {
+      font-weight: 800;
+      letter-spacing: .14em;
+      font-size: 14px;
+      color: var(--accent);
+    }
+    .mode-btn .blurb {
+      grid-column: 1;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .mode-btn .today {
+      grid-row: 1 / span 2;
+      align-self: center;
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid #5a3a10;
+      border-radius: 999px;
+      padding: 6px 8px;
+      min-width: 70px;
+      text-align: center;
+    }
+    .mode-btn .today.done { color: var(--accent); border-color: var(--accent); }
+    .mode-btn .today.mid { color: var(--ok); }
+    .title-links {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .text-btn {
+      appearance: none;
+      background: none;
+      border: 0;
+      color: var(--accent);
+      font: inherit;
+      font-size: 12px;
+      letter-spacing: .08em;
+      cursor: pointer;
+      padding: 8px;
+    }
+    .disclaimer {
+      margin-top: auto;
+      padding-top: 16px;
+      text-align: center;
+      color: #5a4030;
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .play-header {
+      height: calc(48px + var(--safe-t));
+      padding: var(--safe-t) 6px 0;
+      display: grid;
+      grid-template-columns: 40px 1fr 40px 40px;
+      align-items: center;
+      border-bottom: 1px solid #3a2a12;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      background: none;
+      color: var(--accent);
+      cursor: pointer;
+      font: 700 20px inherit;
+    }
+    .play-title {
+      text-align: center;
+      font-size: 12px;
+      letter-spacing: .16em;
+      font-weight: 800;
+      color: var(--accent);
+      text-shadow: 0 0 8px var(--glow);
+    }
+    .play-title small {
+      display: block;
+      color: var(--muted);
+      letter-spacing: .1em;
+      font-size: 10px;
+      margin-top: 1px;
+    }
+
+    .term-top {
+      padding: 10px 12px 6px;
+      flex-shrink: 0;
+    }
+    .term-line { font-size: 11px; line-height: 1.45; color: var(--text); }
+    .term-line.dim { color: var(--muted); }
+    .attempts {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 11px;
+      letter-spacing: .06em;
+    }
+    .pips { display: flex; gap: 5px; }
+    .pip {
+      width: 14px;
+      height: 14px;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    .pip.off { background: #3a2a12; box-shadow: none; }
+
+    .dump {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
+      padding: 4px 10px 8px;
+      font-size: clamp(11px, 3.1vw, 13px);
+      line-height: 1.72;
+      letter-spacing: .02em;
+    }
+    .dump-row { white-space: pre; }
+    .hex { color: var(--muted); margin-right: 8px; }
+    .junk { color: var(--junk); }
+    .word, .bracket {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font: inherit;
+      letter-spacing: inherit;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      text-shadow: 0 0 8px var(--glow);
+    }
+    .word:hover, .bracket:hover, .word:focus-visible, .bracket:focus-visible {
+      background: var(--accent);
+      color: #1a1000;
+      text-shadow: none;
+    }
+    .word.tried {
+      color: var(--junk);
+      text-decoration: line-through;
+      text-shadow: none;
+      pointer-events: none;
+    }
+    .word.secret { background: var(--accent); color: #1a1000; text-shadow: none; }
+    .bracket.used { color: var(--junk); pointer-events: none; text-shadow: none; }
+
+    .term-log {
+      flex-shrink: 0;
+      min-height: 92px;
+      max-height: 28%;
+      overflow: auto;
+      border-top: 1px solid #3a2a12;
+      padding: 8px 12px calc(10px + var(--safe-b));
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .log-line { color: var(--text); }
+    .log-line.warn { color: var(--fail); }
+    .log-line.ok { color: var(--ok); }
+    .cursor::after {
+      content: "█";
+      animation: blink 1s step-end infinite;
+      color: var(--accent);
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 12;
+    }
+    .overlay.open { opacity: 1; pointer-events: auto; }
+    .modal {
+      width: min(100%, 360px);
+      max-height: min(86dvh, 640px);
+      overflow: auto;
+      background: #1a140c;
+      border: 1px solid #5a3a10;
+      border-radius: 12px;
+      padding: 18px 16px 14px;
+      overscroll-behavior: contain;
+      box-shadow: 0 0 24px var(--glow);
+    }
+    .modal h2 {
+      margin: 0 0 10px;
+      text-align: center;
+      letter-spacing: .14em;
+      font-size: 15px;
+      color: var(--accent);
+    }
+    .modal p, .modal li { color: #e8c48a; font-size: 13px; line-height: 1.45; }
+    .modal .close-x {
+      float: right;
+      margin: -6px -2px 0 0;
+      background: none;
+      border: 0;
+      color: var(--muted);
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .tiny { color: var(--muted); font-size: 12px; }
+    .result-word {
+      text-align: center;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      color: var(--accent);
+      text-shadow: 0 0 12px var(--glow);
+      margin: 8px 0 6px;
+    }
+    .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .primary, .secondary {
+      appearance: none;
+      border-radius: 8px;
+      padding: 11px;
+      font: 700 13px inherit;
+      letter-spacing: .08em;
+      cursor: pointer;
+    }
+    .primary { border: 0; background: var(--accent); color: #1a1000; }
+    .secondary { border: 1px solid #5a3a10; background: transparent; color: var(--text); }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 12px 0 8px;
+      text-align: center;
+    }
+    .stats-grid b { display: block; font-size: 20px; color: var(--accent); }
+    .stats-grid span { font-size: 9px; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+    .mode-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .mode-tabs button {
+      flex: 1;
+      border: 1px solid #5a3a10;
+      background: #141414;
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 7px;
+      font: 700 10px inherit;
+      letter-spacing: .08em;
+      cursor: pointer;
+    }
+    .mode-tabs button.on { color: #1a1000; background: var(--accent); border-color: var(--accent); }
+    @media (prefers-reduced-motion: reduce) {
+      .cursor::after { animation: none; }
+      .screen { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="screen active" id="screen-title">
+      <div class="crt-mark" aria-hidden="true"></div>
+      <h1 class="wordmark"><span>WORDLOCK</span><em>TERMLINK</em></h1>
+      <p class="tagline">Hack the terminal. Find the password.</p>
+      <div class="modes">
+        <button class="mode-btn" data-mode="easy">
+          <span class="name">NOVICE</span>
+          <span class="today" id="st-easy">Play</span>
+          <span class="blurb">5-letter wasteland words. 5 tries.</span>
+        </button>
+        <button class="mode-btn" data-mode="normal">
+          <span class="name">ADVANCED</span>
+          <span class="today" id="st-normal">Play</span>
+          <span class="blurb">Longer entries. 4 tries. Classic lock.</span>
+        </button>
+        <button class="mode-btn" data-mode="extreme">
+          <span class="name">MASTER</span>
+          <span class="today" id="st-extreme">Play</span>
+          <span class="blurb">Deep-cut passwords. 4 tries. No mercy.</span>
+        </button>
+      </div>
+      <div class="title-links">
+        <button class="text-btn" id="btn-help">HOW TO HACK</button>
+        <button class="text-btn" id="btn-stats">STATS</button>
+      </div>
+      <p class="disclaimer">Fan-made and unofficial. Not affiliated with Bethesda, Microsoft, or Amazon.</p>
+    </section>
+
+    <section class="screen" id="screen-play">
+      <header class="play-header">
+        <button class="icon-btn" id="btn-back" aria-label="Back">‹</button>
+        <div class="play-title" id="play-title">ADVANCED<small>Daily</small></div>
+        <button class="icon-btn" id="btn-help2" aria-label="How to hack">?</button>
+        <button class="icon-btn" id="btn-sound" aria-label="Toggle sound">🔊</button>
+      </header>
+      <div class="term-top">
+        <div class="term-line">WORDLOCK OS (C) ROBCO</div>
+        <div class="term-line dim">PASSWORD REQUIRED</div>
+        <div class="attempts"><span id="attempt-label">4 ATTEMPT(S) LEFT</span><div class="pips" id="pips"></div></div>
+      </div>
+      <div class="dump" id="dump" aria-label="Memory dump"></div>
+      <div class="term-log" id="log"><div class="log-line cursor">> </div></div>
+    </section>
+
+    <div class="overlay" id="overlay-help">
+      <div class="modal" role="dialog" aria-labelledby="help-h">
+        <button class="close-x" data-close aria-label="Close">×</button>
+        <h2 id="help-h">HOW TO HACK</h2>
+        <p>One highlighted word is the password. Tap a word to try it.</p>
+        <p>The terminal reports <b>likeness</b>: how many letters sit in the <b>exact same place</b> as the password. It is not Wordle — wrong-place letters do not count.</p>
+        <p>Example: password <b>HOUSE</b>, guess <b>HORSE</b> → likeness 4/5.</p>
+        <p>You get a handful of tries. Fail them all and the lockout engages.</p>
+        <p class="tiny">Pairs of brackets like &lt;...&gt; or [...] are exploits. Tap one to delete a dud word or restore your attempts.</p>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-stats">
+      <div class="modal" role="dialog" aria-labelledby="stats-h">
+        <button class="close-x" data-close aria-label="Close">×</button>
+        <h2 id="stats-h">STATS</h2>
+        <div class="mode-tabs" id="stats-tabs"></div>
+        <div id="stats-body"></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-result">
+      <div class="modal" role="dialog" aria-labelledby="result-h">
+        <button class="close-x" data-close aria-label="Close">×</button>
+        <h2 id="result-h">ACCESS GRANTED</h2>
+        <div class="result-word" id="result-word">VAULT</div>
+        <p class="tiny" id="result-hint" style="text-align:center"></p>
+        <div class="actions">
+          <button class="primary" id="btn-share">SHARE</button>
+          <button class="secondary" id="btn-practice">NEW DUMP</button>
+          <button class="secondary" id="btn-modes">CHANGE MODE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const POOLS = {
+    5: [
+      {w:"VAULT",h:"underground shelter"},
+      {w:"GHOUL",h:"irradiated human"},
+      {w:"ROBOT",h:"automaton"},
+      {w:"ARMOR",h:"protective plating"},
+      {w:"LASER",h:"energy weapon"},
+      {w:"RIFLE",h:"common firearm"},
+      {w:"SNEAK",h:"stealth skill"},
+      {w:"PERKS",h:"character bonuses"},
+      {w:"KARMA",h:"classic morality"},
+      {w:"WATER",h:"the chip and the war"},
+      {w:"STEEL",h:"Brotherhood of Steel"},
+      {w:"POWER",h:"power armor"},
+      {w:"QUEST",h:"a job in the wastes"},
+      {w:"MEDIC",h:"healing perk"},
+      {w:"CHEMS",h:"wasteland drugs"},
+      {w:"NUKES",h:"what fell in 2077"},
+      {w:"SYNTH",h:"Institute android"},
+      {w:"RADIO",h:"wasteland airwaves"},
+      {w:"VEGAS",h:"New Vegas"},
+      {w:"STRIP",h:"the gated Strip"},
+      {w:"ALIEN",h:"Zetan visitor"},
+      {w:"SUPER",h:"Super Mutant"},
+      {w:"CLAWS",h:"Deathclaw"},
+      {w:"WASTE",h:"the Wasteland"},
+      {w:"BOMBS",h:"the Great War"},
+      {w:"PIPER",h:"Piper Wright"},
+      {w:"SHAUN",h:"Shaun / Father"},
+      {w:"HOUSE",h:"Mr. House"},
+      {w:"ROBCO",h:"RobCo Industries"},
+      {w:"GECKO",h:"wasteland lizard"},
+      {w:"AMATA",h:"Amata Almodovar"},
+      {w:"BUTCH",h:"Tunnel Snakes"},
+      {w:"BENNY",h:"the checkered chairman"},
+      {w:"BOONE",h:"Craig Boone"},
+      {w:"CURIE",h:"Miss Nanny scientist"},
+      {w:"DANSE",h:"Paladin Danse"},
+      {w:"GLORY",h:"Railroad heavy"},
+      {w:"FILLY",h:"town from the show"},
+      {w:"NOVAC",h:"dinosaur motel town"},
+      {w:"PRIMM",h:"Vikki and Vance"},
+      {w:"OASIS",h:"hidden grove"},
+      {w:"KHANS",h:"Great Khans"},
+      {w:"TALON",h:"Talon Company"},
+      {w:"JAMES",h:"Lone Wanderer's father"},
+      {w:"UNITY",h:"the Master's dream"},
+      {w:"ELDER",h:"Brotherhood rank"},
+      {w:"GAUSS",h:"gauss rifle"},
+      {w:"TESLA",h:"tesla weapon"},
+      {w:"MELEE",h:"close combat"},
+      {w:"SUGAR",h:"Sugar Bombs"},
+      {w:"VIRUS",h:"F.E.V."},
+      {w:"KINGS",h:"Freeside gang"},
+      {w:"LUCKY",h:"Lucky 38"},
+      {w:"NINJA",h:"sneak-melee perk"},
+      {w:"BLOOD",h:"Bloody Mess"},
+      {w:"TOUGH",h:"Toughness perk"},
+      {w:"SNIPE",h:"long rifle work"},
+      {w:"VIPER",h:"Vipers gang"},
+      {w:"BEAST",h:"scorchbeast"},
+      {w:"QUEEN",h:"Mirelurk Queen"},
+      {w:"SCOUT",h:"recon role"},
+      {w:"THIEF",h:"thief perk"},
+      {w:"GHOST",h:"Ghost perk"},
+      {w:"BRAIN",h:"Intelligence"},
+      {w:"BLAST",h:"explosions"},
+      {w:"FLAME",h:"flamers"},
+      {w:"DAISY",h:"Goodneighbor"},
+      {w:"STIMP",h:"a stimpak"},
+      {w:"NUKAS",h:"Nuka-Cola"},
+      {w:"COLAS",h:"Nuka-Cola"},
+      {w:"PSYCH",h:"Psycho"},
+      {w:"MUTIE",h:"mutant slang"},
+      {w:"KNIFE",h:"combat knife"},
+      {w:"LOCKS",h:"lockpicking"},
+      {w:"HACKS",h:"terminal hacks"},
+      {w:"TROOP",h:"NCR trooper"},
+      {w:"ATOMS",h:"the bomb, or its children"},
+      {w:"MAXIM",h:"Maximus"},
+      {w:"HANDY",h:"Mr. Handy"},
+      {w:"GUTSY",h:"Miss Gutsy"},
+      {w:"PRIME",h:"Liberty Prime"},
+      {w:"PIPBO",h:"Pip-Boy"}
+    ],
+    6: [
+      {w:"PIPBOY",h:"wrist computer"},
+      {w:"FATMAN",h:"mini-nuke launcher"},
+      {w:"PLASMA",h:"energy weapon type"},
+      {w:"PISTOL",h:"sidearm"},
+      {w:"FUSION",h:"fusion core / cell"},
+      {w:"PSYCHO",h:"combat chem"},
+      {w:"DEACON",h:"Railroad spy"},
+      {w:"MAXSON",h:"Elder Maxson"},
+      {w:"VIRGIL",h:"Institute scientist"},
+      {w:"HAYLEN",h:"Scribe Haylen"},
+      {w:"INGRAM",h:"Proctor Ingram"},
+      {w:"TEAGAN",h:"Proctor Teagan"},
+      {w:"YESMAN",h:"Yes Man"},
+      {w:"CAESAR",h:"Legion lord"},
+      {w:"LANIUS",h:"Legate Lanius"},
+      {w:"VULPES",h:"Vulpes Inculta"},
+      {w:"ARCADE",h:"Arcade Gannon"},
+      {w:"HELIOS",h:"Helios One"},
+      {w:"NIPTON",h:"burned Mojave town"},
+      {w:"MOJAVE",h:"the Mojave Wasteland"},
+      {w:"BOSTON",h:"the Commonwealth"},
+      {w:"WATOGA",h:"Appalachian city"},
+      {w:"WILZIG",h:"Dr. Wilzig"},
+      {w:"COOPER",h:"Cooper Howard"},
+      {w:"ASKINS",h:"Bud Askins"},
+      {w:"BIRDIE",h:"Birdie of Vault 4"},
+      {w:"HONCHO",h:"wasteland honcho"},
+      {w:"GULPER",h:"Far Harbor / show beast"},
+      {w:"ANGLER",h:"Far Harbor angler"},
+      {w:"MANTIS",h:"giant mantis"},
+      {w:"SCORCH",h:"the Scorched"},
+      {w:"CRATER",h:"Crater raiders"},
+      {w:"FOREST",h:"The Forest, 76"},
+      {w:"RAIDER",h:"wasteland raider"},
+      {w:"GUNNER",h:"Commonwealth merc"},
+      {w:"SENTRY",h:"sentry bot"},
+      {w:"TURRET",h:"automated turret"},
+      {w:"ENERGY",h:"energy weapons"},
+      {w:"ACCESS",h:"terminal access"},
+      {w:"DENIED",h:"entry denied"},
+      {w:"MEMORY",h:"memory dump"},
+      {w:"SYSTEM",h:"operating system"},
+      {w:"MUTANT",h:"Super Mutant"},
+      {w:"ROBOTS",h:"automata"},
+      {w:"GHOULS",h:"the irradiated"},
+      {w:"CHARON",h:"Underworld ghoul"},
+      {w:"FAWKES",h:"intelligent mutant"},
+      {w:"MURPHY",h:"Mama Murphy"},
+      {w:"SKINNY",h:"Skinny Malone"},
+      {w:"SINJIN",h:"Sinjin"},
+      {w:"TRAVIS",h:"Travis Miles"},
+      {w:"ARTURO",h:"Arturo Rodriguez"},
+      {w:"PORTER",h:"Porter Gage"},
+      {w:"COLTER",h:"Overboss Colter"},
+      {w:"SAVAGE",h:"Savage Divide"},
+      {w:"BOTTLE",h:"Nuka bottle"},
+      {w:"SAFARI",h:"Safari Adventure"},
+      {w:"GALAXY",h:"Galaxy News"},
+      {w:"KIDDIE",h:"Kiddie Kingdom"},
+      {w:"HARPER",h:"Steph Harper"},
+      {w:"MORGAN",h:"Morgantown"},
+      {w:"JOSHUA",h:"Joshua Graham"},
+      {w:"GRAHAM",h:"the Burned Man"},
+      {w:"DANIEL",h:"Daniel of Zion"},
+      {w:"ELIJAH",h:"Father Elijah"},
+      {w:"HANLON",h:"Chief Hanlon"},
+      {w:"OLIVER",h:"General Oliver"},
+      {w:"BEAGLE",h:"Primm Beagle"},
+      {w:"BOXCAR",h:"Boxcars"},
+      {w:"REILLY",h:"Reilly's Rangers"},
+      {w:"WESTON",h:"Mayor McDonough's rival era"},
+      {w:"HAROLD",h:"Harold the tree"},
+      {w:"EULOGY",h:"Eulogy Jones"},
+      {w:"SANDRA",h:"Sandra of The Pitt"},
+      {w:"NADINE",h:"Nadine of Point Lookout"},
+      {w:"ZIMMER",h:"Dr. Zimmer"},
+      {w:"MARCUS",h:"Marcus of Broken Hills"},
+      {w:"BISHOP",h:"New Reno Bishop"},
+      {w:"ARROYO",h:"the Chosen One's village"},
+      {w:"JORDAN",h:"Jordan of Arroyo"},
+      {w:"BARTER",h:"barter skill"},
+      {w:"SPEECH",h:"speech skill"},
+      {w:"REPAIR",h:"repair skill"},
+      {w:"KNIGHT",h:"Brotherhood rank"},
+      {w:"SCRIBE",h:"Brotherhood scholar"},
+      {w:"STRONG",h:"Strong the mutant"},
+      {w:"LEGION",h:"Caesar's Legion"},
+      {w:"SLAVES",h:"Legion or Pitt slaves"},
+      {w:"TRIBAL",h:"a tribal people"},
+      {w:"GECKOS",h:"gecko pelts"},
+      {w:"ATOMIC",h:"atomic fire"},
+      {w:"LOCKER",h:"storage locker"},
+      {w:"HACKER",h:"terminal hacker"},
+      {w:"GEIGER",h:"Geiger counter"},
+      {w:"HELMET",h:"combat helmet"},
+      {w:"ARMORY",h:"the armory"},
+      {w:"RIFLES",h:"long guns"},
+      {w:"LASERS",h:"laser guns"},
+      {w:"FLAMER",h:"flamethrower"},
+      {w:"RIPPER",h:"ripper blade"},
+      {w:"MENTAT",h:"a Mentat"},
+      {w:"SQUIRE",h:"Brotherhood junior"},
+      {w:"CLERIC",h:"Brotherhood cleric"},
+      {w:"COMBAT",h:"combat armor"},
+      {w:"DIVIDE",h:"the Divide"},
+      {w:"FINGER",h:"the Ghoul's friend"},
+      {w:"MEDKIT",h:"first aid"}
+    ],
+    7: [
+      {w:"DOGMEAT",h:"the best boy"},
+      {w:"ENCLAVE",h:"remnants of America"},
+      {w:"MENTATS",h:"the thinking chem"},
+      {w:"BUFFOUT",h:"the muscle chem"},
+      {w:"RADAWAY",h:"radiation purge"},
+      {w:"PRESTON",h:"Preston Garvey"},
+      {w:"STURGES",h:"Sturges"},
+      {w:"HANCOCK",h:"Mayor Hancock"},
+      {w:"KELLOGG",h:"the Institute's knife"},
+      {w:"MAXIMUS",h:"Maximus of the show"},
+      {w:"YAOGUAI",h:"irradiated bear"},
+      {w:"BRAHMIN",h:"two-headed cattle"},
+      {w:"CENTAUR",h:"FEV horror"},
+      {w:"CAZADOR",h:"Mojave wasp"},
+      {w:"WENDIGO",h:"Appalachian horror"},
+      {w:"SPECIAL",h:"the seven stats"},
+      {w:"AGILITY",h:"a SPECIAL stat"},
+      {w:"SETTLER",h:"a wasteland civilian"},
+      {w:"GUNNERS",h:"Commonwealth mercs"},
+      {w:"BROTHER",h:"Brotherhood of Steel"},
+      {w:"PALADIN",h:"Brotherhood paladin"},
+      {w:"MINIGUN",h:"rotary cannon"},
+      {w:"SHOTGUN",h:"scattergun"},
+      {w:"MISSILE",h:"missile launcher"},
+      {w:"ASSAULT",h:"assault rifle"},
+      {w:"UNARMED",h:"fist fighting"},
+      {w:"SCIENCE",h:"science skill"},
+      {w:"HACKING",h:"terminal work"},
+      {w:"GLOWING",h:"glowing one"},
+      {w:"MUTANTS",h:"Super Mutants"},
+      {w:"RAIDERS",h:"the common threat"},
+      {w:"NUCLEAR",h:"nuclear fire"},
+      {w:"STEALTH",h:"Stealth Boy"},
+      {w:"DIAMOND",h:"Diamond City"},
+      {w:"CONCORD",h:"Museum of Freedom"},
+      {w:"NEWRENO",h:"the biggest little city"},
+      {w:"THEPITT",h:"Ashur's city"},
+      {w:"MOTHMAN",h:"Point Pleasant god"},
+      {w:"WESTTEK",h:"West Tek"},
+      {w:"PEARSON",h:"Betty Pearson"},
+      {w:"BRANDIS",h:"Paladin Brandis"},
+      {w:"QUINLAN",h:"Proctor Quinlan"},
+      {w:"DEACONS",h:"Railroad agents"},
+      {w:"FATHERS",h:"the Institute's Father"},
+      {w:"SNIPERS",h:"long rifles"},
+      {w:"PISTOLS",h:"sidearms"},
+      {w:"CHEMIST",h:"chem cook"},
+      {w:"MEDICAL",h:"first aid"},
+      {w:"DOCTORS",h:"wasteland medics"},
+      {w:"TUNNELS",h:"metro and caves"},
+      {w:"OUTCAST",h:"Brotherhood Outcast"},
+      {w:"SCRIBES",h:"Brotherhood scribes"},
+      {w:"KNIGHTS",h:"Brotherhood knights"},
+      {w:"MAXSONS",h:"the Maxson line"},
+      {w:"EYEBOTS",h:"hovering eyebots"},
+      {w:"MRHANDY",h:"Mr. Handy"},
+      {w:"LIBERTY",h:"Liberty Prime"},
+      {w:"STIMPAK",h:"the classic stim"},
+      {w:"PSYCHOS",h:"Psycho doses"},
+      {w:"ULYSSES",h:"courier of the Divide"}
+    ],
+    8: [
+      {w:"STIMPACK",h:"the battlefield stim"},
+      {w:"NUKACOLA",h:"the wasteland soda"},
+      {w:"RADROACH",h:"irradiated roach"},
+      {w:"MIRELURK",h:"coastal crab"},
+      {w:"BLOATFLY",h:"mutant fly"},
+      {w:"RAILROAD",h:"synth railroad"},
+      {w:"LOCKPICK",h:"the bobby-pin art"},
+      {w:"HOLOTAPE",h:"data tape"},
+      {w:"OVERSEER",h:"vault boss"},
+      {w:"SETTLERS",h:"Foundation folk"},
+      {w:"NIGHTKIN",h:"stealth mutants"},
+      {w:"CHARISMA",h:"a SPECIAL stat"},
+      {w:"SENTINEL",h:"Brotherhood sentinel"},
+      {w:"INITIATE",h:"Brotherhood initiate"},
+      {w:"HIGHRISE",h:"Railroad heavy"},
+      {w:"COMMANDO",h:"automatic perk"},
+      {w:"RIFLEMAN",h:"rifle perk"},
+      {w:"MOLDAVER",h:"Lee Moldaver"},
+      {w:"THADDEUS",h:"Knight Thaddeus"},
+      {w:"BLOODBUG",h:"the sucking fly"},
+      {w:"RADSCORP",h:"radscorpion"},
+      {w:"STEALTHY",h:"a Stealth Boy user"},
+      {w:"BOBBYPIN",h:"every lock's friend"},
+      {w:"TERMINAL",h:"the machine you are on"},
+      {w:"PASSWORD",h:"what you are hunting"},
+      {w:"LIKENESS",h:"the hacking score"},
+      {w:"TERMLINK",h:"the protocol"},
+      {w:"VAULTTEC",h:"Vault-Tec"},
+      {w:"POSEIDON",h:"Poseidon Energy"},
+      {w:"FREESIDE",h:"outside the Strip"},
+      {w:"WESTSIDE",h:"North Vegas neighbor"},
+      {w:"THESTRIP",h:"New Vegas Strip"},
+      {w:"JUNKTOWN",h:"classic hub town"},
+      {w:"BONEYARD",h:"the Angel's Boneyard"},
+      {w:"MARIPOSA",h:"Mariposa base"},
+      {w:"FOLLOWER",h:"Followers of the Apocalypse"},
+      {w:"OUTCASTS",h:"Lyons' Outcasts"},
+      {w:"ROBOTICS",h:"robot work"},
+      {w:"IRONSIDE",h:"the Constitution"},
+      {w:"BIGEMPTY",h:"the Big Empty"},
+      {w:"RADAWAYS",h:"RadAway doses"},
+      {w:"STIMPAKS",h:"a handful of stimpaks"},
+      {w:"ATOMCATS",h:"the Atom Cats"},
+      {w:"PALADINS",h:"Brotherhood paladins"},
+      {w:"ENCLAVES",h:"Enclave cells"},
+      {w:"DOGMEATS",h:"good dogs"},
+      {w:"CULTISTS",h:"Mothman cult"},
+      {w:"MOTHMANS",h:"the winged omen"},
+      {w:"WENDIGOS",h:"the hungry dead"}
+    ],
+    9: [
+      {w:"DEATHCLAW",h:"the apex predator"},
+      {w:"INSTITUTE",h:"the synth makers"},
+      {w:"MINUTEMEN",h:"the colonial militia"},
+      {w:"CODSWORTH",h:"the family Mr. Handy"},
+      {w:"VALENTINE",h:"Nick Valentine"},
+      {w:"MACCREADY",h:"Robert MacCready"},
+      {w:"STINGWING",h:"the stinging fly"},
+      {w:"FLATWOODS",h:"Flatwoods, Appalachia"},
+      {w:"SANCTUARY",h:"Sanctuary Hills"},
+      {w:"FARHARBOR",h:"the island of fog"},
+      {w:"NUKAWORLD",h:"the theme park"},
+      {w:"VERTIBIRD",h:"Brotherhood bird"},
+      {w:"STIMPACKS",h:"a surgeon's stash"},
+      {w:"HOLOTAPES",h:"a fist of holotapes"},
+      {w:"LOCKPICKS",h:"a ring of pins"},
+      {w:"MIRELURKS",h:"a nest of crabs"},
+      {w:"NIGHTKINS",h:"stealth nightkin"},
+      {w:"OVERSEERS",h:"vault bosses"},
+      {w:"RAILROADS",h:"the freedom line"},
+      {w:"WASTELAND",h:"everything outside"},
+      {w:"DEADMONEY",h:"the Sierra Madre DLC"},
+      {w:"CHRISTINE",h:"Christine Royce"},
+      {w:"DESDEMONA",h:"Railroad leader"},
+      {w:"LOSTHILLS",h:"Brotherhood bunker"},
+      {w:"THEMASTER",h:"the Unity's voice"},
+      {w:"FOLLOWERS",h:"Followers of the Apocalypse"},
+      {w:"REGULATOR",h:"the Regulator gang"},
+      {w:"SCROUNGER",h:"ammo-finding perk"},
+      {w:"ENDURANCE",h:"a SPECIAL stat"}
+    ],
+    10: [
+      {w:"APPALACHIA",h:"the 76 map"},
+      {w:"RESPONDERS",h:"Appalachia's medics"},
+      {w:"DEATHCLAWS",h:"a pack of claws"},
+      {w:"POWERARMOR",h:"walking a tank"},
+      {w:"FUSIONCORE",h:"what the frame drinks"},
+      {w:"GLOWINGONE",h:"the shining ghoul"},
+      {w:"PERCEPTION",h:"a SPECIAL stat"},
+      {w:"HONEYBEAST",h:"the giant bee"},
+      {w:"FOGCRAWLER",h:"Far Harbor horror"},
+      {w:"FAHRENHEIT",h:"Hancock's bodyguard"},
+      {w:"CARRINGTON",h:"Dr. Carrington"},
+      {w:"JACOBSTOWN",h:"Marcus's resort"},
+      {w:"FOUNDATION",h:"Settlers' home"},
+      {w:"SHADYSANDS",h:"the NCR's first city"},
+      {w:"PROTECTRON",h:"the mall cop robot"},
+      {w:"ASSAULTRON",h:"the blade robot"},
+      {w:"INSTITUTES",h:"Institute sites"},
+      {w:"LOCKPICKER",h:"a bobby-pin artist"},
+      {w:"STINGWINGS",h:"a cloud of wings"},
+      {w:"BROKENHILL",h:"Broken Hills"},
+      {w:"CATHEDRALS",h:"the Master's church"},
+      {w:"REGULATORS",h:"the Regulator posse"},
+      {w:"MORGANTOWN",h:"76 university town"},
+      {w:"CHARLESTON",h:"the flooded capital"},
+      {w:"RAILROADER",h:"a Railroad agent"},
+      {w:"UNDERWORLD",h:"the ghoul city"},
+      {w:"SECURITRON",h:"Mr. House's army"},
+      {w:"ATOMICCATS",h:"the Atom Cats garage"},
+      {w:"FORTSTRONG",h:"Fort Strong"},
+      {w:"COMBATZONE",h:"the Combat Zone"},
+      {w:"OVERBOSSES",h:"Nuka-World bosses"},
+      {w:"FIREBREATH",h:"the Firebreathers"},
+      {w:"FREESTATES",h:"the Free States"},
+      {w:"BLOODEAGLE",h:"Blood Eagles"},
+      {w:"BLOATFLIES",h:"a cloud of bloatflies"},
+      {w:"RADROACHES",h:"a nest of radroaches"},
+      {w:"MIRELURKER",h:"a hunter in the muck"},
+      {w:"ATOMICSHOP",h:"the Atomic Shop"}
+    ]
+  };
+
+  const MODES = {
+    easy:   { label: "NOVICE",   attempts: 5, count: 8,  lengths: [5] },
+    normal: { label: "ADVANCED", attempts: 4, count: 10, lengths: [6, 7] },
+    extreme:{ label: "MASTER",   attempts: 4, count: 12, lengths: [8, 9, 10] }
+  };
+  const MODE_KEYS = ["easy", "normal", "extreme"];
+  const JUNK = "!@#$%^&*-_=+;:,./?|~";
+
+  const store = {
+    get(k, fb) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  };
+  function emptyStats() { return { played: 0, wins: 0, streak: 0, maxStreak: 0, lastDate: "" }; }
+  let stats = store.get("tw-stats", {});
+  MODE_KEYS.forEach(m => { if (!stats[m]) stats[m] = emptyStats(); });
+  let settings = store.get("tw-settings", { sound: true });
+  let dailySave = store.get("tw-daily", {});
+
+  const $ = (id) => document.getElementById(id);
+
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  }
+  function hashStr(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function shuffle(arr, rnd) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rnd() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function rng(seed) {
+    let s = seed >>> 0;
+    return function () {
+      s = Math.imul(s ^ (s >>> 15), 16807) >>> 0;
+      return (s >>> 0) / 4294967296;
+    };
+  }
+  function likeness(guess, secret) {
+    let n = 0;
+    for (let i = 0; i < secret.length; i++) if (guess[i] === secret[i]) n++;
+    return n;
+  }
+
+  let audioCtx = null;
+  function beep(freq, dur, type, gain) {
+    if (!settings.sound) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type || "square";
+      o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      g.gain.setValueAtTime(gain || 0.04, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime + dur);
+    } catch {}
+  }
+  const sfx = {
+    tap: () => beep(620, 0.05, "square", 0.03),
+    deny: () => beep(140, 0.22, "sawtooth", 0.045),
+    grant: () => { beep(520, 0.1, "square", 0.05); setTimeout(() => beep(780, 0.16, "square", 0.05), 90); },
+    lock: () => beep(90, 0.4, "sawtooth", 0.05),
+    dud: () => beep(880, 0.08, "triangle", 0.04)
+  };
+
+  const game = {
+    mode: "normal",
+    practice: false,
+    secret: null,
+    words: [],
+    wordLen: 5,
+    maxAttempts: 4,
+    attempts: 4,
+    tried: [],
+    removed: [],
+    brackets: [],
+    cells: [],
+    cols: 12,
+    rows: 18,
+    status: "playing",
+    log: []
+  };
+
+  function pickRound(mode, practice) {
+    const cfg = MODES[mode];
+    const day = todayKey();
+    const seed = practice
+      ? (Math.floor(Math.random() * 1e9) ^ Date.now()) >>> 0
+      : hashStr(day + ":" + mode + ":tw");
+    const rnd = rng(seed);
+    const len = cfg.lengths[Math.floor(rnd() * cfg.lengths.length)];
+    let pool = (POOLS[len] || []).slice();
+    if (pool.length < cfg.count) {
+      cfg.lengths.forEach(L => {
+        if (L !== len) pool = pool.concat(POOLS[L] || []);
+      });
+      pool = pool.filter(x => x.w.length === len);
+    }
+    pool = shuffle(pool, rnd);
+    const secret = pool[0];
+    const rest = pool.slice(1, cfg.count);
+    const words = shuffle([secret].concat(rest), rnd);
+    return { secret, words, wordLen: len, maxAttempts: cfg.attempts, seed };
+  }
+
+  function generateDump(words, wordLen) {
+    const cols = 12;
+    let rows = 17;
+    const need = words.length + 5;
+    if (need > 14) rows = 20;
+    const grid = Array.from({ length: rows }, () => Array(cols).fill(null));
+    const rnd = rng(hashStr(words.map(w => w.w).join(",") + game.secret.w));
+
+    function freeRun(r, c, n) {
+      if (c + n > cols) return false;
+      for (let i = 0; i < n; i++) if (grid[r][c + i] !== null) return false;
+      return true;
+    }
+    const placed = [];
+    words.forEach((item, idx) => {
+      let ok = false;
+      for (let t = 0; t < 80 && !ok; t++) {
+        const r = Math.floor(rnd() * rows);
+        const c = Math.floor(rnd() * (cols - wordLen + 1));
+        if (!freeRun(r, c, wordLen)) continue;
+        for (let i = 0; i < wordLen; i++) {
+          grid[r][c + i] = { kind: "word", ch: item.w[i], id: idx };
+        }
+        placed.push({ id: idx, word: item.w, r, c });
+        ok = true;
+      }
+      if (!ok) {
+        const r = Math.min(idx, rows - 1);
+        for (let i = 0; i < wordLen && i < cols; i++) {
+          grid[r][i] = { kind: "word", ch: item.w[i], id: idx };
+        }
+        placed.push({ id: idx, word: item.w, r, c: 0 });
+      }
+    });
+
+    const pairs = [["<",">"],["[","]"],["{","}"],["(",")"]];
+    const brackets = [];
+    for (let b = 0; b < 4; b++) {
+      const [a, z] = pairs[b % pairs.length];
+      const span = 3 + Math.floor(rnd() * 3);
+      for (let t = 0; t < 40; t++) {
+        const r = Math.floor(rnd() * rows);
+        const c = Math.floor(rnd() * (cols - span + 1));
+        if (!freeRun(r, c, span)) continue;
+        grid[r][c] = { kind: "br", ch: a, id: b, end: false };
+        for (let i = 1; i < span - 1; i++) grid[r][c + i] = { kind: "br", ch: JUNK[Math.floor(rnd()*JUNK.length)], id: b, end: false };
+        grid[r][c + span - 1] = { kind: "br", ch: z, id: b, end: true };
+        brackets.push({ id: b, used: false });
+        break;
+      }
+    }
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (!grid[r][c]) grid[r][c] = { kind: "junk", ch: JUNK[Math.floor(rnd() * JUNK.length)] };
+      }
+    }
+    return { grid, cols, rows, brackets };
+  }
+
+  function renderDump() {
+    const el = $("dump");
+    el.innerHTML = "";
+    const { grid, cols, rows } = game;
+    const base = 0xF000;
+    for (let r = 0; r < rows; r++) {
+      const row = document.createElement("div");
+      row.className = "dump-row";
+      const hex = document.createElement("span");
+      hex.className = "hex";
+      hex.textContent = "0x" + (base + r * cols).toString(16).toUpperCase().padStart(4, "0");
+      row.appendChild(hex);
+
+      let c = 0;
+      while (c < cols) {
+        const cell = grid[r][c];
+        if (cell.kind === "word") {
+          const id = cell.id;
+          let text = "";
+          let n = 0;
+          while (c + n < cols && grid[r][c + n].kind === "word" && grid[r][c + n].id === id) {
+            text += grid[r][c + n].ch;
+            n++;
+          }
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "word";
+          btn.textContent = text;
+          btn.dataset.id = id;
+          if (game.removed.includes(id)) {
+            btn.textContent = ".".repeat(text.length);
+            btn.classList.add("tried");
+          } else if (game.tried.includes(id)) {
+            btn.classList.add("tried");
+          }
+          if (game.status !== "playing" && game.words[id] && game.words[id].w === game.secret.w) {
+            btn.classList.add("secret");
+          }
+          btn.addEventListener("click", () => onWord(id));
+          row.appendChild(btn);
+          c += n;
+        } else if (cell.kind === "br") {
+          const id = cell.id;
+          let text = "";
+          let n = 0;
+          while (c + n < cols && grid[r][c + n].kind === "br" && grid[r][c + n].id === id) {
+            text += grid[r][c + n].ch;
+            n++;
+          }
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "bracket" + (game.brackets.find(b => b.id === id && b.used) ? " used" : "");
+          btn.textContent = text;
+          btn.addEventListener("click", () => onBracket(id));
+          row.appendChild(btn);
+          c += n;
+        } else {
+          const span = document.createElement("span");
+          span.className = "junk";
+          let text = "";
+          while (c < cols && grid[r][c].kind === "junk") { text += grid[r][c].ch; c++; }
+          span.textContent = text;
+          row.appendChild(span);
+        }
+      }
+      el.appendChild(row);
+    }
+  }
+
+  function renderPips() {
+    $("attempt-label").textContent = game.attempts + " ATTEMPT(S) LEFT";
+    const box = $("pips");
+    box.innerHTML = "";
+    for (let i = 0; i < game.maxAttempts; i++) {
+      const p = document.createElement("div");
+      p.className = "pip" + (i >= game.attempts ? " off" : "");
+      box.appendChild(p);
+    }
+  }
+
+  function pushLog(text, cls) {
+    game.log.push({ text, cls });
+    if (game.log.length > 8) game.log.shift();
+    const el = $("log");
+    el.innerHTML = game.log.map(l =>
+      `<div class="log-line ${l.cls || ""}">&gt; ${escapeHtml(l.text)}</div>`
+    ).join("") + `<div class="log-line cursor">&gt; </div>`;
+    el.scrollTop = el.scrollHeight;
+  }
+  function escapeHtml(s) {
+    return s.replace(/[&<>]/g, ch => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[ch]));
+  }
+
+  function persistDaily() {
+    if (game.practice) return;
+    dailySave[game.mode] = {
+      date: todayKey(),
+      status: game.status,
+      secret: game.secret.w,
+      tried: game.tried.slice(),
+      attempts: game.attempts
+    };
+    store.set("tw-daily", dailySave);
+  }
+
+  function isYesterday(prev, today) {
+    const [y,m,d] = prev.split("-").map(Number);
+    const p = new Date(y, m - 1, d);
+    p.setDate(p.getDate() + 1);
+    const t = today.split("-").map(Number);
+    return p.getFullYear() === t[0] && (p.getMonth()+1) === t[1] && p.getDate() === t[2];
+  }
+  function recordStats(won) {
+    if (game.practice) return;
+    const s = stats[game.mode];
+    const day = todayKey();
+    if (s.lastDate === day) return;
+    s.played++;
+    if (won) {
+      s.wins++;
+      s.streak = (s.lastDate && isYesterday(s.lastDate, day)) ? s.streak + 1 : 1;
+      s.maxStreak = Math.max(s.maxStreak, s.streak);
+    } else {
+      s.streak = 0;
+    }
+    s.lastDate = day;
+    store.set("tw-stats", stats);
+  }
+
+  function startGame(mode, practice) {
+    game.mode = mode;
+    game.practice = !!practice;
+    game.status = "playing";
+    game.tried = [];
+    game.removed = [];
+    game.log = [];
+
+    const day = todayKey();
+    const saved = dailySave[mode];
+    const round = pickRound(mode, practice);
+    game.secret = round.secret;
+    game.words = round.words;
+    game.wordLen = round.wordLen;
+    game.maxAttempts = round.maxAttempts;
+    game.attempts = round.maxAttempts;
+
+    const dump = generateDump(game.words, game.wordLen);
+    game.grid = dump.grid;
+    game.cols = dump.cols;
+    game.rows = dump.rows;
+    game.brackets = dump.brackets;
+
+    $("play-title").innerHTML = MODES[mode].label + "<small>" + (practice ? "Practice" : "Daily") + "</small>";
+    showScreen("play");
+    renderDump();
+    renderPips();
+    $("log").innerHTML = `<div class="log-line cursor">&gt; </div>`;
+    pushLog("Password required.");
+    if (!practice && saved && saved.date === day && saved.secret === game.secret.w) {
+      game.tried = saved.tried || [];
+      game.attempts = saved.attempts;
+      game.status = saved.status || "playing";
+      renderDump();
+      renderPips();
+      if (game.status !== "playing") openResult(game.status === "won");
+    }
+  }
+
+  function onWord(id) {
+    if (game.status !== "playing") return;
+    if (game.tried.includes(id) || game.removed.includes(id)) return;
+    const item = game.words[id];
+    if (!item) return;
+    sfx.tap();
+    game.tried.push(id);
+    const score = likeness(item.w, game.secret.w);
+    pushLog(item.w);
+    if (item.w === game.secret.w) {
+      game.status = "won";
+      pushLog("Exact match!", "ok");
+      pushLog("Please wait while system is accessed.", "ok");
+      persistDaily();
+      recordStats(true);
+      sfx.grant();
+      renderDump();
+      setTimeout(() => openResult(true), 450);
+      refreshTitle();
+      return;
+    }
+    game.attempts--;
+    pushLog("Entry denied.", "warn");
+    pushLog("Likeness=" + score + "/" + game.wordLen + ".", "warn");
+    renderPips();
+    renderDump();
+    if (game.attempts <= 0) {
+      game.status = "lost";
+      pushLog("Init lockout sequence.", "warn");
+      persistDaily();
+      recordStats(false);
+      sfx.lock();
+      renderDump();
+      setTimeout(() => openResult(false), 500);
+    } else {
+      persistDaily();
+      sfx.deny();
+    }
+    refreshTitle();
+  }
+
+  function onBracket(id) {
+    if (game.status !== "playing") return;
+    const br = game.brackets.find(b => b.id === id);
+    if (!br || br.used) return;
+    br.used = true;
+    sfx.dud();
+    const duds = game.words
+      .map((w, i) => i)
+      .filter(i => game.words[i].w !== game.secret.w && !game.tried.includes(i) && !game.removed.includes(i));
+    const replenish = duds.length === 0 || Math.random() < 0.35;
+    if (replenish) {
+      game.attempts = game.maxAttempts;
+      pushLog("Allowance replenished.");
+      renderPips();
+    } else {
+      const kill = duds[Math.floor(Math.random() * duds.length)];
+      game.removed.push(kill);
+      pushLog("Dud removed.");
+    }
+    renderDump();
+  }
+
+  function openResult(won) {
+    $("result-h").textContent = won ? "ACCESS GRANTED" : "LOCKOUT ENGAGED";
+    $("result-word").textContent = game.secret.w;
+    $("result-hint").textContent = game.secret.h + " · " + game.wordLen + " glyphs · " +
+      (won ? (game.maxAttempts - game.attempts + (game.tried[game.tried.length-1] !== undefined ? 0 : 0) ) : game.maxAttempts) +
+      " tries used";
+    const used = game.tried.length;
+    $("result-hint").textContent = game.secret.h + " · " + used + (won ? " probe(s)" : " failed probes");
+    $("overlay-result").classList.add("open");
+  }
+
+  function shareText() {
+    const used = game.tried.length;
+    const n = game.status === "won" ? used + "/" + game.maxAttempts : "X/" + game.maxAttempts;
+    return "WORDLOCK · " + (game.practice ? "Practice" : todayKey()) + "\n" +
+      MODES[game.mode].label + " · " + n + "\n" +
+      (game.status === "won" ? "ACCESS GRANTED" : "LOCKOUT");
+  }
+  async function share() {
+    const text = shareText();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        pushLog("Copied to clipboard.");
+        return;
+      }
+    } catch {}
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); pushLog("Copied to clipboard."); }
+    catch { pushLog("Copy failed."); }
+    document.body.removeChild(ta);
+  }
+
+  function renderStats(mode) {
+    const s = stats[mode] || emptyStats();
+    const pct = s.played ? Math.round(100 * s.wins / s.played) : 0;
+    $("stats-tabs").innerHTML = MODE_KEYS.map(m =>
+      `<button type="button" data-m="${m}" class="${m===mode?"on":""}">${MODES[m].label}</button>`
+    ).join("");
+    $("stats-tabs").onclick = (e) => {
+      const b = e.target.closest("button");
+      if (b) renderStats(b.dataset.m);
+    };
+    $("stats-body").innerHTML =
+      `<div class="stats-grid">
+        <div><b>${s.played}</b><span>Hacks</span></div>
+        <div><b>${pct}</b><span>Win %</span></div>
+        <div><b>${s.streak}</b><span>Streak</span></div>
+        <div><b>${s.maxStreak}</b><span>Max</span></div>
+      </div>`;
+  }
+
+  function showScreen(name) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    $("screen-" + name).classList.add("active");
+    refreshTitle();
+  }
+  function refreshTitle() {
+    const day = todayKey();
+    MODE_KEYS.forEach(m => {
+      const el = $("st-" + m);
+      const s = dailySave[m];
+      el.classList.remove("done", "mid");
+      if (!s || s.date !== day) { el.textContent = "Play"; return; }
+      if (s.status === "won") { el.textContent = "In"; el.classList.add("done"); }
+      else if (s.status === "lost") { el.textContent = "Lock"; el.classList.add("done"); }
+      else { el.textContent = s.attempts + " left"; el.classList.add("mid"); }
+    });
+    $("btn-sound").textContent = settings.sound !== false ? "🔊" : "🔇";
+  }
+  function closeOverlays() {
+    document.querySelectorAll(".overlay").forEach(o => o.classList.remove("open"));
+  }
+
+  function init() {
+    refreshTitle();
+    document.querySelectorAll(".mode-btn").forEach(b => {
+      b.addEventListener("click", () => startGame(b.dataset.mode, false));
+    });
+    $("btn-back").addEventListener("click", () => { closeOverlays(); showScreen("title"); });
+    $("btn-help").addEventListener("click", () => $("overlay-help").classList.add("open"));
+    $("btn-help2").addEventListener("click", () => $("overlay-help").classList.add("open"));
+    $("btn-stats").addEventListener("click", () => { renderStats(game.mode || "easy"); $("overlay-stats").classList.add("open"); });
+    $("btn-sound").addEventListener("click", () => {
+      settings.sound = !settings.sound;
+      store.set("tw-settings", settings);
+      refreshTitle();
+    });
+    $("btn-share").addEventListener("click", share);
+    $("btn-practice").addEventListener("click", () => { closeOverlays(); startGame(game.mode, true); });
+    $("btn-modes").addEventListener("click", () => { closeOverlays(); showScreen("title"); });
+    document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeOverlays));
+    document.querySelectorAll(".overlay").forEach(o => {
+      o.addEventListener("click", (e) => { if (e.target === o) o.classList.remove("open"); });
+    });
+    const q = new URLSearchParams(location.search).get("mode");
+    if (q && MODES[q.toLowerCase()]) startGame(q.toLowerCase(), false);
+  }
+  init();
+  </script>
+</body>
+</html>
