@@ -6,9 +6,9 @@ They are fan-made and unofficial. Not affiliated with Bethesda, Microsoft, Amazo
 
 | File | Game | What it is |
 | --- | --- | --- |
-| `Wasteland Words.html` | Wasteland Words | 5-letter daily word game (Wordle rules, wasteland answers) |
-| `Terminal Wordlock.html` | Terminal Wordlock | RobCo-style terminal hack (likeness, not Wordle) |
-| `Nuka Field.html` | Nuka Field | Minesweeper — clear unexploded Nuka |
+| `WastelandWords.html` | Wasteland Words | 5-letter daily word game (Wordle rules, wasteland answers) |
+| `TerminalWordlock.html` | Terminal Wordlock | RobCo-style terminal hack (likeness, not Wordle) |
+| `NukaField.html` | Nuka Field | Minesweeper — clear unexploded Nuka |
 
 No build step, no server, no account, no CDN, no webfonts, no network after the page loads. Open a file in any modern browser.
 
@@ -33,7 +33,7 @@ Double-click any of the three HTML files, or serve the folder:
 python -m http.server 8080
 ```
 
-Then open `http://localhost:8080/Wasteland%20Words.html` (and the other two files the same way).
+Then open `http://localhost:8080/WastelandWords.html` (and the other two files the same way).
 
 ### Ship it
 
@@ -68,13 +68,13 @@ Point the in-app WebView at the same GitHub Pages URL. Optional: append `?mode=e
 
 ## 1. Wasteland Words
 
-Guess the **5-letter** wasteland word in **6 tries**. Classic Wordle scoring, Fallout answers.
+Guess the **5-letter** wasteland word in **6 tries**. Same length and try count as the original Wordle. Classic Wordle scoring, Fallout answers. Answers are **singular only** — never a simple plural like NUKES or CAMPS.
 
-**File:** `Wasteland Words.html`
+**File:** `WastelandWords.html`
 
 ### How to play
 
-Type a 5-letter word (on-screen keyboard or a hardware keyboard) and press Enter.
+Type a 5-letter word (on-screen keyboard or a hardware keyboard) and press Enter. Every answer is exactly five letters.
 
 - **Orange** — right letter, right place.
 - **Amber** — right letter, wrong place.
@@ -92,11 +92,11 @@ The rules never change. Only the **answer list** does.
 
 | Mode | Answers | What shows up |
 | --- | ---: | --- |
-| Easy | 267 | Household names from the games and the TV show (VAULT, GHOUL, VEGAS, MAXIM, PIPER…) |
-| Normal | 183 | Towns, companions, mid-tier lore (TYCHO, SULIK, NOVAC, PRIMM…) |
-| Extreme | 174 | Deep cuts (TALUS, MYNOC, NAGOR…) |
+| Easy | 52 | Only the household names — VAULT, GHOUL, VEGAS, MAXIM, PIPER, ROBCO… |
+| Normal | 187 | Companions, towns, mid-tier lore (TYCHO, SULIK, TANDI, RIVET…) — its own list |
+| Extreme | 120 | Deep cuts (TALUS, MYNOC, NAGOR…) — its own list |
 
-About **624** possible answers in total.
+About **359** possible answers in total, all exactly 5 letters and singular. Each mode picks only from its own list.
 
 ### Daily vs practice
 
