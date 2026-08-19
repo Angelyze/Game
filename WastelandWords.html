@@ -520,20 +520,20 @@
       <h1 class="wordmark"><span>WASTELAND</span><em>WORDS</em></h1>
       <p class="tagline">Guess the wasteland word</p>
       <div class="modes">
-        <button class="mode-btn" data-mode="easy">
+        <button type="button" class="mode-btn" data-mode="easy">
           <span class="name">EASY</span>
           <span class="today" id="st-easy">Today</span>
-          <span class="blurb">Household names from the games and the show.</span>
+          <span class="blurb">Only the household names — VAULT, GHOUL, VEGAS…</span>
         </button>
-        <button class="mode-btn" data-mode="normal">
+        <button type="button" class="mode-btn" data-mode="normal">
           <span class="name">NORMAL</span>
           <span class="today" id="st-normal">Today</span>
-          <span class="blurb">Towns, companions, and mid-tier lore.</span>
+          <span class="blurb">Companions, towns, and mid-tier lore. Its own word list.</span>
         </button>
-        <button class="mode-btn" data-mode="extreme">
+        <button type="button" class="mode-btn" data-mode="extreme">
           <span class="name">EXTREME</span>
           <span class="today" id="st-extreme">Today</span>
-          <span class="blurb">Deep cuts. Wiki dwellers only.</span>
+          <span class="blurb">Deep cuts. Wiki dwellers only. Its own word list.</span>
         </button>
       </div>
       <div class="toggles">
@@ -568,14 +568,14 @@
       <div class="modal" role="dialog" aria-labelledby="help-h">
         <button class="close-x" data-close aria-label="Close">×</button>
         <h2 id="help-h">HOW TO PLAY</h2>
-        <p>Guess the 5-letter wasteland word in 6 tries. Each guess must be a real word.</p>
+        <p>Guess the 5-letter wasteland word in 6 tries — same length as the original Wordle. Answers are always exactly 5 letters and always singular (never NUKES, CAMPS, or other simple plurals).</p>
         <div class="how-ex"><i class="correct">V</i><i>A</i><i>U</i><i>L</i><i>T</i></div>
         <p class="tiny">Orange — right letter, right place.</p>
         <div class="how-ex"><i>G</i><i class="present">H</i><i>O</i><i>U</i><i>L</i></div>
         <p class="tiny">Amber — right letter, wrong place.</p>
         <div class="how-ex"><i>R</i><i>O</i><i>B</i><i class="absent">O</i><i>T</i></div>
         <p class="tiny">Gray — not in the word. Duplicate letters are scored like the original.</p>
-        <p>Easy, Normal, and Extreme change which wasteland word is the answer, not the rules. Guesses can be common English words. Hard mode makes you reuse revealed hints.</p>
+        <p>Each mode has its own answer list. Easy is only the most famous Fallout words. Normal is companions, towns, and mid-tier lore. Extreme is deep cuts. Guesses can still be common English words. Hard mode makes you reuse revealed hints.</p>
       </div>
     </div>
 
@@ -606,7 +606,377 @@
 
   <script>
   /* ========== Word data ========== */
+  function pack(rows) {
+    return rows.map(function (r) { return { w: r[0], h: r[1], s: r[2] }; });
+  }
   const WORDS = {
+    easy: pack([
+      ["VAULT","underground shelter","all games + show"],
+      ["GHOUL","irradiated human","all games + show"],
+      ["ROBOT","automaton","all games"],
+      ["ARMOR","power armor and plating","all games + show"],
+      ["LASER","energy weapon","all games"],
+      ["RIFLE","common firearm","all games + show"],
+      ["STEEL","Brotherhood of Steel","all games + show"],
+      ["POWER","power armor","all games + show"],
+      ["SYNTH","Institute android","Fallout 4 + show"],
+      ["RADIO","Galaxy News and Diamond City Radio","all games"],
+      ["VEGAS","New Vegas","New Vegas + show"],
+      ["WASTE","the Wasteland","all games + show"],
+      ["HOUSE","Mr. House","New Vegas + show"],
+      ["ROBCO","RobCo Industries","all games + show"],
+      ["MAXIM","Maximus of the Brotherhood","TV show"],
+      ["PIPER","Piper Wright","Fallout 4"],
+      ["SHAUN","Shaun / Father","Fallout 4"],
+      ["BENNY","the checkered-suit chairman","New Vegas"],
+      ["BOONE","Craig Boone","New Vegas"],
+      ["CURIE","Miss Nanny turned scientist","Fallout 4"],
+      ["DANSE","Paladin Danse","Fallout 4"],
+      ["FILLY","surface town on the show","TV show"],
+      ["NOVAC","the dinosaur motel town","New Vegas + show"],
+      ["ELDER","Brotherhood leader rank","all games + show"],
+      ["VIRUS","Forced Evolutionary Virus","all games"],
+      ["STIMP","a stimpak","all games + show"],
+      ["PSYCH","Psycho","all games"],
+      ["KNIFE","combat knife","all games + show"],
+      ["SNEAK","stealth skill","all games"],
+      ["QUEST","a job in the wastes","all games"],
+      ["MELEE","close-quarters combat","all games"],
+      ["SUGAR","Sugar Bombs cereal","all games"],
+      ["BOOZE","wasteland liquor","all games"],
+      ["PRIME","Liberty Prime","FO3, FO4"],
+      ["HANDY","Mr. Handy","all games + show"],
+      ["GECKO","wasteland lizard","FO2, New Vegas"],
+      ["ALIEN","Zetans and crashed ships","FO3 onward"],
+      ["STRIP","the gated heart of New Vegas","New Vegas + show"],
+      ["LUCKY","the Lucky 38","New Vegas"],
+      ["KARMA","classic morality meter","FO1–FO3, New Vegas"],
+      ["WATER","the chip, the thirst, the war","FO1 + all games"],
+      ["BUTCH","Tunnel Snakes rule","Fallout 3"],
+      ["PRIMM","home of the Vikki and Vance","New Vegas"],
+      ["MEDIC","healing skill","all games"],
+      ["GUTSY","Miss Gutsy","FO3 onward"],
+      ["PIPBO","Pip-Boy","all games + show"],
+      ["ROACH","radroach","all games + show"],
+      ["BOBBY","bobby pin","3D games"],
+      ["SHADY","Shady Sands","FO1, FO2, show"],
+      ["BLADE","combat knife, or the Blades","all games / FO1"],
+      ["SCOPE","a sniper's scope","all games"],
+      ["FLARE","flare gun","FO4, 76"]
+    ]),
+    normal: pack([
+      ["TYCHO","desert ranger companion","Fallout 1"],
+      ["KATJA","Boneyard thief companion","Fallout 1"],
+      ["SULIK","tribal companion with a spirit","Fallout 2"],
+      ["MYRON","teenage chem genius","Fallout 2"],
+      ["LENNY","ghoul doctor companion","Fallout 2"],
+      ["GORIS","intelligent deathclaw","Fallout 2"],
+      ["LYONS","Owyn or Sarah Lyons","Fallout 3"],
+      ["KELLS","Lancer-Captain Kells","Fallout 4"],
+      ["MARCY","Marcy Long of Sanctuary","Fallout 4"],
+      ["TRUDY","Trudy of the Concord diner","Fallout 4"],
+      ["CLAIR","Clair of the Colonial Taphouse","Fallout 4"],
+      ["AVERY","Captain Avery of Far Harbor","Fallout 4"],
+      ["KENJI","Kenji Nakano","Fallout 4"],
+      ["VADIM","Vadim Bobrov","Fallout 4"],
+      ["FISTO","entertainment protectron","New Vegas"],
+      ["MOIRA","Moira Brown, Wasteland Survival Guide","Fallout 3"],
+      ["STEPH","Steph Harper of Vault 33","TV show"],
+      ["TITUS","Knight Titus","TV show"],
+      ["BLOAT","bloatfly","FO3 onward"],
+      ["RIVET","Rivet City","Fallout 3"],
+      ["MODOC","the slaughterhouse town","Fallout 2"],
+      ["LUCAS","Lucas Simms","Fallout 3"],
+      ["CROSS","Star Paladin Cross","Fallout 3"],
+      ["BETTY","Betty Pearson of Vault 31","TV show"],
+      ["WOODY","Woody Thomas","TV show"],
+      ["FELIX","Cleric Felix","TV show"],
+      ["TANDI","Tandi of Shady Sands","FO1, FO2"],
+      ["THREE","Three Dog","Fallout 3"],
+      ["ASHUR","Lord Ashur of The Pitt","Fallout 3"],
+      ["SWANK","Swank of The Tops","New Vegas"],
+      ["RINGO","Ringo of Goodsprings","New Vegas"],
+      ["SALON","the Prospector Saloon","New Vegas"],
+      ["ELLIE","Ellie Perkins","Fallout 4"],
+      ["YEFIM","Yefim Bobrov","Fallout 4"],
+      ["FERAL","feral ghoul","3D games"],
+      ["PAIGE","Paige of Foundation","Fallout 76"],
+      ["MASON","Mason of The Pack","Fallout 4"],
+      ["DIXIE","Dixie of the Disciples","Fallout 4"],
+      ["COLIN","Colin Moriarty","Fallout 3"],
+      ["SARAH","Sarah Lyons","Fallout 3"],
+      ["CAROL","Carol of Underworld","Fallout 3"],
+      ["MARIE","Marie of The Pitt","Fallout 3"],
+      ["HALEY","Haley of Point Lookout","Fallout 3"],
+      ["RHYSS","Knight Rhys","Fallout 4"],
+      ["BRIAN","Brian Virgil","Fallout 4"],
+      ["CARLA","Trashcan Carla","Fallout 4"],
+      ["PENNY","Penny Fitzgerald or Hornwright","FO4 / 76"],
+      ["MITCH","Mitch of Far Harbor","Fallout 4"],
+      ["TEDDY","Teddy Wright","Fallout 4"],
+      ["ALLEN","Allen Lee of Far Harbor","Fallout 4"],
+      ["JANEY","Janey, Cooper Howard's daughter","TV show"],
+      ["GIZMO","Gizmo of Junktown","Fallout 1"],
+      ["MIRIA","Miria of The Den","Fallout 2"],
+      ["DAVIN","Davin of The Den","Fallout 2"],
+      ["JENNY","Jenny of Arroyo","Fallout 2"],
+      ["ULTRA","Ultra-Luxe","New Vegas"],
+      ["MADRE","Sierra Madre","Dead Money"],
+      ["EMPTY","the Big Empty","Old World Blues"],
+      ["DWELL","Vault Dweller","Fallout 1"],
+      ["AGILE","Agility","all games"],
+      ["CHARM","Charisma","all games"],
+      ["FIXIT","Mr. Fixit perk","classic games"],
+      ["LONER","Lone Wanderer perk","Fallout 4"],
+      ["AWARE","Awareness perk","all games"],
+      ["QUICK","Quick Pockets or Quick Draw","classic / FO4"],
+      ["LIGHT","Light Step perk","classic games"],
+      ["SHARP","Sharpshooter perk","classic games"],
+      ["HATCH","mirelurk hatchling","FO3 onward"],
+      ["WORLD","Nuka-World","Fallout 4"],
+      ["EAGLE","Blood Eagles","Fallout 76"],
+      ["TOXIC","Toxic Valley","Fallout 76"],
+      ["POINT","Point Lookout or Point Pleasant","FO3 / 76"],
+      ["DANDY","Dandy Boy Apples","all games"],
+      ["FANCY","Fancy Lads Snack Cakes","all games"],
+      ["LUNCH","a lunchbox","Fallout Shelter"],
+      ["ANGEL","Angel's Boneyard","FO1, show"],
+      ["SCRAP","Junktown scrap","Fallout 1"],
+      ["GRETA","Greta of Underworld","Fallout 3"],
+      ["LUCIA","Knight Lucia","Fallout 4"],
+      ["GAVIL","Knight-Sergeant Gavil","Fallout 4"],
+      ["DAVEY","Davey of Vault 32","TV show"],
+      ["SUNNY","Sunny Smiles","New Vegas"],
+      ["RYLEE","Trader Rylee","Fallout 4"],
+      ["SHANK","Shank of Nuka-World","Fallout 4"],
+      ["MAPLE","Maple of Little Lamplight","Fallout 3"],
+      ["HARRY","Harry of Necropolis","Fallout 1"],
+      ["JACOB","Jacobstown","New Vegas"],
+      ["PEARL","Pearl of the Boomers","New Vegas"],
+      ["SLOAN","Sloan quarry town","New Vegas"],
+      ["NORTH","North Vegas","New Vegas"],
+      ["DANNY","Danny Sullivan","Fallout 4"],
+      ["FINCH","Finch farm","Fallout 4"],
+      ["HAGEN","Fort Hagen","Fallout 4"],
+      ["RALPH","Mick and Ralph","New Vegas"],
+      ["MOORE","Colonel Moore","New Vegas"],
+      ["SOLAR","Helios solar plant","New Vegas"],
+      ["CLOUD","the Sierra Madre cloud","Dead Money"],
+      ["HAPPY","Happy Trails","Honest Hearts"],
+      ["STORM","Divide storms","Lonesome Road"],
+      ["RELAY","the Institute molecular relay","Fallout 4"],
+      ["VERTI","a vertibird","FO3 onward + show"],
+      ["FIFTY","Area 51","TV show"],
+      ["HOLLY","Hollywood","TV show"],
+      ["WALLY","Wally Mack of the Tunnel Snakes","Fallout 3"],
+      ["FERRY","the Point Lookout ferry","Point Lookout"],
+      ["WIDOW","Black Widow perk","all 3D games"],
+      ["BLITZ","Blitz perk","Fallout 4"],
+      ["IDIOT","Idiot Savant","Fallout 4"],
+      ["GRAPE","grape Mentats","FO4, 76"],
+      ["BERRY","berry Mentats","FO4, 76"],
+      ["STING","stingwing","FO4, 76"],
+      ["SCORP","radscorpion","all games"],
+      ["LEECH","a bloodsucker","all games"],
+      ["HORSE","the Dead Horses","Honest Hearts"],
+      ["GRAFF","the Van Graffs","New Vegas"],
+      ["SHORT","Shorty of Big Town","Fallout 3"],
+      ["UNCLE","Uncle Leo","Fallout 3"],
+      ["SIREN","air-raid siren","all games + show"],
+      ["LEVER","a switch lever","all games"],
+      ["CRANK","a generator crank","all games"],
+      ["MOTOR","a car motor","all games"],
+      ["BROWN","Moira Brown","Fallout 3"],
+      ["JONES","Eulogy Jones","Fallout 3"],
+      ["TRISH","Trish","Fallout 4"],
+      ["CHASE","Chase","FO4 / 76"],
+      ["REILY","Reilly's Rangers","Fallout 3"],
+      ["TESLA","crackling energy gun","FO3, 76"],
+      ["GAUSS","electromagnetic rifle","3D games"],
+      ["QUEEN","Mirelurk Queen","FO4, 76"],
+      ["AMATA","Amata Almodovar","Fallout 3"],
+      ["UNITY","the Master's grim dream","Fallout 1"],
+      ["DAISY","Daisy of Goodneighbor","Fallout 4"],
+      ["TALON","Talon Company","Fallout 3"],
+      ["GLORY","Railroad heavy","Fallout 4"],
+      ["SUPER","Super Mutant","all games + show"],
+      ["OASIS","a hidden grove","Fallout 3"],
+      ["RECON","NCR Ranger recon","FO2, New Vegas, show"],
+      ["FLASH","The Glow","Fallout 1"],
+      ["BRUTE","Super Mutant muscle","all games + show"],
+      ["TOMMY","Tinker Tom","Fallout 4"],
+      ["NINJA","sneak-melee perk","Fallout 4"],
+      ["VIPER","Vipers raider gang","FO1, New Vegas"],
+      ["SIMMS","Sheriff Lucas Simms","Fallout 3"],
+      ["HOOCH","homemade booze","all games"],
+      ["CANDY","Sugar Bombs and Dandy Boys","all games"],
+      ["MUTIE","wasteland slang for mutant","all games"],
+      ["SERUM","mutation or FEV serum","FO4, 76"],
+      ["BEAST","scorchbeast or deathclaw","76 / all"],
+      ["VISOR","power armor visor","all games + show"],
+      ["CHILD","Children of Atom","FO3, FO4, 76"],
+      ["TRIBE","a tribal group","FO2, NV, FO3"],
+      ["GIANT","giant ant","all games"],
+      ["FRUIT","mutfruit","FO4, 76"],
+      ["GREEN","FEV goo","all games"],
+      ["TRAIT","classic character trait","FO1, FO2, New Vegas"],
+      ["VOICE","President Eden","Fallout 3"],
+      ["GHOST","Ghost perk","classic games"],
+      ["BLAST","an explosion","all games"],
+      ["FLAME","a flamer","all games"],
+      ["SPEAR","thrown or melee spear","all games"],
+      ["TROOP","NCR trooper","FO2, New Vegas, show"],
+      ["AGENT","a Railroad agent","Fallout 4"],
+      ["VENOM","radscorpion or cazador venom","all games"],
+      ["SLIME","FEV and mirelurk muck","all games"],
+      ["TOXIN","radiation and poison","all games"],
+      ["SEWER","D.C. tunnels","FO3, FO4"],
+      ["WRECK","ruined cars and planes","all games + show"],
+      ["RUINS","bombed-out cities","all games + show"],
+      ["INGOT","gold or uranium ingot","NV, 76"],
+      ["SWAMP","Point Lookout or the Mire","FO3 / 76"],
+      ["DRILL","the Pitt or a power tool","FO3 / all"],
+      ["STASH","hidden loot","all games"],
+      ["CACHE","a supply cache","all games"],
+      ["SALVE","healing salve","Fallout 76"],
+      ["BLOOD","Bloody Mess perk","all games"],
+      ["SCOUT","recon perk or role","all games"],
+      ["GUARD","vault or city guard","all games"],
+      ["THIEF","thief perk","classic games"],
+      ["PUPIL","a Brotherhood squire","games + show"],
+      ["TORCH","flamethrower or lamp","all games"],
+      ["SHELL","shotgun shell","all games"],
+      ["PILOT","vertibird pilot","FO3 onward + show"],
+      ["RADAR","Pip-Boy radar","FO3 onward"],
+      ["TOUGH","Toughness perk","all games"],
+      ["SKILL","a tagged skill","classic games"],
+      ["SQUAD","a fireteam","all games + show"],
+      ["TRASH","pre-War garbage","all games"]
+    ]),
+    extreme: pack([
+      ["TALUS","Lost Hills paladin","Fallout 1"],
+      ["MYNOC","Arroyo villager","Fallout 2"],
+      ["NAGOR","Arroyo hunter","Fallout 2"],
+      ["KLINT","temple guard of Arroyo","Fallout 2"],
+      ["MARSH","Point Lookout marsh","Point Lookout"],
+      ["KEELY","Vault 22 scientist","New Vegas"],
+      ["ANTON","Vault 22 researcher","New Vegas"],
+      ["QUINN","Underworld resident","Fallout 3"],
+      ["STICK","Sticky of Little Lamplight","Fallout 3"],
+      ["PATCH","Patchwork of Underworld","Fallout 3"],
+      ["NELIS","Nellis Air Force Base","New Vegas"],
+      ["CABOT","the Cabot family","Fallout 4"],
+      ["COVEN","Covenant","Fallout 4"],
+      ["WHITE","White Glove Society","New Vegas"],
+      ["GLOVE","White Glove Society","New Vegas"],
+      ["FUSED","Mass Fusion","Fallout 4"],
+      ["TRADE","Bunker Hill market","Fallout 4"],
+      ["TRIGG","Triggermen","Fallout 4"],
+      ["FLOAT","floater","FO1, FO2"],
+      ["SPORE","spore carrier","FO3, New Vegas"],
+      ["CRICK","cave cricket","Fallout 76"],
+      ["SHEEP","Sheepsquatch","Fallout 76"],
+      ["GRAFT","Grafton Monster","Fallout 76"],
+      ["HEAVE","Heave Ho! perk","classic games"],
+      ["SNAKE","Snakeater perk","classic games"],
+      ["SWIFT","Swift Learner perk","classic games"],
+      ["DODGE","Dodger perk","classic games"],
+      ["SPEAK","Speaker perk","classic games"],
+      ["BLOCK","Mental Block perk","classic games"],
+      ["BRUSH","Brush Gun","New Vegas"],
+      ["TRAIL","Trail Carbine","New Vegas"],
+      ["PUNCH","Power Fist","all games"],
+      ["GOURD","settlement crop","Fallout 4"],
+      ["GRAIN","razorgrain","FO4, 76"],
+      ["MELON","melon crop","Fallout 4"],
+      ["JERKY","iguana or radstag jerky","all games"],
+      ["STONE","Stonewall perk","classic games"],
+      ["DEATH","Silent Death perk","classic games"],
+      ["FOUND","Foundation","Fallout 76"],
+      ["CADET","Nuka-Cade or Brotherhood cadet","FO4 / show"],
+      ["GULCH","Dry Rock Gulch","Fallout 4"],
+      ["BONEY","the Boneyard","FO1, show"],
+      ["ALTAR","Cathedral altar","Fallout 1"],
+      ["LORRI","Scribe Lorri","Fallout 1"],
+      ["CYRUS","Cyrus","Brotherhood of Steel"],
+      ["NADIA","Nadia","Brotherhood of Steel"],
+      ["CAINE","Cain of the Brotherhood","Brotherhood of Steel"],
+      ["SMILE","Smiley the gecko trapper","Fallout 2"],
+      ["SKEET","Skeeter of Broken Hills","Fallout 2"],
+      ["BIRDY","Birdie of Vault 4","TV show"],
+      ["BENJI","Overseer Benjamin of Vault 4","TV show"],
+      ["IRVIN","Irv of Vault 32","TV show"],
+      ["BUDDY","Bud Askins","TV show"],
+      ["FLORA","Flora of Diamond City market","Fallout 4"],
+      ["BRAND","Paladin Brandis","Fallout 4"],
+      ["BETSY","Betsy the deathclaw","Fallout Tactics"],
+      ["MINER","Ash Heap miner","Fallout 76"],
+      ["FREED","Free States","Fallout 76"],
+      ["STATE","Free States","Fallout 76"],
+      ["CHIEF","a vault overseer","all vaults"],
+      ["WATCH","overseer's watch","all vaults"],
+      ["HASTE","Adrenaline Rush","classic games"],
+      ["DOGGY","a vault pet","Fallout Shelter"],
+      ["CLAIM","workshop claim","Fallout 76"],
+      ["NIGHT","nightkin","FO1, FO2, New Vegas"],
+      ["REAVE","ghoul reaver","Fallout 3"],
+      ["STALK","night stalker","New Vegas"],
+      ["BRAHM","brahmin","all games"],
+      ["QUINT","Elder Cleric Quintus","TV show"],
+      ["ALANA","Alana Secord of the Institute","Fallout 4"],
+      ["EMILY","Emily Ortal","New Vegas"],
+      ["SILUS","Silus of the Legion","New Vegas"],
+      ["LYNET","First Citizen Lynette","Fallout 2"],
+      ["RAZLO","Razlo of Shady Sands","Fallout 1"],
+      ["SETON","Set of Necropolis","Fallout 1"],
+      ["MORPH","Morpheus of the Cathedral","Fallout 1"],
+      ["LAURA","Laura of the Followers","Fallout 1"],
+      ["MAXON","the Maxson line","all Brotherhood games"],
+      ["MORLI","Morlis of Arroyo","Fallout 2"],
+      ["HAKUN","Hakunin of Arroyo","Fallout 2"],
+      ["JORDY","Jordan of Arroyo","Fallout 2"],
+      ["SIMON","Simon Barnaky","Fallout Tactics"],
+      ["BARNA","General Barnaky","Fallout Tactics"],
+      ["HAROL","Harold","FO1, FO2, FO3"],
+      ["NADIN","Nadine of Point Lookout","Point Lookout"],
+      ["EULOG","Eulogy Jones","Fallout 3"],
+      ["TOBAR","Tobar the Ferryman","Point Lookout"],
+      ["KNOCK","Knock Knock of Lamplight","Fallout 3"],
+      ["KLEOS","Kleo of Goodneighbor","Fallout 4"],
+      ["DIMAS","DiMA of Acadia","Fallout 4"],
+      ["AUREL","Aurelius of Phoenix","New Vegas"],
+      ["CHAIR","the Chairmen","New Vegas"],
+      ["ASKIN","Bud Askins","TV show"],
+      ["CENTA","a centaur","FO1, FO2, FO3, NV"],
+      ["MANTI","a giant mantis","FO1, FO2, NV"],
+      ["HONEY","honey beast","Fallout 76"],
+      ["XCELL","X-Cell","New Vegas"],
+      ["KNUCK","spiked knuckle","all games"],
+      ["PROTE","a protectron","all 3D games"],
+      ["EYEBO","an eyebot","FO3 onward"],
+      ["LIBER","Liberty Prime","FO3, FO4"],
+      ["POSEI","Poseidon Energy","FO1, NV, FO4"],
+      ["BOGGY","Cranberry Bog","Fallout 76"],
+      ["FOGGY","the Fog of Far Harbor","Fallout 4"],
+      ["MIRED","the Mire","Fallout 76"],
+      ["ASHEN","the Ash Heap","Fallout 76"],
+      ["RIDGE","the Savage Divide","Fallout 76"],
+      ["CLIFF","a wasteland cliff","all games"],
+      ["BLUFF","a ridge bluff","all games"],
+      ["GORGE","a mountain gorge","FO76, NV"],
+      ["BROOK","a mountain brook","Fallout 76"],
+      ["CRATE","Crater","Fallout 76"],
+      ["CLINT","Camp McClintock","Fallout 76"],
+      ["ROCKY","Dry Rock Gulch","Fallout 4"],
+      ["GALAX","Galaxy News / Nuka-Galaxy","FO3 / FO4"],
+      ["KIDDY","Kiddie Kingdom","Fallout 4"],
+      ["EARLE","Earle Williams","Fallout 76"],
+      ["PETRO","Poseidon petroleum","all games"],
+      ["FLASK","a chem flask","all games"],
+      ["ADULT","an adult dweller","Fallout Shelter"]
+    ])
+  };
+  /* LEGACY_UNUSED
     easy: [
       {w:"VAULT",h:"underground shelter",s:"all games + show"},
       {w:"GHOUL",h:"irradiated human",s:"all games + show"},
@@ -1238,6 +1608,7 @@
       {w:"TUBES",h:"test tubes",s:"all games"}
     ]
   };
+  */
 
   const EN_RAW = "ABACK ABASE ABATE ABBEY ABBOT ABHOR ABIDE ABLED ABODE ABORT ABOUT ABOVE ABUSE ABYSS ACORN ACRID ACTOR ACUTE ADAGE ADAPT ADEPT ADMIN ADMIT ADOBE ADOPT ADORE ADORN ADULT AFFIX AFIRE AFOOT AFOUL AFTER AGAIN AGAPE AGATE AGENT AGILE AGING AGLOW AGONY AGREE AHEAD AIDER AISLE ALARM ALBUM ALERT ALGAE ALIBI ALIEN ALIGN ALIKE ALIVE ALLAY ALLEY ALLOT ALLOW ALLOY ALOFT ALONE ALONG ALOOF ALOUD ALPHA ALTAR ALTER AMASS AMAZE AMBER AMBLE AMEND AMISS AMITY AMONG AMPLE AMPLY AMUSE ANGEL ANGER ANGLE ANGRY ANGST ANIME ANKLE ANNEX ANNOY ANNUL ANODE ANTIC ANVIL AORTA APART APHID APING APNEA APPLE APPLY APRON APTLY ARBOR ARDOR ARENA ARGUE ARISE ARMOR AROMA AROSE ARRAY ARROW ARSON ARTSY ASCOT ASHEN ASIDE ASKEW ASSAY ASSET ATOLL ATONE ATTIC AUDIO AUDIT AUGUR AUNTY AVAIL AVERT AVIAN AVOID AWAIT AWAKE AWARD AWARE AWASH AWFUL AWOKE AXIAL AXIOM AXION AZURE BACON BADGE BADLY BAGEL BAGGY BAKER BALER BALMY BANAL BANJO BARGE BARON BASAL BASIC BASIL BASIN BASIS BASTE BATCH BATHE BATON BATTY BAWDY BAYOU BEACH BEADY BEARD BEAST BEECH BEEFY BEFIT BEGAN BEGAT BEGET BEGIN BEGUN BELCH BELIE BELLE BELLY BELOW BENCH BERET BERRY BERTH BESET BETEL BEVEL BEZEL BIBLE BICEP BIDDY BIGOT BILGE BILLY BINGE BINGO BIOME BIRCH BIRTH BISON BITTY BLACK BLADE BLAME BLAND BLANK BLARE BLAST BLAZE BLEAK BLEAT BLEED BLEEP BLEND BLESS BLIMP BLIND BLINK BLISS BLITZ BLOAT BLOCK BLOKE BLOND BLOOD BLOOM BLOWN BLUER BLUFF BLUNT BLURB BLURT BLUSH BOARD BOAST BOBBY BONEY BONGO BONUS BOOBY BOOST BOOTH BOOTY BOOZE BOOZY BORAX BORNE BOSOM BOSSY BOTCH BOUGH BOULE BOUND BOWEL BOXER BRACE BRAID BRAIN BRAKE BRAND BRASH BRASS BRAVE BRAVO BRAWL BRAWN BREAD BREAK BREED BRIAR BRIBE BRICK BRIDE BRIEF BRINE BRING BRINK BRINY BRISK BROAD BROIL BROKE BROOD BROOK BROOM BROTH BROWN BRUNT BRUSH BRUTE BUDDY BUDGE BUGGY BUGLE BUILD BUILT BULGE BULKY BULLY BUNCH BUNNY BURLY BURNT BURST BUSED BUSHY BUTCH BUTTE BUXOM BUYER BYLAW CABAL CABBY CABIN CABLE CACAO CACHE CACTI CADDY CADET CAGEY CAIRN CAMEL CAMEO CANAL CANDY CANNY CANOE CANON CAPER CAPUT CARAT CARGO CAROL CARRY CARVE CASTE CATCH CATER CATTY CAULK CAUSE CAVIL CEASE CEDAR CELLO CHAFE CHAFF CHAIN CHAIR CHALK CHAMP CHANT CHAOS CHARD CHARM CHART CHASE CHASM CHEAP CHEAT CHECK CHEEK CHEER CHESS CHEST CHICK CHIDE CHIEF CHILD CHILI CHILL CHIME CHINA CHIRP CHOCK CHOIR CHOKE CHORD CHORE CHOSE CHUCK CHUMP CHUNK CHURN CHUTE CIDER CIGAR CINCH CIRCA CIVIC CIVIL CLACK CLAIM CLAMP CLANG CLANK CLASH CLASP CLASS CLEAN CLEAR CLEAT CLEFT CLERK CLICK CLIFF CLIMB CLING CLINK CLOAK CLOCK CLONE CLOSE CLOTH CLOUD CLOUT CLOVE CLOWN CLUCK CLUED CLUMP CLUNG COACH COAST COBRA COCOA COLON COLOR COMET COMFY COMIC COMMA CONCH CONDO CONIC COPSE CORAL CORER CORNY COUCH COUGH COULD COUNT COUPE COURT COVEN COVER COVET COVEY COWER COYLY CRACK CRAFT CRAMP CRANE CRANK CRASH CRASS CRATE CRAVE CRAWL CRAZE CRAZY CREAK CREAM CREDO CREED CREEK CREEP CREME CREPE CREPT CRESS CREST CRICK CRIED CRIER CRIME CRIMP CRISP CROAK CROCK CRONE CRONY CROOK CROSS CROUP CROWD CROWN CRUDE CRUEL CRUMB CRUMP CRUSH CRUST CRYPT CUBIC CUMIN CURIO CURLY CURRY CURSE CURVE CURVY CUTIE CYBER CYCLE CYNIC DADDY DAILY DAIRY DAISY DALLY DANCE DANDY DATUM DAUNT DEALT DEATH DEBAR DEBIT DEBUG DEBUT DECAL DECAY DECOR DECOY DECRY DEFER DEIGN DEITY DELAY DELTA DELVE DEMON DEMUR DENIM DENSE DEPOT DEPTH DERBY DETER DETOX DEUCE DEVIL DIARY DICEY DIGIT DILLY DIMLY DINER DINGO DINGY DIODE DIRGE DIRTY DISCO DITCH DITTO DITTY DIVER DIZZY DODGE DODGY DOGMA DOING DOLLY DONOR DONUT DOPEY DOUBT DOUGH DOWDY DOWEL DOWNY DOWRY DOZEN DRAFT DRAIN DRAKE DRAMA DRANK DRAPE DRAWL DRAWN DREAD DREAM DRESS DRIED DRIER DRIFT DRILL DRINK DRIVE DROIT DROLL DRONE DROOL DROOP DROSS DROVE DROWN DRUID DRUNK DRYER DRYLY DUCHY DULLY DUMMY DUMPY DUNCE DUSKY DUSTY DUTCH DUVET DWARF DWELL DWELT DYING EAGER EAGLE EARLY EARTH EASEL EATEN EATER EBONY ECLAT EDICT EDIFY EERIE EGRET EIGHT EJECT EKING ELATE ELBOW ELDER ELECT ELEGY ELFIN ELIDE ELITE ELOPE ELUDE EMAIL EMBED EMBER EMCEE EMPTY ENACT ENDOW ENEMA ENEMY ENJOY ENNUI ENSUE ENTER ENTRY ENVOY EPOCH EPOXY EQUAL EQUIP ERASE ERECT ERODE ERROR ERUPT ESSAY ESTER ETHER ETHIC ETHOS ETUDE EVADE EVENT EVERY EVICT EVOKE EXACT EXALT EXCEL EXERT EXILE EXIST EXPEL EXTOL EXTRA EXULT EYING FABLE FACET FAINT FAIRY FAITH FALSE FANCY FANNY FARCE FATAL FATTY FAULT FAUNA FAVOR FEAST FECAL FEIGN FELLA FELON FEMME FEMUR FENCE FERAL FERRY FETAL FETCH FETID FETUS FEVER FEWER FIBER FICUS FIELD FIEND FIERY FIFTH FIFTY FIGHT FILER FILET FILLY FILMY FILTH FINAL FINCH FINER FIRST FISHY FIXER FIZZY FJORD FLACK FLAIL FLAIR FLAKE FLAKY FLAME FLANK FLARE FLASH FLASK FLECK FLEET FLESH FLICK FLIER FLING FLINT FLIRT FLOAT FLOCK FLOOD FLOOR FLORA FLOSS FLOUR FLOUT FLOWN FLUFF FLUID FLUKE FLUME FLUNG FLUNK FLUSH FLUTE FLYER FOAMY FOCAL FOCUS FOGGY FOIST FOLIO FOLLY FORAY FORCE FORGE FORGO FORTE FORTH FORTY FORUM FOUND FOYER FRAIL FRAME FRANK FRAUD FREAK FREED FREER FRESH FRIAR FRIED FRILL FRISK FRITZ FROCK FROND FRONT FROST FROTH FROWN FROZE FRUIT FUDGE FUGUE FULLY FUNGI FUNKY FUNNY FUROR FURRY FUSSY FUZZY GAFFE GAILY GAMER GAMMA GAMUT GASSY GAUDY GAUGE GAUNT GAUZE GAVEL GAWKY GAYER GAYLY GAZER GECKO GEEKY GEESE GENIE GENRE GHOST GHOUL GIANT GIDDY GIPSY GIRLY GIRTH GIVEN GIVER GLADE GLAND GLARE GLASS GLAZE GLEAM GLEAN GLIDE GLINT GLOAT GLOBE GLOOM GLORY GLOSS GLOVE GLYPH GNASH GNOME GODLY GOING GOLEM GOLLY GONAD GONER GOODY GOOEY GOOFY GOOSE GORGE GOUGE GOURD GRACE GRADE GRAFT GRAIL GRAIN GRAND GRANT GRAPE GRAPH GRASP GRASS GRATE GRAVE GRAVY GRAZE GREAT GREED GREEN GREET GRIEF GRILL GRIME GRIMY GRIND GRIPE GROAN GROIN GROOM GROPE GROSS GROUP GROUT GROVE GROWL GROWN GRUEL GRUFF GRUNT GUARD GUAVA GUESS GUEST GUIDE GUILD GUILE GUILT GUISE GULCH GULLY GUMBO GUMMY GUPPY GUSTO GUSTY GYPSY HABIT HAIRY HALVE HANDY HAPPY HARDY HAREM HARPY HARRY HARSH HASTE HASTY HATCH HATER HAUNT HAUTE HAVEN HAVOC HAZEL HEADY HEARD HEART HEATH HEAVE HEAVY HEDGE HEFTY HEIST HELIX HELLO HENCE HERON HILLY HINGE HIPPO HIPPY HITCH HOARD HOBBY HOIST HOLLY HOMER HONEY HONOR HORDE HORNY HORSE HOTEL HOTLY HOUND HOUSE HOVEL HOVER HOWDY HUMAN HUMID HUMOR HUMPH HUMUS HUNCH HUNKY HURRY HUSKY HUSSY HUTCH HYDRO HYENA HYMEN HYPER ICILY ICING IDEAL IDIOM IDIOT IDLER IDYLL IGLOO ILIAC IMAGE IMBUE IMPEL IMPLY INANE INBOX INCUR INDEX INEPT INERT INFER INGOT INLAY INLET INNER INPUT INTER INTRO IONIC IRATE IRONY ISLET ISSUE ITCHY IVORY JAUNT JAZZY JELLY JERKY JETTY JEWEL JIFFY JOINT JOIST JOKER JOLLY JOUST JUDGE JUICE JUICY JUMBO JUMPY JUNTA JUNTO JUROR KAPPA KARMA KAYAK KEBAB KHAKI KINKY KIOSK KITTY KNACK KNAVE KNEAD KNEED KNEEL KNELT KNIFE KNOCK KNOLL KNOWN KOALA KRILL LABEL LABOR LADEN LADLE LAGER LANCE LANKY LAPEL LAPSE LARGE LARVA LASSO LATCH LATER LATHE LATTE LAUGH LAYER LEACH LEAFY LEAKY LEANT LEAPT LEARN LEASE LEASH LEAST LEAVE LEDGE LEECH LEERY LEFTY LEGAL LEGGY LEMON LEMUR LEPER LEVEL LEVER LIBEL LIEGE LIGHT LIKEN LILAC LIMBO LIMIT LINEN LINER LINGO LIPID LITHE LIVER LIVID LLAMA LOAMY LOATH LOBBY LOCAL LOCUS LODGE LOFTY LOGIC LOGIN LOOPY LOOSE LORRY LOSER LOUSE LOUSY LOVER LOWER LOWLY LOYAL LUCID LUCKY LUMEN LUMPY LUNAR LUNCH LUNGE LUPUS LURCH LURID LUSTY LYING LYMPH LYRIC MACAW MACHO MACRO MADAM MADLY MAFIA MAGIC MAGMA MAIZE MAJOR MAKER MAMBO MAMMA MAMMY MANGA MANGE MANGO MANGY MANIA MANIC MANLY MANOR MAPLE MARCH MARRY MARSH MASON MASSE MATCH MATEY MAUVE MAXIM MAYBE MAYOR MEALY MEANT MEATY MECCA MEDAL MEDIA MEDIC MELEE MELON MERCY MERGE MERIT MERRY METAL METER METRO MICRO MIDGE MIDST MIGHT MILKY MIMIC MINCE MINER MINIM MINOR MINTY MINUS MIRTH MISER MISSY MOCHA MODAL MODEL MODEM MOGUL MOIST MOLAR MOLDY MONEY MONTH MOODY MOOSE MORAL MORON MORPH MOSSY MOTEL MOTIF MOTOR MOTTO MOULT MOUND MOUNT MOURN MOUSE MOUTH MOVER MOVIE MOWER MUCKY MUCUS MUDDY MULCH MUMMY MUNCH MURAL MURKY MUSHY MUSIC MUSKY MUSTY MYRRH NADIR NAIVE NANNY NASAL NASTY NATAL NAVAL NAVEL NEEDY NEIGH NERDY NERVE NEVER NEWER NEWLY NICER NICHE NIECE NIGHT NINJA NINNY NINTH NOBLE NOBLY NOISE NOISY NOMAD NOOSE NORTH NOSEY NOTCH NOVEL NUDGE NURSE NUTTY NYLON NYMPH OAKEN OBESE OCCUR OCEAN OCTAL OCTET ODDER ODDLY OFFAL OFFER OFTEN OLDEN OLDER OLIVE OMBRE OMEGA ONION ONSET OPERA OPINE OPIUM OPTIC ORBIT ORDER ORGAN OTHER OTTER OUGHT OUNCE OUTDO OUTER OUTGO OVARY OVATE OVERT OVINE OVOID OWING OWNER OXIDE OZONE PADDY PAGAN PAINT PALER PALSY PANEL PANIC PANSY PAPAL PAPER PARER PARKA PARRY PARSE PARTY PASTA PASTE PASTY PATCH PATIO PATSY PATTY PAUSE PAYEE PAYER PEACE PEACH PEARL PECAN PEDAL PENAL PENCE PENNE PENNY PERCH PERIL PERKY PESKY PESTO PETAL PETTY PHASE PHONE PHONY PHOTO PIANO PICKY PIECE PIETY PIGGY PILOT PINCH PINEY PINKY PINTO PIPER PIQUE PITCH PITHY PIVOT PIXEL PIXIE PIZZA PLACE PLAID PLAIN PLAIT PLANE PLANK PLANT PLATE PLAZA PLEAD PLEAT PLIED PLIER PLUCK PLUMB PLUME PLUMP PLUNK PLUSH POESY POINT POISE POKER POLAR POLKA POLYP POOCH POPPY PORCH POSER POSIT POSSE POUCH POUND POUTY POWER PRANK PRAWN PREEN PRESS PRICE PRICK PRIDE PRIED PRIME PRIMO PRINT PRIOR PRISM PRIVY PRIZE PROBE PRONE PRONG PROOF PROSE PROUD PROVE PROWL PROXY PRUDE PRUNE PSALM PUBIC PUDGY PUFFY PULPY PULSE PUNCH PUPIL PUPPY PUREE PURER PURGE PURSE PUSHY PUTTY PYGMY QUACK QUAIL QUAKE QUALM QUARK QUART QUASH QUASI QUEEN QUEER QUELL QUERY QUEST QUEUE QUICK QUIET QUILL QUILT QUIRK QUITE QUOTA QUOTE QUOTH RABBI RABID RACER RADAR RADII RADIO RAINY RAISE RAJAH RALLY RALPH RAMEN RANCH RANDY RANGE RAPID RARER RASPY RATIO RATTY RAVEN RAYON RAZOR REACH REACT READY REALM REARM REBAR REBEL REBUS REBUT RECAP RECUR RECUT REEDY REFER REFIT REGAL REHAB REIGN RELAX RELAY RELIC REMIT RENAL RENEW REPAY REPEL REPLY RERUN RESET RESIN RETCH RETRO RETRY REUSE REVEL REVUE RHINO RHYME RIDER RIDGE RIFLE RIGHT RIGID RIGOR RINSE RIPEN RIPER RISEN RISER RISKY RIVAL RIVER RIVET ROACH ROAST ROBIN ROBOT ROCKY RODEO ROGER ROGUE ROOMY ROOST ROTOR ROUGE ROUGH ROUND ROUSE ROUTE ROVER ROWDY ROWER ROYAL RUDDY RUDER RUGBY RULER RUMBA RUMOR RUPEE RURAL RUSTY SADLY SAFER SAINT SALAD SALLY SALON SALSA SALTY SALVE SALVO SANDY SANER SAPPY SASSY SATIN SATYR SAUCE SAUCY SAUNA SAUTE SAVOR SAVOY SAVVY SCALD SCALE SCALP SCALY SCAMP SCANT SCARE SCARF SCARY SCENE SCENT SCION SCOFF SCOLD SCONE SCOOP SCOPE SCORE SCORN SCOUR SCOUT SCOWL SCRAM SCRAP SCREE SCREW SCRUB SCRUM SCUBA SEDAN SEEDY SEGUE SEIZE SEMEN SENSE SEPIA SERIF SERUM SERVE SETUP SEVEN SEVER SEWER SHACK SHADE SHADY SHAFT SHAKE SHAKY SHALE SHALL SHALT SHAME SHANK SHAPE SHARD SHARE SHARK SHARP SHAVE SHAWL SHEAR SHEEN SHEEP SHEER SHEET SHEIK SHELF SHELL SHIED SHIFT SHINE SHINY SHIRE SHIRK SHIRT SHOAL SHOCK SHONE SHOOK SHOOT SHORE SHORN SHORT SHOUT SHOVE SHOWN SHOWY SHREW SHRUB SHRUG SHUCK SHUNT SHUSH SHYLY SIEGE SIEVE SIGHT SIGMA SILKY SILLY SINCE SINEW SINGE SIREN SISSY SIXTH SIXTY SKATE SKIER SKIFF SKILL SKIMP SKIRT SKULK SKULL SKUNK SLACK SLAIN SLANG SLANT SLASH SLATE SLEEK SLEEP SLEET SLEPT SLICE SLICK SLIDE SLIME SLIMY SLING SLINK SLOOP SLOPE SLOSH SLOTH SLUMP SLUNG SLUNK SLURP SLUSH SLYLY SMACK SMALL SMART SMASH SMEAR SMELL SMELT SMILE SMIRK SMITE SMITH SMOCK SMOKE SMOKY SMOTE SNACK SNAIL SNAKE SNAKY SNARE SNARL SNEAK SNEER SNIDE SNIFF SNIPE SNOOP SNORE SNORT SNOUT SNOWY SNUCK SNUFF SOAPY SOBER SOGGY SOLAR SOLID SOLVE SONAR SONIC SOOTH SOOTY SORRY SOUND SOUTH SOWER SPACE SPADE SPANK SPARE SPARK SPASM SPAWN SPEAK SPEAR SPECK SPEED SPELL SPELT SPEND SPENT SPERM SPICE SPICY SPIED SPIEL SPIKE SPIKY SPILL SPILT SPINE SPINY SPIRE SPITE SPLAT SPLIT SPOIL SPOKE SPOOF SPOOK SPOOL SPOON SPORE SPORT SPOUT SPRAY SPREE SPRIG SPUNK SPURN SPURT SQUAD SQUAT SQUIB STACK STAFF STAGE STAID STAIN STAIR STAKE STALE STALK STALL STAMP STAND STANK STARE STARK START STASH STATE STAVE STEAD STEAK STEAL STEAM STEED STEEL STEEP STEER STEIN STERN STICK STIFF STILL STILT STING STINK STINT STOCK STOIC STOKE STOLE STOMP STONE STONY STOOD STOOL STOOP STORE STORK STORM STORY STOUT STOVE STRAP STRAW STRAY STRIP STRUT STUCK STUDY STUFF STUMP STUNG STUNK STUNT STYLE SUAVE SUGAR SUING SUITE SULKY SULLY SUMAC SUNNY SUPER SURER SURGE SURLY SUSHI SWAMI SWAMP SWARM SWASH SWATH SWEAR SWEAT SWEEP SWEET SWELL SWEPT SWIFT SWILL SWINE SWING SWIRL SWISH SWOON SWOOP SWORD SWORE SWORN SWUNG SYNOD SYRUP TABBY TABLE TABOO TACIT TACKY TAFFY TAINT TAKEN TAKER TALLY TALON TAMER TANGO TANGY TAPER TAPIR TARDY TAROT TASTE TASTY TATTY TAUNT TAWNY TEACH TEARY TEASE TEDDY TEETH TEMPO TENET TENOR TENSE TENTH TEPEE TEPID TERRA TERSE TESTY THANK THEFT THEIR THEME THERE THESE THETA THICK THIEF THIGH THING THINK THIRD THONG THORN THOSE THREE THREW THROB THROW THRUM THUMB THUMP THYME TIARA TIBIA TIDAL TIGER TIGHT TILDE TIMER TIMID TIPSY TITAN TITHE TITLE TOAST TODAY TODDY TOKEN TONAL TONGA TONIC TOOTH TOPAZ TOPIC TORCH TORSO TORUS TOTAL TOTEM TOUCH TOUGH TOWEL TOWER TOXIC TOXIN TRACE TRACK TRACT TRADE TRAIL TRAIN TRAIT TRAMP TRASH TRAWL TREAD TREAT TREND TRIAD TRIAL TRIBE TRICE TRICK TRIED TRIPE TRITE TROLL TROOP TROPE TROUT TROVE TRUCE TRUCK TRUER TRULY TRUMP TRUNK TRUSS TRUST TRUTH TRYST TUBAL TUBER TULIP TULLE TUMOR TUNIC TURBO TUTOR TWANG TWEAK TWEED TWEET TWICE TWINE TWIRL TWIST TWIXT TYING UDDER ULCER ULTRA UMBRA UNCLE UNCUT UNDER UNDID UNDUE UNFED UNFIT UNIFY UNION UNITE UNITY UNLIT UNMET UNSET UNTIE UNTIL UNWED UNZIP UPPER UPSET URBAN URINE USAGE USHER USING USUAL USURP UTILE UTTER VAGUE VALET VALID VALOR VALUE VALVE VAPID VAPOR VAULT VAUNT VEGAN VENOM VENUE VERGE VERSE VERSO VERVE VICAR VIDEO VIGIL VIGOR VILLA VINYL VIOLA VIPER VIRAL VIRUS VISIT VISOR VISTA VITAL VIVID VIXEN VOCAL VODKA VOGUE VOICE VOILA VOMIT VOTER VOUCH VOWEL VYING WACKY WAFER WAGER WAGON WAIST WAIVE WALTZ WARTY WASTE WATCH WATER WAVER WAXEN WEARY WEAVE WEDGE WEEDY WEIGH WEIRD WELCH WELSH WHACK WHALE WHARF WHEAT WHEEL WHELP WHERE WHICH WHIFF WHILE WHINE WHINY WHIRL WHISK WHITE WHOLE WHOOP WHOSE WIDEN WIDER WIDOW WIDTH WIELD WIGHT WILLY WIMPY WINCE WINCH WINDY WISER WISPY WITCH WITTY WOKEN WOMAN WOMEN WOODY WOOER WOOLY WOOZY WORDY WORLD WORRY WORSE WORST WORTH WOULD WOUND WOVEN WRACK WRATH WREAK WRECK WREST WRING WRIST WRITE WRONG WROTE WRUNG WRYLY YACHT YEARN YEAST YIELD YOUNG YOUTH ZEBRA ZESTY ZONAL ADIEU SOARE ROATE SALET OUIJA AEROS AUREI RAILE TARES NARES LARES SAINE STANE";
   </script>
@@ -1283,6 +1654,17 @@
   let dailySave = loadDaily();
 
   const allowed = new Set();
+  function sanitizeAnswers() {
+    const seen = {};
+    MODES.forEach(function (m) {
+      WORDS[m] = (WORDS[m] || []).filter(function (x) {
+        if (!x || typeof x.w !== "string" || x.w.length !== 5 || !/^[A-Z]{5}$/.test(x.w)) return false;
+        if (seen[x.w]) return false;
+        seen[x.w] = m;
+        return true;
+      });
+    });
+  }
   function buildAllowed() {
     allowed.clear();
     MODES.forEach(m => WORDS[m].forEach(x => allowed.add(x.w)));
@@ -1524,8 +1906,9 @@
 
     const day = todayKey();
     const saved = dailySave[mode];
-    if (!practice && saved && saved.date === day) {
-      game.answer = WORDS[mode].find(x => x.w === saved.word) || pickDaily(mode, day);
+    const stillThere = saved && WORDS[mode].some(function (x) { return x.w === saved.word; });
+    if (!practice && saved && saved.date === day && stillThere) {
+      game.answer = WORDS[mode].find(x => x.w === saved.word);
       game.guesses = saved.guesses.slice();
       game.results = saved.results.slice();
       game.row = game.guesses.length;
@@ -1726,6 +2109,7 @@
 
   /* ========== Wire up ========== */
   function init() {
+    sanitizeAnswers();
     buildAllowed();
     buildBoard();
     buildKeyboard();
