@@ -5,171 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Poker Game</title>
     <style>
-        body {
-            background-color: #333333;
-            font-family: Arial, sans-serif;
-            color: #222222;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        #gameContainer {
-            width: 500px;
-            height: 700px;
-            background-image: url('https://angelyze.github.io/Cards/Background.jpg');
-            background-size: cover; /* Changed from cover to contain */
-            background-position: center;
-            background-repeat: no-repeat; /* Added to prevent tiling */
-            border: 2px solid #ff9000;
-            border-radius: 10px;
-            padding: 10px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
-            position: relative;
-        }
-        #houseSection, #communitySection, #playerSection {
-            margin: 10px 0;
-        }
-        #houseCards, #playerCards {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 110px;
-            margin: 6px 0;
-        }
-        #communityCards {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 110px;
-            margin: 10px 0;
-            border: 2px solid #ff9000;
-            background-color: #222222;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        img {
-            width: 70px;
-            height: 110px;
-            margin: 0 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        #controls {
-            margin: 10px 0;
-        }
-        button {
-            padding: 10px 10px;
-            font-size: 16px;
-            margin: 5px;
-            border: none;
-            border-radius: 5px;
-            background-color: #ff9000;
-            color: white;
-            cursor: pointer;
-            touch-action: manipulation;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #e68300;
-        }
-        #status, #playerCaps, #houseCaps, #pot {
-            margin: 5px 0;
-            font-size: 16px;
-        }
-        #status {
-            color: #222222; /* Default dot color */
-        }
-        h3 {
-            margin: 5px 0;
-            font-size: 18px;
-        }
-        #endScreen, #welcomeScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            color: #ff9000;
-            font-size: 24px;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            cursor: pointer;
-            display: none;
-        }
-        #welcomeScreen.active {
-            display: flex;
-        }
-        @media (max-width: 500px) {
-            #gameContainer {
-                width: 100vw;
-                height: 94vh;
-                position: fixed; /* or 'absolute', depending on your needs */
-                top: 0; /* Aligns it to the top */
-                border: none;
-                border-radius: 0;
-            }
-            img {
-                width: 15vw;
-                height: auto;
-            }
-            button {
-                padding: 8px 16px;
-                font-size: 14px;
-            }
-            #status, #playerCaps, #houseCaps, #pot, h3 {
-                font-size: 14px;
-            }
-            #endScreen, #welcomeScreen {
-                font-size: 20px;
-            }
-        }
-
-        /* Fit the visible viewport, including browser chrome and display cutouts. */
         :root { --view-height: 100vh; --view-width: 100vw; }
         @supports (height: 100dvh) { :root { --view-height: 100dvh; } }
+        * { box-sizing: border-box; }
         html { width: 100%; height: 100%; overflow: hidden; }
         body {
             --usable-height: calc(var(--view-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
             --usable-width: calc(var(--view-width) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
             --u: min(calc(var(--usable-width) / 500), calc(var(--usable-height) / 700));
-            box-sizing: border-box; margin: 0; min-height: 0;
-            width: var(--view-width); height: var(--view-height); overflow: hidden;
+            margin: 0; width: var(--view-width); height: var(--view-height); overflow: hidden;
             padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+            display: flex; justify-content: center; align-items: center;
+            background: #151815; color: #fff4dc; font-family: Arial, sans-serif; text-align: center;
         }
-        button { touch-action: manipulation; }
-
-        #gameContainer { position: relative; top: auto; box-sizing: border-box;
-            width: min(100%, calc(var(--usable-height) * 5 / 7)); height: 100%; min-height: 0;
-            padding: calc(10 * var(--u)); border-width: calc(2 * var(--u)); border-radius: calc(10 * var(--u));
-            gap: calc(4 * var(--u)); overflow: hidden; font-size: calc(16 * var(--u)); }
-        #controls { display: flex; justify-content: center; flex-wrap: wrap; gap: calc(4 * var(--u));
-            margin: 0; padding: calc(4 * var(--u)); }
-        button, .overlay button { margin: 0; padding: calc(10 * var(--u)) calc(12 * var(--u));
-            font-size: calc(16 * var(--u)); border-radius: calc(5 * var(--u)); }
-        #status, #playerCaps, #houseCaps, #pot, h3 { margin: calc(3 * var(--u)) 0;
-            padding: 0; font-size: calc(16 * var(--u)); line-height: 1.2; overflow-wrap: anywhere; }
-        .overlay, #endScreen, #welcomeScreen { box-sizing: border-box; padding: calc(16 * var(--u));
-            font-size: calc(24 * var(--u)); flex-wrap: wrap; align-content: center; gap: calc(12 * var(--u)); }
-
-        #gameContainer { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, .85fr) minmax(0, 1fr) auto auto auto; }
-        #houseSection, #communitySection, #playerSection { min-height: 0; margin: 0; display: flex; flex-direction: column; }
-        #houseCards, #communityCards, #playerCards { flex: 1 1 0; min-height: 0; height: auto;
-            margin: calc(4 * var(--u)) 0; padding: calc(4 * var(--u)); gap: calc(6 * var(--u)); }
-        #gameContainer img { display: block; width: calc(70 * var(--u)); height: 100%; min-height: 0;
-            max-height: calc(130 * var(--u)); margin: 0; object-fit: contain; }
-
+        #gameContainer {
+            position: relative; width: min(100%, calc(var(--usable-height) * 5 / 7)); height: 100%;
+            min-height: 0; padding: calc(10 * var(--u)); border: 2px solid #ff9000;
+            border-radius: 10px; overflow: hidden;
+            background: linear-gradient(#152019db, #152019eb), url('https://angelyze.github.io/Cards/Background.jpg') center / cover;
+            display: grid; gap: calc(6 * var(--u));
+            grid-template-areas: "house" "community" "player" "controls" "status" "pot";
+            grid-template-rows: minmax(0, 1fr) minmax(0, .85fr) minmax(0, 1fr) auto auto auto;
+        }
+        #houseSection { grid-area: house; }
+        #communitySection { grid-area: community; }
+        #playerSection { grid-area: player; }
+        #houseSection, #communitySection, #playerSection {
+            min-width: 0; min-height: 0; display: flex; flex-direction: column;
+        }
+        h3, #playerCaps, #houseCaps, #pot { flex: 0 0 auto; margin: calc(3 * var(--u)) 0; font-size: max(11px, calc(16 * var(--u))); }
+        h3 { color: #ffb347; }
+        #houseCards, #communityCards, #playerCards {
+            flex: 1 1 0; min-height: 0; min-width: 0; display: flex; justify-content: center; align-items: center;
+            gap: calc(6 * var(--u)); padding: calc(4 * var(--u));
+        }
+        #communityCards { border: 1px solid #ff900080; border-radius: 5px; background: #0b100c80; }
+        #gameContainer img {
+            display: block; flex: 0 1 auto; min-width: 0; width: calc(70 * var(--u));
+            height: calc(110 * var(--u)); max-height: 100%; object-fit: contain;
+            filter: drop-shadow(0 2px 3px #0008);
+        }
+        #controls { grid-area: controls; display: flex; justify-content: center; flex-wrap: wrap; gap: calc(6 * var(--u)); }
+        button {
+            border: 0; padding: calc(10 * var(--u)) calc(16 * var(--u)); border-radius: 5px;
+            background: #ff9000; color: #17120a; font-weight: bold; font-size: max(12px, calc(16 * var(--u)));
+            cursor: pointer; touch-action: manipulation;
+        }
+        button:hover { background: #ffb347; }
+        button:disabled { opacity: .45; cursor: default; }
+        button:focus-visible, [role="button"]:focus-visible { outline: 3px solid #fff4dc; outline-offset: -3px; }
+        #status { grid-area: status; font-size: max(11px, calc(16 * var(--u))); line-height: 1.25; overflow-wrap: anywhere; }
+        #pot { grid-area: pot; color: #ffb347; font-weight: bold; }
+        #endScreen, #welcomeScreen {
+            position: absolute; inset: 0; z-index: 10; padding: 20px; background: #101610ed;
+            color: #ffb347; font-size: clamp(16px, calc(24 * var(--u)), 30px); font-weight: bold;
+            display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+            cursor: pointer; touch-action: manipulation; overflow-y: auto;
+        }
+        #welcomeScreen.active { display: flex; }
+        #welcomeScreen small { font-size: .7em; line-height: 1.5; color: #fff4dc; font-weight: normal; }
+        @media (orientation: landscape) and (min-width: 600px) and (max-height: 600px) {
+            body { --u: min(calc(var(--usable-width) / 1000), calc(var(--usable-height) / 420)); }
+            #gameContainer {
+                width: min(100%, 1100px);
+                grid-template-areas: "house community player" "controls controls controls" "status status status" "pot pot pot";
+                grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+                grid-template-rows: minmax(0, 1fr) auto auto auto;
+            }
+        }
     </style>
 
     <script>
@@ -220,10 +123,10 @@
             <button id="checkButton" style="display:none">Check</button>
             <button id="foldButton" style="display:none">Fold</button>
         </div>
-        <div id="status">.</div> <!-- Placeholder dot -->
+        <div id="status" role="status" aria-live="polite">Deal a hand to begin.</div>
         <div id="pot">Pot: 0</div>
-        <div id="endScreen"></div>
-        <div id="welcomeScreen" class="active">Welcome to Caps Poker! Tap anywhere to start.</div>
+        <div id="endScreen" role="button" tabindex="0" aria-label="Restart game"></div>
+        <div id="welcomeScreen" class="active" role="button" tabindex="0"><span>Welcome to Caps Poker</span><small>1 cap ante each. Bet up to 5 caps per street, check, or fold. The house calls or folds. Best five-card hand wins.</small><span>Tap or press Enter to start</span></div>
     </div>
 
     <script>
@@ -296,6 +199,7 @@
         let communityCards = [];
         let stage = "";
         let currentBet = 0;
+        let roundActive = false;
 
         const houseCardImgs = [
             document.getElementById('house1'),
@@ -325,10 +229,14 @@
 
         function addButtonListeners(button, callback) {
             button.addEventListener('click', callback);
-            button.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                callback();
-            });
+            if (button.getAttribute('role') === 'button') {
+                button.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        callback();
+                    }
+                });
+            }
         }
 
         addButtonListeners(startButton, startRound);
@@ -362,15 +270,18 @@
             playerCapsDiv.textContent = `Your Caps: ${playerCaps}`;
             houseCapsDiv.textContent = `House Caps: ${houseCaps}`;
             potDiv.textContent = `Pot: ${pot}`;
-            checkEndGame();
+            const amount = Math.min(5, playerCaps, houseCaps);
+            betButton.textContent = `Bet ${amount}`;
+            betButton.disabled = !roundActive || amount <= 0;
         }
 
         function checkEndGame() {
-            if (playerCaps >= 200) {
-                endScreen.textContent = "Congrats, you won! Tap to restart the game.";
+            if (roundActive) return;
+            if (houseCaps === 0) {
+                endScreen.textContent = statusDiv.textContent + " You won all the caps! Tap to restart.";
                 endScreen.style.display = "flex";
-            } else if (houseCaps >= 200) {
-                endScreen.textContent = "House wins.. Tap to restart the game.";
+            } else if (playerCaps === 0) {
+                endScreen.textContent = statusDiv.textContent + " House wins all the caps. Tap to restart.";
                 endScreen.style.display = "flex";
             }
         }
@@ -384,6 +295,7 @@
             communityCards = [];
             stage = "";
             currentBet = 0;
+            roundActive = false;
             endScreen.style.display = "none";
             playerCardImgs[0].src = cardURLs["back"];
             playerCardImgs[1].src = cardURLs["back"];
@@ -392,26 +304,34 @@
             for (let i = 0; i < 5; i++) {
                 communityCardImgs[i].src = cardURLs["back"];
             }
-            statusDiv.textContent = ".";
-            statusDiv.style.color = "#222222";
+            statusDiv.textContent = "Deal a hand to begin.";
             welcomeScreen.classList.add("active");
             startButton.style.display = "none";
+            betButton.style.display = "none";
+            checkButton.style.display = "none";
+            foldButton.style.display = "none";
             updateDisplays();
         }
 
         function startGame() {
+            if (roundActive) return;
             welcomeScreen.classList.remove("active");
             startButton.style.display = "inline";
             updateDisplays();
         }
 
         function startRound() {
+            if (roundActive) return;
             if (playerCaps < 1 || houseCaps < 1) {
                 alert("Not enough caps to play!");
                 return;
             }
-            pot = 0;
+            // Equal antes give every hand a stake; bets use the smaller stack.
+            playerCaps -= 1;
+            houseCaps -= 1;
+            pot = 2;
             currentBet = 0;
+            roundActive = true;
             createDeck();
             shuffle(deck);
             playerHand = deck.slice(0, 2);
@@ -431,17 +351,15 @@
             betButton.style.display = "inline";
             checkButton.style.display = "inline";
             foldButton.style.display = "inline";
-            statusDiv.textContent = "Pre-flop: Bet, Check, or Fold?";
-            statusDiv.style.color = "#333333";
+            statusDiv.textContent = "Pre-flop · 1 cap ante each. Bet, Check, or Fold?";
             updateDisplays();
+            if (playerCaps === 0 || houseCaps === 0) runOutBoard();
         }
 
         function playerBet() {
-            let betAmount = 5;
-            if (playerCaps < betAmount) {
-                alert("Not enough caps to bet!");
-                return;
-            }
+            if (!roundActive) return;
+            const betAmount = Math.min(5, playerCaps, houseCaps);
+            if (betAmount <= 0) return;
             playerCaps -= betAmount;
             pot += betAmount;
             currentBet = betAmount;
@@ -450,6 +368,7 @@
         }
 
         function playerCheck() {
+            if (!roundActive) return;
             if (currentBet === 0) {
                 houseAction();
             } else {
@@ -458,6 +377,7 @@
         }
 
         function playerFold() {
+            if (!roundActive) return;
             statusDiv.textContent = `You folded. House wins the pot of ${pot} caps.`;
             houseCaps += pot;
             pot = 0;
@@ -466,6 +386,7 @@
         }
 
         function houseAction() {
+            if (!roundActive) return;
             if (stage === "pre-flop") {
                 let houseRank = evaluatePreFlop(houseHand);
                 if (currentBet > 0 && houseRank < 1 && Math.random() < 0.5) {
@@ -491,7 +412,23 @@
                 houseCaps -= currentBet;
                 pot += currentBet;
             }
+            currentBet = 0;
+            updateDisplays();
+            if (playerCaps === 0 || houseCaps === 0) {
+                runOutBoard();
+                return;
+            }
             nextStage();
+        }
+
+        function runOutBoard() {
+            if (!roundActive) return;
+            currentBet = 0;
+            revealFlop();
+            revealTurn();
+            revealRiver();
+            stage = "river";
+            showdown();
         }
 
         function evaluatePreFlop(hand) {
@@ -534,17 +471,19 @@
         }
 
         function showdown() {
+            if (!roundActive) return;
             houseCardImgs[0].src = getCardImage(houseHand[0]);
             houseCardImgs[1].src = getCardImage(houseHand[1]);
             let playerBest = getBestHandRank(playerHand.concat(communityCards));
             let houseBest = getBestHandRank(houseHand.concat(communityCards));
             let playerRank = evaluateHand(playerBest);
             let houseRank = evaluateHand(houseBest);
+            const comparison = compareHands(playerBest, houseBest);
 
-            if (playerRank > houseRank) {
+            if (comparison > 0) {
                 statusDiv.textContent = `You win with ${handRankNames[playerRank]}! You win the pot of ${pot} caps.`;
                 playerCaps += pot;
-            } else if (houseRank > playerRank) {
+            } else if (comparison < 0) {
                 statusDiv.textContent = `House wins with ${handRankNames[houseRank]}! House wins the pot of ${pot} caps.`;
                 houseCaps += pot;
             } else {
@@ -558,20 +497,22 @@
         }
 
         function endRound() {
+            roundActive = false;
+            stage = "complete";
+            currentBet = 0;
             betButton.style.display = "none";
             checkButton.style.display = "none";
             foldButton.style.display = "none";
             startButton.style.display = "inline";
+            updateDisplays();
+            checkEndGame();
         }
 
         function getBestHandRank(sevenCards) {
             let bestCombo = null;
-            let bestRank = -1;
             let combinations = getCombinations(sevenCards, 5);
             for (let combo of combinations) {
-                let rank = evaluateHand(combo);
-                if (rank > bestRank) {
-                    bestRank = rank;
+                if (!bestCombo || compareHands(combo, bestCombo) > 0) {
                     bestCombo = combo;
                 }
             }
@@ -596,43 +537,40 @@
         }
 
         function evaluateHand(hand) {
-            hand.sort((a, b) => a.rank - b.rank);
-            let isFlush = hand.every(card => card.suit === hand[0].suit);
-            let isStraight = checkStraight(hand);
-
-            if (isFlush && isStraight) {
-                if (hand[4].rank === 12 && hand[0].rank === 8) {
-                    return 9; // Royal Flush
-                }
-                return 8; // Straight Flush
-            }
-
-            let rankCounts = {};
-            hand.forEach(card => {
-                rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
-            });
-            let counts = Object.values(rankCounts).sort((a, b) => b - a);
-
-            if (counts[0] === 4) return 7; // Four of a Kind
-            if (counts[0] === 3 && counts[1] === 2) return 6; // Full House
-            if (isFlush) return 5; // Flush
-            if (isStraight) return 4; // Straight
-            if (counts[0] === 3) return 3; // Three of a Kind
-            if (counts[0] === 2 && counts[1] === 2) return 2; // Two Pair
-            if (counts[0] === 2) return 1; // One Pair
-            return 0; // High Card
+            return scoreHand(hand)[0];
         }
 
-        function checkStraight(hand) {
-            for (let i = 1; i < 5; i++) {
-                if (hand[i].rank !== hand[i - 1].rank + 1) {
-                    if (i === 4 && hand[4].rank === 12 && hand[0].rank === 0 && hand[1].rank === 1 && hand[2].rank === 2 && hand[3].rank === 3) {
-                        return true;
-                    }
-                    return false;
-                }
+        // Compare the category, then every relevant rank and kicker in order.
+        // Ace-low straights are five-high; suits never break a tie.
+        function scoreHand(hand) {
+            const ranks = hand.map(card => card.rank).sort((a, b) => b - a);
+            const counts = new Map();
+            ranks.forEach(rank => counts.set(rank, (counts.get(rank) || 0) + 1));
+            const groups = [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+            const flush = hand.every(card => card.suit === hand[0].suit);
+            let straightHigh = -1;
+            if (counts.size === 5) {
+                if (ranks[0] - ranks[4] === 4) straightHigh = ranks[0];
+                else if (ranks.join(',') === '12,3,2,1,0') straightHigh = 3;
             }
-            return true;
+            if (flush && straightHigh >= 0) return [straightHigh === 12 ? 9 : 8, straightHigh];
+            if (groups[0][1] === 4) return [7, groups[0][0], groups[1][0]];
+            if (groups[0][1] === 3 && groups[1][1] === 2) return [6, groups[0][0], groups[1][0]];
+            if (flush) return [5, ...ranks];
+            if (straightHigh >= 0) return [4, straightHigh];
+            if (groups[0][1] === 3) return [3, ...groups.map(group => group[0])];
+            if (groups[0][1] === 2 && groups[1][1] === 2) return [2, ...groups.map(group => group[0])];
+            if (groups[0][1] === 2) return [1, ...groups.map(group => group[0])];
+            return [0, ...ranks];
+        }
+
+        function compareHands(first, second) {
+            const a = scoreHand(first);
+            const b = scoreHand(second);
+            for (let i = 0; i < a.length; i++) {
+                if (a[i] !== b[i]) return a[i] - b[i];
+            }
+            return 0;
         }
     </script>
 </body>
