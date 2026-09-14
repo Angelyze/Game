@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Wasteland Candy Crush</title>
     <style>
         body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1a1a1a; font-family: Arial, sans-serif; }
@@ -14,7 +14,44 @@
             color: #0f0; font-size: 18px; margin-bottom: 10px; text-shadow: 0 0 5px #0f0; 
         }
         #ui span { background: #222; padding: 5px 10px; border-radius: 3px; }
+
+        /* Fit the visible viewport, including browser chrome and display cutouts. */
+        :root { --view-height: 100vh; --view-width: 100vw; }
+        @supports (height: 100dvh) { :root { --view-height: 100dvh; } }
+        html { width: 100%; height: 100%; overflow: hidden; }
+        body {
+            --usable-height: calc(var(--view-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            --usable-width: calc(var(--view-width) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            --u: min(calc(var(--usable-width) / 500), calc(var(--usable-height) / 700));
+            box-sizing: border-box; margin: 0; min-height: 0;
+            width: var(--view-width); height: var(--view-height); overflow: hidden;
+            padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+        }
+        button { touch-action: manipulation; }
+
+        body { display: flex; flex-direction: column; justify-content: flex-start; align-items: center; }
+        #ui { box-sizing: border-box; flex: 0 0 auto; width: 100%; max-width: 700px; margin: 0;
+            gap: 4px; padding: clamp(3px, 1dvh, 10px); font-size: clamp(10px, 2.5dvh, 18px); }
+        #ui span { padding: 3px; white-space: nowrap; }
+        #gameContainer { flex: 1 1 0; width: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; }
+        #gameCanvas { display: block; box-sizing: border-box; max-width: 100%; max-height: 100%; touch-action: manipulation; }
+
     </style>
+
+    <script>
+    // VisualViewport also tracks mobile address bars and the on-screen keyboard.
+    (() => {
+        const syncViewport = () => {
+            const viewport = window.visualViewport;
+            document.documentElement.style.setProperty('--view-height', (viewport ? viewport.height : window.innerHeight) + 'px');
+            document.documentElement.style.setProperty('--view-width', (viewport ? viewport.width : window.innerWidth) + 'px');
+        };
+        syncViewport();
+        window.addEventListener('resize', syncViewport);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', syncViewport);
+    })();
+    </script>
+
 </head>
 <body>
     <div id="ui">
@@ -279,8 +316,8 @@
         canvas.addEventListener('click', (e) => {
             if (gameOver) return;
             const rect = canvas.getBoundingClientRect();
-            const x = Math.floor((e.clientX - rect.left) / TILE_SIZE);
-            const y = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+            const x = Math.floor((e.clientX - rect.left - canvas.clientLeft) * canvas.width / canvas.clientWidth / TILE_SIZE);
+            const y = Math.floor((e.clientY - rect.top - canvas.clientTop) * canvas.height / canvas.clientHeight / TILE_SIZE);
 
             if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return; // Prevent out-of-bounds clicks
 
@@ -327,6 +364,16 @@
 
             requestAnimationFrame(gameLoop);
         }
+
+        // Preserve square tiles while fitting both available dimensions.
+        const fitBoard = () => {
+            const area = document.getElementById('gameContainer');
+            const size = Math.min(area.clientWidth, area.clientHeight);
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+        };
+        new ResizeObserver(fitBoard).observe(document.getElementById('gameContainer'));
+        fitBoard();
 
         // Start game
         requestAnimationFrame(gameLoop);

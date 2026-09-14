@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>The Armageddon</title>
     <style>
         * {
@@ -67,14 +67,56 @@
             z-index: 1000;
             text-align: center; /* Center the text within the div */
         }
+
+        /* Fit the visible viewport, including browser chrome and display cutouts. */
+        :root { --view-height: 100vh; --view-width: 100vw; }
+        @supports (height: 100dvh) { :root { --view-height: 100dvh; } }
+        html { width: 100%; height: 100%; overflow: hidden; }
+        body {
+            --usable-height: calc(var(--view-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            --usable-width: calc(var(--view-width) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            --u: min(calc(var(--usable-width) / 500), calc(var(--usable-height) / 700));
+            box-sizing: border-box; margin: 0; min-height: 0;
+            width: var(--view-width); height: var(--view-height); overflow: hidden;
+            padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+        }
+        button { touch-action: manipulation; }
+
+        body { display: flex; align-items: center; justify-content: center; }
+        #warShell { position: relative; width: 100%; height: 100%; min-height: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+        #gameCanvas { display: block; box-sizing: content-box; flex: 0 0 auto; margin: auto 0; }
+        #gameHUD { position: static; flex: 0 0 auto; box-sizing: border-box; width: 100%;
+            padding: 6px 40px 6px 4px; font-size: clamp(11px, 2.5dvh, 20px); order: -1; }
+        #soundToggle { top: 2px; left: auto; right: 4px; width: 28px; height: 28px; }
+        #startScreen { top: 50%; transform: translateY(-50%); max-width: 95%; font-size: clamp(14px, 3.4dvh, 24px); }
+        #flashOverlay { position: absolute; }
+
     </style>
+
+    <script>
+    // VisualViewport also tracks mobile address bars and the on-screen keyboard.
+    (() => {
+        const syncViewport = () => {
+            const viewport = window.visualViewport;
+            document.documentElement.style.setProperty('--view-height', (viewport ? viewport.height : window.innerHeight) + 'px');
+            document.documentElement.style.setProperty('--view-width', (viewport ? viewport.width : window.innerWidth) + 'px');
+        };
+        syncViewport();
+        window.addEventListener('resize', syncViewport);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', syncViewport);
+    })();
+    </script>
+
 </head>
 <body>
+    <div id="warShell">
     <div id="startScreen">Tap to Start<br>The Armageddon</div>
     <canvas id="gameCanvas"></canvas>
     <canvas id="soundToggle"></canvas>
     <div id="gameHUD">Level: 1 | Time: 60 | Lives: 3</div>
     <div id="flashOverlay"></div>
+    </div>
 
     <script>
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -248,12 +290,15 @@
         let bigBombSpawnTime = 0;
 
         function setupCanvas() {
-            const scale = window.devicePixelRatio;
-            canvas.width = GAME_WIDTH * scale;
-            canvas.height = GAME_HEIGHT * scale;
-            canvas.style.width = GAME_WIDTH + 'px';
-            canvas.style.height = GAME_HEIGHT + 'px';
-            ctx.scale(scale, scale);
+            const shell = document.getElementById('warShell');
+            const hudHeight = document.getElementById('gameHUD').getBoundingClientRect().height;
+            const fit = Math.max(0.01, Math.min((shell.clientWidth - 4) / GAME_WIDTH, (shell.clientHeight - hudHeight - 4) / GAME_HEIGHT));
+            const density = window.devicePixelRatio || 1;
+            canvas.width = Math.round(GAME_WIDTH * fit * density);
+            canvas.height = Math.round(GAME_HEIGHT * fit * density);
+            canvas.style.width = (GAME_WIDTH * fit) + 'px';
+            canvas.style.height = (GAME_HEIGHT * fit) + 'px';
+            ctx.setTransform(canvas.width / GAME_WIDTH, 0, 0, canvas.height / GAME_HEIGHT, 0, 0);
         }
 
         function startGame() {
@@ -494,7 +539,7 @@
         function draw() {
             let bgColors = ['#999999', '#888888', '#666666', '#444444', '#222222'];
             ctx.fillStyle = bgColors[level - 1];
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
             let cloudColors = ['#ffffff', '#777777', '#555555', '#333333', '#111111'];
             ctx.fillStyle = cloudColors[level - 1];
@@ -557,7 +602,7 @@
             }
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
+            const x = (touch.clientX - rect.left - canvas.clientLeft) * GAME_WIDTH / canvas.clientWidth;
             player.isMoving = true;
             player.direction = x < GAME_WIDTH / 2 ? -1 : 1;
         }
@@ -609,6 +654,7 @@
         canvas.addEventListener('touchend', handleTouchEnd);
         startScreen.addEventListener('click', startGame);
 
+        new ResizeObserver(setupCanvas).observe(document.getElementById('warShell'));
         setupCanvas();
         gameLoop();
         drawSoundIcon(false);

@@ -67,7 +67,45 @@
                 height: calc(98vh - 90px); /* Adjust for mobile system buttons (-50px from 98vh - 40px) */
             }
         }
+
+        /* Fit the visible viewport, including browser chrome and display cutouts. */
+        :root { --view-height: 100vh; --view-width: 100vw; }
+        @supports (height: 100dvh) { :root { --view-height: 100dvh; } }
+        html { width: 100%; height: 100%; overflow: hidden; }
+        body {
+            --usable-height: calc(var(--view-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            --usable-width: calc(var(--view-width) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            --u: min(calc(var(--usable-width) / 500), calc(var(--usable-height) / 700));
+            box-sizing: border-box; margin: 0; min-height: 0;
+            width: var(--view-width); height: var(--view-height); overflow: hidden;
+            padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+        }
+        button { touch-action: manipulation; }
+
+        body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+        #hud { position: static; box-sizing: border-box; width: 100%; flex: 0 0 auto;
+            padding: clamp(3px, 1dvh, 10px); gap: 4px; font-size: clamp(11px, 2.5dvh, 18px); }
+        #gameContainer { box-sizing: border-box; flex: 1 1 0; min-height: 0; width: 100%; height: auto; margin: 0;
+            display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #gameCanvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+        #gameOver { width: 90%; font-size: clamp(14px, 4dvh, 24px); }
+
     </style>
+
+    <script>
+    // VisualViewport also tracks mobile address bars and the on-screen keyboard.
+    (() => {
+        const syncViewport = () => {
+            const viewport = window.visualViewport;
+            document.documentElement.style.setProperty('--view-height', (viewport ? viewport.height : window.innerHeight) + 'px');
+            document.documentElement.style.setProperty('--view-width', (viewport ? viewport.width : window.innerWidth) + 'px');
+        };
+        syncViewport();
+        window.addEventListener('resize', syncViewport);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', syncViewport);
+    })();
+    </script>
+
 </head>
 <body>
     <div id="hud">
@@ -89,9 +127,11 @@
         const soundToggleElement = document.getElementById('soundToggle');
 
         // Game constants
-        const GRID_SIZE = Math.min(window.innerWidth * 0.98, window.innerHeight * 0.98) / 32; // Adjust grid size based on 98% of screen size
-        const GAME_WIDTH = Math.floor((window.innerWidth * 0.98) / GRID_SIZE);
-        const GAME_HEIGHT = Math.floor(((window.innerHeight * 0.98) - 40) / GRID_SIZE); // Adjust height for HUD
+        const GRID_SIZE = 16;
+        const boardBounds = document.getElementById('gameContainer').getBoundingClientRect();
+        const cellSize = Math.max(1, Math.min(boardBounds.width, boardBounds.height) / 32);
+        const GAME_WIDTH = Math.max(12, Math.floor((boardBounds.width - 4) / cellSize));
+        const GAME_HEIGHT = Math.max(12, Math.floor((boardBounds.height - 4) / cellSize));
         const SNAKE_COLOR = '#ff9000'; // Updated theme color
         const FOOD_COLOR = '#FFFF00'; // Yellow food
         const BONUS_COLOR = '#00FF00'; // Green bonus apple
@@ -400,22 +440,7 @@
             }
         }
 
-        // Handle window resizing
-        window.addEventListener('resize', () => {
-            // Stop the game loop
-            clearInterval(gameLoop);
-            // Wait for the resize to complete
-            setTimeout(() => {
-                // Recalculate game dimensions
-                const GRID_SIZE = Math.min(window.innerWidth * 0.98, window.innerHeight * 0.98) / 32;
-                const GAME_WIDTH = Math.floor((window.innerWidth * 0.98) / GRID_SIZE);
-                const GAME_HEIGHT = Math.floor(((window.innerHeight * 0.98) - 40) / GRID_SIZE); // Adjust height for HUD
-                canvas.width = GAME_WIDTH * GRID_SIZE;
-                canvas.height = GAME_HEIGHT * GRID_SIZE;
-                // Restart the game
-                startGame();
-            }, 500); // Delay to ensure resize is complete
-        });
+        // CSS scales the existing board on resize without resetting the run.
 
         // Load high score from localStorage on page load
         window.onload = function() {

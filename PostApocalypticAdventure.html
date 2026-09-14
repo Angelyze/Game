@@ -81,7 +81,46 @@
                 font-size: clamp(0.9em, 2.5vw, 1.2em); /* Slightly smaller on mobile */
             }
         }
+
+        /* Fit the visible viewport, including browser chrome and display cutouts. */
+        :root { --view-height: 100vh; --view-width: 100vw; }
+        @supports (height: 100dvh) { :root { --view-height: 100dvh; } }
+        html { width: 100%; height: 100%; overflow: hidden; }
+        body {
+            --usable-height: calc(var(--view-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            --usable-width: calc(var(--view-width) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            --u: min(calc(var(--usable-width) / 500), calc(var(--usable-height) / 700));
+            box-sizing: border-box; margin: 0; min-height: 0;
+            width: var(--view-width); height: var(--view-height); overflow: hidden;
+            padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+        }
+        button { touch-action: manipulation; }
+
+        #game-container { width: 100%; max-width: 1024px; height: 100%; min-height: 0;
+            display: grid; grid-template-rows: minmax(0, 1fr) auto auto;
+            gap: clamp(2px, 1dvh, 10px); padding: clamp(4px, 1dvh, 10px); }
+        #game-image { display: block; width: 100%; height: 100%; min-height: 0; max-height: none; object-fit: contain; }
+        #text { margin: 0; font-size: clamp(12px, 2.3dvh, 22px); line-height: 1.25; }
+        #choices { margin: 0; gap: clamp(2px, .7dvh, 8px); }
+        .choice { box-sizing: border-box; width: 100%; max-width: 640px; margin: 0;
+            padding: clamp(3px, 1dvh, 12px) 8px; font-size: clamp(12px, 2dvh, 20px); }
+
     </style>
+
+    <script>
+    // VisualViewport also tracks mobile address bars and the on-screen keyboard.
+    (() => {
+        const syncViewport = () => {
+            const viewport = window.visualViewport;
+            document.documentElement.style.setProperty('--view-height', (viewport ? viewport.height : window.innerHeight) + 'px');
+            document.documentElement.style.setProperty('--view-width', (viewport ? viewport.width : window.innerWidth) + 'px');
+        };
+        syncViewport();
+        window.addEventListener('resize', syncViewport);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', syncViewport);
+    })();
+    </script>
+
 </head>
 <body>
     <div id="game-container">

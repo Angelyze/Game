@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Memory Match Game</title>
     <style>
         body {
@@ -81,7 +81,49 @@
         #game-over h2 {
             margin: 20px;
         }
+
+        /* Fit the visible viewport, including browser chrome and display cutouts. */
+        :root { --view-height: 100vh; --view-width: 100vw; }
+        @supports (height: 100dvh) { :root { --view-height: 100dvh; } }
+        html { width: 100%; height: 100%; overflow: hidden; }
+        body {
+            --usable-height: calc(var(--view-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            --usable-width: calc(var(--view-width) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+            --u: min(calc(var(--usable-width) / 500), calc(var(--usable-height) / 700));
+            box-sizing: border-box; margin: 0; min-height: 0;
+            width: var(--view-width); height: var(--view-height); overflow: hidden;
+            padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+        }
+        button { touch-action: manipulation; }
+
+        body { display: flex; flex-direction: column; align-items: center; }
+        #hud { position: static; width: 100%; height: auto; flex: 0 0 auto; box-sizing: border-box;
+            padding: clamp(3px, 1dvh, 10px); font-size: clamp(12px, 2.5dvh, 20px); }
+        #game-container { flex: 1 1 0; min-height: 0; width: 100%; max-width: calc(var(--usable-height) * .72);
+            height: auto; max-height: none; margin: 0 auto; box-sizing: border-box;
+            grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(6, minmax(0, 1fr));
+            gap: clamp(2px, .9dvh, 10px); padding: clamp(2px, .9dvh, 10px); align-items: stretch; }
+        .card { box-sizing: border-box; width: 100%; height: 100%; min-height: 0; padding: 0;
+            background-size: contain; background-position: center; background-repeat: no-repeat; border-radius: 4px; }
+        .card img { object-fit: contain; }
+        #game-over { box-sizing: border-box; height: var(--view-height); padding: 12px; text-align: center; }
+
     </style>
+
+    <script>
+    // VisualViewport also tracks mobile address bars and the on-screen keyboard.
+    (() => {
+        const syncViewport = () => {
+            const viewport = window.visualViewport;
+            document.documentElement.style.setProperty('--view-height', (viewport ? viewport.height : window.innerHeight) + 'px');
+            document.documentElement.style.setProperty('--view-width', (viewport ? viewport.width : window.innerWidth) + 'px');
+        };
+        syncViewport();
+        window.addEventListener('resize', syncViewport);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', syncViewport);
+    })();
+    </script>
+
 </head>
 <body>
     <div id="hud">
